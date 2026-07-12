@@ -150,6 +150,7 @@ class Aggregation:
     mode: str            # mean_plus_worst | minimax
     lambda_worst: float
     target_whkm: float | None  # class benchmark shown in the gallery chart
+    record_whkm: float | None  # record-class stretch line
 
 
 @dataclass(frozen=True)
@@ -296,7 +297,9 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
     aggregation = Aggregation(
         mode=str(ag["mode"]), lambda_worst=float(ag["lambda_worst"]),
         target_whkm=(float(ag["target_aggregate_whkm"])
-                     if ag.get("target_aggregate_whkm") else None))
+                     if ag.get("target_aggregate_whkm") else None),
+        record_whkm=(float(ag["record_aggregate_whkm"])
+                     if ag.get("record_aggregate_whkm") else None))
     er = scen["early_reject"]
     early = EarlyReject(bool(er["enabled"]), float(er["margin"]), float(er["penalty_factor"]))
     rm = scen["rain_model"]

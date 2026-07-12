@@ -289,7 +289,8 @@ class EvolutionLoop:
         if glossary.exists():  # keep the gallery's glossary link file://-local
             shutil.copyfile(glossary, self.results / "glossary.html")
         gallery_mod.write_gallery(self.store, self.run_id, self.results,
-                                  self.cfg.aggregation.target_whkm)
+                                  self.cfg.aggregation.target_whkm,
+                                  self.cfg.aggregation.record_whkm)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
         gallery_mod.write_convergence(self.store, self.run_id, self.results)

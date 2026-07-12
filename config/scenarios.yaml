@@ -26,6 +26,10 @@ aggregation:
   # Our aggregate (mean of 6 adverse scenarios + 0.5 x worst) runs ~2.0x the
   # calm figure -> ~5.0 Wh/km aggregate.
   target_aggregate_whkm: 5.0
+  # Record-class stretch line: ~2 Wh/km calm-cruise (Dave_C-class ultralight
+  # long-range record flights, at best-range speed) x the ~2.0 calm->aggregate
+  # ratio of this scenario portfolio.
+  record_aggregate_whkm: 4.0
 
 early_reject:
   # optional cheap screen: fly calm_warm first; candidates worse than the

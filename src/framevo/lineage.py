@@ -165,9 +165,12 @@ svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit){{opacity
 svg.focus .ed.lit{{stroke-width:2;opacity:1}}
 svg.focus .el.lit{{stroke-width:2;opacity:1}}
 svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
-/* the candidate card (matches the gallery detail block) */
-.ncard{{position:absolute;z-index:10;width:340px;background:var(--paper);
-  border:1px solid var(--ink);padding:14px 16px 14px;pointer-events:none;
+/* the candidate card (matches the gallery detail block), docked just to
+   the right of the tree so it never covers the highlighted ancestry */
+.ncard{{position:fixed;top:50%;transform:translateY(-50%);
+  z-index:10;width:340px;max-height:calc(100vh - 32px);overflow:hidden;
+  background:var(--paper);border:1px solid var(--ink);
+  padding:14px 16px 14px;pointer-events:none;
   box-shadow:6px 6px 0 rgba(17,17,17,.07);display:none}}
 .ncard img{{width:100%;aspect-ratio:4/3;object-fit:contain;display:block;
   mix-blend-mode:multiply}}
@@ -223,7 +226,7 @@ function ancestors(h){{ // hovered candidate + every ancestor, via parent walk
   }}
   return seen;
 }}
-function show(h,hit){{
+function show(h){{
   var c=META[h];
   var set=ancestors(h);
   svg.classList.add("focus");
@@ -267,20 +270,13 @@ function show(h,hit){{
     +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
       +" highlighted":"seed / immigrant &mdash; no ancestors")+"</div>";
   card.style.display="block";
-  var r=hit.getBoundingClientRect(),cw=card.offsetWidth,ch=card.offsetHeight;
-  var x=r.right+12+window.scrollX,y=r.top+window.scrollY-10;
-  if(r.right+12+cw>document.documentElement.clientWidth)
-    x=r.left-12-cw+window.scrollX;   // flip to the left near the right edge
-  y=Math.max(window.scrollY+6,
-    Math.min(y,window.scrollY+window.innerHeight-ch-6));
-  card.style.left=x+"px";card.style.top=y+"px";
 }}
 function clear(){{
   svg.classList.remove("focus");
   card.style.display="none";
 }}
 svg.querySelectorAll(".hit").forEach(function(hit){{
-  hit.addEventListener("mouseenter",function(){{show(hit.dataset.h,hit)}});
+  hit.addEventListener("mouseenter",function(){{show(hit.dataset.h)}});
   hit.addEventListener("mouseleave",clear);
 }});
 }})();

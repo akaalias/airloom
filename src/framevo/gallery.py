@@ -270,7 +270,8 @@ def _mesh_blob_for(results_dir: Path, png_path: str | None) -> str | None:
 
 # --------------------------------------------------------------- the chart --
 def progress_chart_svg(store: Store, run_id: str,
-                       target_whkm: float | None = None) -> str:
+                       target_whkm: float | None = None,
+                       record_whkm: float | None = None) -> str:
     """Every candidate in evaluation order: discarded dots, a best-so-far
     step line with labeled improvements, invalid marks in a top strip, and
     generation boundaries as faint ticks. Tufte: thin rules, ink data."""
@@ -289,6 +290,8 @@ def progress_chart_svg(store: Store, run_id: str,
     y_max = hi * 1.06
     if target_whkm:
         y_max = max(y_max, target_whkm * 1.2)
+    if record_whkm:
+        y_max = max(y_max, record_whkm * 1.2)
     if y_max <= 0:
         y_max = 1.0
 
@@ -386,7 +389,16 @@ def progress_chart_svg(store: Store, run_id: str,
                  f'stroke="#8c2f1f" stroke-width="1.2" stroke-dasharray="6,4"/>')
         s.append(f'<text x="{ml + 8}" y="{yt - 6:.1f}" font-size="12.5" '
                  f'font-style="italic" fill="#8c2f1f">{target_whkm:g} &#183; '
-                 f'class benchmark (7-inch long-range practice)</text>')
+                 f'minimum target (current 7-inch long-range practice, '
+                 f'&#8776;8 g/W)</text>')
+    if record_whkm:
+        yr = yat(record_whkm)
+        s.append(f'<line x1="{ml}" y1="{yr:.1f}" x2="{W - mr}" y2="{yr:.1f}" '
+                 f'stroke="#8a6a1e" stroke-width="1.1" stroke-dasharray="2,5"/>')
+        s.append(f'<text x="{ml + 8}" y="{yr - 6:.1f}" font-size="12.5" '
+                 f'font-style="italic" fill="#8a6a1e">{record_whkm:g} &#183; '
+                 f'record-class stretch (&#8776;2 Wh/km calm cruise, '
+                 f'Dave_C-style builds)</text>')
     s.append(f'<text x="{ml + pw / 2}" y="{H - 8}" text-anchor="middle" '
              f'font-size="13" font-style="italic" fill="#6b6a60">'
              f'candidate # (evaluation order) &mdash; lower is better</text>')
@@ -396,7 +408,8 @@ def progress_chart_svg(store: Store, run_id: str,
 
 # -------------------------------------------------------------- the gallery --
 def write_gallery(store: Store, run_id: str, results_dir: Path,
-                  target_whkm: float | None = None) -> Path:
+                  target_whkm: float | None = None,
+                  record_whkm: float | None = None) -> Path:
     cands = {r["hash"]: r for r in store.candidates_for_run(run_id)}
     gens = store.generations_with_population(run_id)
     scen_cache: dict[str, list] = {}
@@ -435,7 +448,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              '<span class="k"><span class="dot" style="background:#55534c"></span>motors</span>'
              '<span class="k"><span class="dot" style="background:#d8d5c8"></span>prop disks</span>'
              "</div>",
-             f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm)}</div>']
+             f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>']
 
     detail_ids: list[str] = []
     for g in reversed(gens):
