@@ -43,7 +43,7 @@ DRAW_ORDER = ("deck", "battery", "stack", "wiring", "motors", "arms", "props")
 
 def render_parts(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
                  valid: bool = True,
-                 size_px: tuple[int, int] = (360, 270)) -> None:
+                 size_px: tuple[int, int] = (720, 540)) -> None:
     dpi = 90
     fig = plt.figure(figsize=(size_px[0] / dpi, size_px[1] / dpi), dpi=dpi)
     ax = fig.add_subplot(111, projection="3d")
@@ -72,13 +72,13 @@ def render_parts(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
 
 
 def render_thumbnail(mesh: trimesh.Trimesh, path: Path, valid: bool = True,
-                     size_px: tuple[int, int] = (360, 270)) -> None:
+                     size_px: tuple[int, int] = (720, 540)) -> None:
     """Single-mesh fallback (no labeled parts available)."""
     render_parts({"deck": mesh}, path, valid=valid, size_px=size_px)
 
 
 def render_placeholder(path: Path, reason: str,
-                       size_px: tuple[int, int] = (360, 270)) -> None:
+                       size_px: tuple[int, int] = (720, 540)) -> None:
     """Thumbnail for candidates whose mesh could not be built at all."""
     dpi = 90
     fig = plt.figure(figsize=(size_px[0] / dpi, size_px[1] / dpi), dpi=dpi)

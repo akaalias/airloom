@@ -78,7 +78,9 @@ table.sc td:last-child{text-align:right;color:var(--ink)}
 .viewer{width:50%;min-width:320px;position:relative}
 .viewer canvas,.viewer img{width:100%;aspect-ratio:4/3;display:block;
   cursor:grab;touch-action:none}
-.viewer img{object-fit:contain}
+/* static fallback renders are 360px wide: never upscale them past
+   natural size or they pixelate */
+.viewer img{object-fit:contain;width:auto;max-width:100%;cursor:default}
 .viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
   color:var(--faint);pointer-events:none}
 .dmeta{flex:1;min-width:280px}
