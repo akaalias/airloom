@@ -442,6 +442,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              '<span class="k"><span class="dot" style="background:#b9b6a6"></span>candidate</span>'
              '<span class="k"><span class="bar"></span>best so far</span>'
              '<span class="k"><span class="x">&#215;</span>invalid (design fail)</span>'
+             '<span class="k"><span style="color:#2e6e63;font-weight:700">'
+             "g&#8202;&#10227;</span>pivot generation (patience exhausted)</span>"
              '<span class="k num" style="color:#9b998c">aggregate Wh/km, lower is better</span>'
              "</div>",
              '<div class="legend" style="margin-top:6px">'

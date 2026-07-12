@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="856" height="2136" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="856" height="1464" font-family="Helvetica,Arial,sans-serif">
 <rect width="100%" height="100%" fill="#fffff8"/>
 <line class="el" data-h="ced89b9b5ac9" x1="83" y1="69" x2="83" y2="135" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
 <path class="ed" data-c="c371a6123a5a" data-p="ced89b9b5ac9" d="M83,69 C83,102 129,102 129,135" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
@@ -404,207 +404,17 @@
 <path class="ed" data-c="5ac0f38a1973" data-p="b96f040b1cd6" d="M727,1245 C727,1278 681,1278 681,1311" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
 <path class="ed" data-c="0ef46f19a20e" data-p="967487263994" d="M129,1245 C129,1278 727,1278 727,1311" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
 <path class="ed" data-c="0ef46f19a20e" data-p="967487263994" d="M129,1245 C129,1278 727,1278 727,1311" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="0a526b9226b6" x1="83" y1="1329" x2="83" y2="1395" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<line class="el" data-h="3ec3ea5d98c7" x1="129" y1="1329" x2="129" y2="1395" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="4220d8ecc950" data-p="c6af2c20d148" d="M267,1329 C267,1362 175,1362 175,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="4220d8ecc950" data-p="967487263994" d="M175,1329 C175,1362 175,1362 175,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="11656ac43192" data-p="967487263994" d="M175,1329 C175,1362 221,1362 221,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="11656ac43192" data-p="3ec3ea5d98c7" d="M129,1329 C129,1362 221,1362 221,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d48b0bee063c" data-p="d52b3ec43f48" d="M359,1329 C359,1362 267,1362 267,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d48b0bee063c" data-p="3ec3ea5d98c7" d="M129,1329 C129,1362 267,1362 267,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="5a984b083de8" data-p="47b28db1ac9f" d="M313,1329 C313,1362 313,1362 313,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="5a984b083de8" data-p="c6af2c20d148" d="M267,1329 C267,1362 313,1362 313,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="ae18d8af9626" data-p="47b28db1ac9f" d="M313,1329 C313,1362 359,1362 359,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="ae18d8af9626" data-p="c6af2c20d148" d="M267,1329 C267,1362 359,1362 359,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="29d27d85f713" data-p="0a526b9226b6" d="M83,1329 C83,1362 405,1362 405,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="29d27d85f713" data-p="47b28db1ac9f" d="M313,1329 C313,1362 405,1362 405,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="320bbf5fa566" data-p="967487263994" d="M175,1329 C175,1362 451,1362 451,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="320bbf5fa566" data-p="3ec3ea5d98c7" d="M129,1329 C129,1362 451,1362 451,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="01c725c7401c" data-p="e9dc42a9475a" d="M543,1329 C543,1362 497,1362 497,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="01c725c7401c" data-p="47b28db1ac9f" d="M313,1329 C313,1362 497,1362 497,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="88b2c0774ff2" data-p="0a526b9226b6" d="M83,1329 C83,1362 543,1362 543,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="88b2c0774ff2" data-p="3ec3ea5d98c7" d="M129,1329 C129,1362 543,1362 543,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="1e529558be9d" data-p="d52b3ec43f48" d="M359,1329 C359,1362 589,1362 589,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="1e529558be9d" data-p="4c1c9562a691" d="M221,1329 C221,1362 589,1362 589,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cb737312aeb4" data-p="c6af2c20d148" d="M267,1329 C267,1362 681,1362 681,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cb737312aeb4" data-p="c6af2c20d148" d="M267,1329 C267,1362 681,1362 681,1395" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cffaa3023702" data-p="0a526b9226b6" d="M83,1413 C83,1446 83,1446 83,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cffaa3023702" data-p="ae18d8af9626" d="M359,1413 C359,1446 83,1446 83,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="0a526b9226b6" x1="83" y1="1413" x2="129" y2="1479" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="08c5a7555d80" data-p="0a526b9226b6" d="M83,1413 C83,1446 175,1446 175,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="08c5a7555d80" data-p="ae18d8af9626" d="M359,1413 C359,1446 175,1446 175,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="3ec3ea5d98c7" x1="129" y1="1413" x2="221" y2="1479" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="2385b1ab8334" data-p="0a526b9226b6" d="M83,1413 C83,1446 267,1446 267,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="2385b1ab8334" data-p="ae18d8af9626" d="M359,1413 C359,1446 267,1446 267,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d412abdc104e" data-p="d48b0bee063c" d="M267,1413 C267,1446 313,1446 313,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d412abdc104e" data-p="4220d8ecc950" d="M175,1413 C175,1446 313,1446 313,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="6a3754b95832" data-p="0a526b9226b6" d="M83,1413 C83,1446 359,1446 359,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="6a3754b95832" data-p="0a526b9226b6" d="M83,1413 C83,1446 359,1446 359,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="4e007dc37085" data-p="11656ac43192" d="M221,1413 C221,1446 405,1446 405,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="4e007dc37085" data-p="0a526b9226b6" d="M83,1413 C83,1446 405,1446 405,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="881120e63a5f" data-p="d740157fa5b2" d="M635,1413 C635,1446 451,1446 451,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="881120e63a5f" data-p="11656ac43192" d="M221,1413 C221,1446 451,1446 451,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="6efd5f5386cb" data-p="d740157fa5b2" d="M635,1413 C635,1446 497,1446 497,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="6efd5f5386cb" data-p="4220d8ecc950" d="M175,1413 C175,1446 497,1446 497,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="12b4ac600f8e" data-p="5f21d1e6575f" d="M773,1413 C773,1446 543,1446 543,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="12b4ac600f8e" data-p="3ec3ea5d98c7" d="M129,1413 C129,1446 543,1446 543,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="dccc59e1ddf5" data-p="0a526b9226b6" d="M83,1413 C83,1446 589,1446 589,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="dccc59e1ddf5" data-p="4220d8ecc950" d="M175,1413 C175,1446 589,1446 589,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="afc0c8db2af0" data-p="11656ac43192" d="M221,1413 C221,1446 635,1446 635,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="afc0c8db2af0" data-p="5a984b083de8" d="M313,1413 C313,1446 635,1446 635,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c79fb0f9640c" data-p="5a984b083de8" d="M313,1413 C313,1446 681,1446 681,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c79fb0f9640c" data-p="5f21d1e6575f" d="M773,1413 C773,1446 681,1446 681,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="9f2c111a73ee" data-p="11656ac43192" d="M221,1413 C221,1446 773,1446 773,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="9f2c111a73ee" data-p="3ec3ea5d98c7" d="M129,1413 C129,1446 773,1446 773,1479" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="cffaa3023702" x1="83" y1="1497" x2="83" y2="1563" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<line class="el" data-h="0a526b9226b6" x1="129" y1="1497" x2="129" y2="1563" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="93359eab57ec" data-p="0a526b9226b6" d="M129,1497 C129,1530 175,1530 175,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="93359eab57ec" data-p="3ec3ea5d98c7" d="M221,1497 C221,1530 175,1530 175,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="237c023add5d" data-p="cffaa3023702" d="M83,1497 C83,1530 313,1530 313,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="237c023add5d" data-p="d412abdc104e" d="M313,1497 C313,1530 313,1530 313,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="f6829fc342c0" data-p="6a3754b95832" d="M359,1497 C359,1530 451,1530 451,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="f6829fc342c0" data-p="cffaa3023702" d="M83,1497 C83,1530 451,1530 451,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="e29addfbcb16" data-p="08c5a7555d80" d="M175,1497 C175,1530 497,1530 497,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="e29addfbcb16" data-p="08c5a7555d80" d="M175,1497 C175,1530 497,1530 497,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d7be0fdf35e5" data-p="d412abdc104e" d="M313,1497 C313,1530 543,1530 543,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d7be0fdf35e5" data-p="881120e63a5f" d="M451,1497 C451,1530 543,1530 543,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cf30de5aa735" data-p="2385b1ab8334" d="M267,1497 C267,1530 681,1530 681,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cf30de5aa735" data-p="0a526b9226b6" d="M129,1497 C129,1530 681,1530 681,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="0d46a9d92a36" data-p="9f2c111a73ee" d="M773,1497 C773,1530 727,1530 727,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="0d46a9d92a36" data-p="08c5a7555d80" d="M175,1497 C175,1530 727,1530 727,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a2a615ab2e7f" data-p="3ec3ea5d98c7" d="M221,1497 C221,1530 773,1530 773,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a2a615ab2e7f" data-p="2385b1ab8334" d="M267,1497 C267,1530 773,1530 773,1563" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="cffaa3023702" x1="83" y1="1581" x2="83" y2="1647" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<line class="el" data-h="0a526b9226b6" x1="129" y1="1581" x2="129" y2="1647" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="4257f770ff86" data-p="93359eab57ec" d="M175,1581 C175,1614 175,1614 175,1647" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a93a437c1fdb" data-p="0a526b9226b6" d="M129,1581 C129,1614 221,1614 221,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a93a437c1fdb" data-p="327472b3450d" d="M221,1581 C221,1614 221,1614 221,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c326068ac286" data-p="0a526b9226b6" d="M129,1581 C129,1614 267,1614 267,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c326068ac286" data-p="cf30de5aa735" d="M681,1581 C681,1614 267,1614 267,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="508696c48a31" data-p="cffaa3023702" d="M83,1581 C83,1614 313,1614 313,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="508696c48a31" data-p="327472b3450d" d="M221,1581 C221,1614 313,1614 313,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="95da3fcfed1b" data-p="327472b3450d" d="M221,1581 C221,1614 359,1614 359,1647" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="7faba7f601a8" data-p="f935634d802d" d="M267,1581 C267,1614 405,1614 405,1647" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="12e7add8af4a" data-p="93359eab57ec" d="M175,1581 C175,1614 451,1614 451,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="12e7add8af4a" data-p="f935634d802d" d="M267,1581 C267,1614 451,1614 451,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="ac0f9e55c028" data-p="1c7086615449" d="M589,1581 C589,1614 497,1614 497,1647" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="f8b93178be7d" data-p="327472b3450d" d="M221,1581 C221,1614 543,1614 543,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="f8b93178be7d" data-p="327472b3450d" d="M221,1581 C221,1614 543,1614 543,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="7119771338fc" data-p="0d46a9d92a36" d="M727,1581 C727,1614 589,1614 589,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="7119771338fc" data-p="237c023add5d" d="M313,1581 C313,1614 589,1614 589,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="10c4084acdae" data-p="7048de5b88d0" d="M359,1581 C359,1614 635,1614 635,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="10c4084acdae" data-p="93359eab57ec" d="M175,1581 C175,1614 635,1614 635,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a5e89b2d9f03" data-p="a2a615ab2e7f" d="M773,1581 C773,1614 681,1614 681,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a5e89b2d9f03" data-p="0a526b9226b6" d="M129,1581 C129,1614 681,1614 681,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="5b5453a17489" data-p="cffaa3023702" d="M83,1581 C83,1614 727,1614 727,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="5b5453a17489" data-p="cffaa3023702" d="M83,1581 C83,1614 727,1614 727,1647" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c48cd4bbe1bc" data-p="cffaa3023702" d="M83,1665 C83,1698 83,1698 83,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c48cd4bbe1bc" data-p="cffaa3023702" d="M83,1665 C83,1698 83,1698 83,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="cffaa3023702" x1="83" y1="1665" x2="129" y2="1731" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<line class="el" data-h="0a526b9226b6" x1="129" y1="1665" x2="175" y2="1731" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="2292100cfb5a" data-p="cffaa3023702" d="M83,1665 C83,1698 221,1698 221,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="2292100cfb5a" data-p="0a526b9226b6" d="M129,1665 C129,1698 221,1698 221,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="00388f7adc8a" data-p="4257f770ff86" d="M175,1665 C175,1698 267,1698 267,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="00388f7adc8a" data-p="cffaa3023702" d="M83,1665 C83,1698 267,1698 267,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d19625f5765b" data-p="a93a437c1fdb" d="M221,1665 C221,1698 313,1698 313,1731" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="4d0a413dc9b6" data-p="0a526b9226b6" d="M129,1665 C129,1698 359,1698 359,1731" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="1a9319da0b79" data-p="95da3fcfed1b" d="M359,1665 C359,1698 405,1698 405,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="1a9319da0b79" data-p="0efb7529d04c" d="M773,1665 C773,1698 405,1698 405,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c9492cd90bcf" data-p="ac0f9e55c028" d="M497,1665 C497,1698 451,1698 451,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c9492cd90bcf" data-p="c326068ac286" d="M267,1665 C267,1698 451,1698 451,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="1ad2d4448725" data-p="12e7add8af4a" d="M451,1665 C451,1698 497,1698 497,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="1ad2d4448725" data-p="0a526b9226b6" d="M129,1665 C129,1698 497,1698 497,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="94aa0f4afeef" data-p="a93a437c1fdb" d="M221,1665 C221,1698 543,1698 543,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="94aa0f4afeef" data-p="cffaa3023702" d="M83,1665 C83,1698 543,1698 543,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="7a152bffb322" data-p="0a526b9226b6" d="M129,1665 C129,1698 589,1698 589,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="7a152bffb322" data-p="a93a437c1fdb" d="M221,1665 C221,1698 589,1698 589,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="f17a51464ca7" data-p="a93a437c1fdb" d="M221,1665 C221,1698 635,1698 635,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="f17a51464ca7" data-p="95da3fcfed1b" d="M359,1665 C359,1698 635,1698 635,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="0e468a60472c" data-p="10c4084acdae" d="M635,1665 C635,1698 727,1698 727,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="0e468a60472c" data-p="a93a437c1fdb" d="M221,1665 C221,1698 727,1698 727,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c2ec5d666c30" data-p="4257f770ff86" d="M175,1665 C175,1698 773,1698 773,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c2ec5d666c30" data-p="0a526b9226b6" d="M129,1665 C129,1698 773,1698 773,1731" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="02567ecbf1a3" data-p="cffaa3023702" d="M129,1749 C129,1782 83,1782 83,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="02567ecbf1a3" data-p="00388f7adc8a" d="M267,1749 C267,1782 83,1782 83,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="c48cd4bbe1bc" x1="83" y1="1749" x2="129" y2="1815" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<line class="el" data-h="cffaa3023702" x1="129" y1="1749" x2="175" y2="1815" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="cabfdc0c21bb" data-p="c48cd4bbe1bc" d="M83,1749 C83,1782 221,1782 221,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cabfdc0c21bb" data-p="c48cd4bbe1bc" d="M83,1749 C83,1782 221,1782 221,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="3d7020fdc49f" data-p="7a152bffb322" d="M589,1749 C589,1782 267,1782 267,1815" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="71814569302b" data-p="0e468a60472c" d="M727,1749 C727,1782 359,1782 359,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="71814569302b" data-p="4d0a413dc9b6" d="M359,1749 C359,1782 359,1782 359,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="41eb6e2335b7" data-p="0e468a60472c" d="M727,1749 C727,1782 451,1782 451,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="41eb6e2335b7" data-p="c48cd4bbe1bc" d="M83,1749 C83,1782 451,1782 451,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="774c803157e5" data-p="1a9319da0b79" d="M405,1749 C405,1782 497,1782 497,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="774c803157e5" data-p="2292100cfb5a" d="M221,1749 C221,1782 497,1782 497,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cdb935174898" data-p="cffaa3023702" d="M129,1749 C129,1782 589,1782 589,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="cdb935174898" data-p="c48cd4bbe1bc" d="M83,1749 C83,1782 589,1782 589,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="27b8035a1f68" data-p="0a526b9226b6" d="M175,1749 C175,1782 635,1782 635,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="27b8035a1f68" data-p="c48cd4bbe1bc" d="M83,1749 C83,1782 635,1782 635,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="eefef6a292f8" data-p="4d0a413dc9b6" d="M359,1749 C359,1782 681,1782 681,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="eefef6a292f8" data-p="cffaa3023702" d="M129,1749 C129,1782 681,1782 681,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="08552ce22a76" data-p="0a526b9226b6" d="M175,1749 C175,1782 727,1782 727,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="08552ce22a76" data-p="c48cd4bbe1bc" d="M83,1749 C83,1782 727,1782 727,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="28fdac52ea30" data-p="00388f7adc8a" d="M267,1749 C267,1782 773,1782 773,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="28fdac52ea30" data-p="00388f7adc8a" d="M267,1749 C267,1782 773,1782 773,1815" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="02567ecbf1a3" x1="83" y1="1833" x2="83" y2="1899" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="dc6a1b05409a" data-p="c48cd4bbe1bc" d="M129,1833 C129,1866 129,1866 129,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="dc6a1b05409a" data-p="02567ecbf1a3" d="M83,1833 C83,1866 129,1866 129,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="c48cd4bbe1bc" x1="129" y1="1833" x2="175" y2="1899" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="b6c8cd2c6053" data-p="c48cd4bbe1bc" d="M129,1833 C129,1866 221,1866 221,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="b6c8cd2c6053" data-p="3d7020fdc49f" d="M267,1833 C267,1866 221,1866 221,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="240121a3257d" data-p="c48cd4bbe1bc" d="M129,1833 C129,1866 267,1866 267,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="240121a3257d" data-p="781511545388" d="M313,1833 C313,1866 267,1866 267,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a3efb98814dd" data-p="3d7020fdc49f" d="M267,1833 C267,1866 313,1866 313,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="a3efb98814dd" data-p="02567ecbf1a3" d="M83,1833 C83,1866 313,1866 313,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="fe77417e71d3" data-p="eefef6a292f8" d="M681,1833 C681,1866 359,1866 359,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="fe77417e71d3" data-p="02567ecbf1a3" d="M83,1833 C83,1866 359,1866 359,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="3180ad524392" data-p="781511545388" d="M313,1833 C313,1866 405,1866 405,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="3180ad524392" data-p="41eb6e2335b7" d="M451,1833 C451,1866 405,1866 405,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="0c1ce559f128" data-p="c48cd4bbe1bc" d="M129,1833 C129,1866 543,1866 543,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="0c1ce559f128" data-p="cabfdc0c21bb" d="M221,1833 C221,1866 543,1866 543,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="c1fc38cb7484" data-p="cabfdc0c21bb" d="M221,1833 C221,1866 589,1866 589,1899" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="6465ab47ac7f" data-p="02567ecbf1a3" d="M83,1833 C83,1866 635,1866 635,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="6465ab47ac7f" data-p="02567ecbf1a3" d="M83,1833 C83,1866 635,1866 635,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d7f80635db06" data-p="28fdac52ea30" d="M773,1833 C773,1866 727,1866 727,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="d7f80635db06" data-p="3d7020fdc49f" d="M267,1833 C267,1866 727,1866 727,1899" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="90119f91c97a" data-p="774c803157e5" d="M497,1833 C497,1866 773,1866 773,1899" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="3b308d18df46" data-p="02567ecbf1a3" d="M83,1917 C83,1950 83,1950 83,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="3b308d18df46" data-p="a3efb98814dd" d="M313,1917 C313,1950 83,1950 83,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="02567ecbf1a3" x1="83" y1="1917" x2="129" y2="1983" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="bbdabd69b543" data-p="02567ecbf1a3" d="M83,1917 C83,1950 175,1950 175,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="bbdabd69b543" data-p="b6c8cd2c6053" d="M221,1917 C221,1950 175,1950 175,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="00b88557d068" data-p="02567ecbf1a3" d="M83,1917 C83,1950 221,1950 221,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="00b88557d068" data-p="dc6a1b05409a" d="M129,1917 C129,1950 221,1950 221,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<line class="el" data-h="dc6a1b05409a" x1="129" y1="1917" x2="267" y2="1983" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
-<path class="ed" data-c="1243c1b98171" data-p="dc6a1b05409a" d="M129,1917 C129,1950 313,1950 313,1983" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="60df4212ac47" data-p="dc6a1b05409a" d="M129,1917 C129,1950 359,1950 359,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="60df4212ac47" data-p="b6c8cd2c6053" d="M221,1917 C221,1950 359,1950 359,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="b81582023784" data-p="c48cd4bbe1bc" d="M175,1917 C175,1950 405,1950 405,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="b81582023784" data-p="dc6a1b05409a" d="M129,1917 C129,1950 405,1950 405,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="720df497fa80" data-p="02567ecbf1a3" d="M83,1917 C83,1950 451,1950 451,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="720df497fa80" data-p="a3efb98814dd" d="M313,1917 C313,1950 451,1950 451,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="4dbd83d1aa62" data-p="a3efb98814dd" d="M313,1917 C313,1950 497,1950 497,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="4dbd83d1aa62" data-p="0c1ce559f128" d="M543,1917 C543,1950 497,1950 497,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="b3016bd6618c" data-p="b6c8cd2c6053" d="M221,1917 C221,1950 589,1950 589,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="b3016bd6618c" data-p="02567ecbf1a3" d="M83,1917 C83,1950 589,1950 589,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="698844809c2e" data-p="dc6a1b05409a" d="M129,1917 C129,1950 635,1950 635,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="698844809c2e" data-p="dc6a1b05409a" d="M129,1917 C129,1950 635,1950 635,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="e3486bede6ac" data-p="6465ab47ac7f" d="M635,1917 C635,1950 681,1950 681,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="e3486bede6ac" data-p="02567ecbf1a3" d="M83,1917 C83,1950 681,1950 681,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="79046c27ec38" data-p="a3efb98814dd" d="M313,1917 C313,1950 727,1950 727,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="79046c27ec38" data-p="3180ad524392" d="M405,1917 C405,1950 727,1950 727,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="79a0d585d6cb" data-p="eb48d7f1a03f" d="M497,1917 C497,1950 773,1950 773,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<path class="ed" data-c="79a0d585d6cb" data-p="a3efb98814dd" d="M313,1917 C313,1950 773,1950 773,1983" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<circle class="nd" data-h="ced89b9b5ac9" cx="83" cy="60" r="9.0" fill="#363532" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
+<circle class="nd" data-h="ced89b9b5ac9" cx="83" cy="60" r="9.0" fill="#43423d" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
+<circle class="bs" data-h="ced89b9b5ac9" cx="83" cy="60" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="ced89b9b5ac9" cx="83" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0b445b76df85" cx="129" cy="60" r="9.0" fill="#41403c" stroke="#6b6a60" stroke-width="1.2"><title>0b445b76df85 gen0 seed 6.768</title></circle>
+<circle class="nd" data-h="0b445b76df85" cx="129" cy="60" r="9.0" fill="#53524c" stroke="#6b6a60" stroke-width="1.2"><title>0b445b76df85 gen0 seed 6.768</title></circle>
 <circle class="hit" data-h="0b445b76df85" cx="129" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="8b3765ea23bb" cx="175" cy="60" r="9.0" fill="#4b4944" stroke="#6b6a60" stroke-width="1.2"><title>8b3765ea23bb gen0 seed 7.047</title></circle>
+<circle class="nd" data-h="8b3765ea23bb" cx="175" cy="60" r="9.0" fill="#616059" stroke="#6b6a60" stroke-width="1.2"><title>8b3765ea23bb gen0 seed 7.047</title></circle>
+<circle class="bs" data-h="8b3765ea23bb" cx="175" cy="60" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="8b3765ea23bb" cx="175" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="dee594c83495" cx="221" cy="60" r="9.0" fill="#63625a" stroke="#6b6a60" stroke-width="1.2"><title>dee594c83495 gen0 seed 7.765</title></circle>
+<circle class="nd" data-h="dee594c83495" cx="221" cy="60" r="9.0" fill="#868379" stroke="#6b6a60" stroke-width="1.2"><title>dee594c83495 gen0 seed 7.765</title></circle>
 <circle class="hit" data-h="dee594c83495" cx="221" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="58493f4185c2" cx="267" cy="60" r="9.0" fill="#939085" stroke="#6b6a60" stroke-width="1.2"><title>58493f4185c2 gen0 seed 9.156</title></circle>
+<circle class="nd" data-h="58493f4185c2" cx="267" cy="60" r="9.0" fill="#ccc9b8" stroke="#6b6a60" stroke-width="1.2"><title>58493f4185c2 gen0 seed 9.156</title></circle>
 <circle class="hit" data-h="58493f4185c2" cx="267" cy="60" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="849da485cd09" cx="313" cy="60" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>849da485cd09 gen0 seed no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="849da485cd09" cx="313" cy="60" r="14.0" fill="transparent" stroke="none"/>
@@ -628,19 +438,19 @@
 <circle class="hit" data-h="9859d18fef68" cx="727" cy="60" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="c2f7303ba7bc" cx="773" cy="60" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c2f7303ba7bc gen0 seed no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="c2f7303ba7bc" cx="773" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ced89b9b5ac9" cx="83" cy="144" r="5.0" fill="#363532" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
+<circle class="nd" data-h="ced89b9b5ac9" cx="83" cy="144" r="5.0" fill="#43423d" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
 <circle class="hit" data-h="ced89b9b5ac9" cx="83" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c371a6123a5a" cx="129" cy="144" r="9.0" fill="#393834" stroke="#6b6a60" stroke-width="1.2"><title>c371a6123a5a gen1 mutation 6.528</title></circle>
+<circle class="nd" data-h="c371a6123a5a" cx="129" cy="144" r="9.0" fill="#474641" stroke="#6b6a60" stroke-width="1.2"><title>c371a6123a5a gen1 mutation 6.528</title></circle>
 <circle class="hit" data-h="c371a6123a5a" cx="129" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2ea132035395" cx="175" cy="144" r="9.0" fill="#3d3c38" stroke="#6b6a60" stroke-width="1.2"><title>2ea132035395 gen1 crossover 6.652</title></circle>
+<circle class="nd" data-h="2ea132035395" cx="175" cy="144" r="9.0" fill="#4d4c47" stroke="#6b6a60" stroke-width="1.2"><title>2ea132035395 gen1 crossover 6.652</title></circle>
 <circle class="hit" data-h="2ea132035395" cx="175" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0b445b76df85" cx="221" cy="144" r="5.0" fill="#41403c" stroke="#6b6a60" stroke-width="1.2"><title>0b445b76df85 gen0 seed 6.768</title></circle>
+<circle class="nd" data-h="0b445b76df85" cx="221" cy="144" r="5.0" fill="#53524c" stroke="#6b6a60" stroke-width="1.2"><title>0b445b76df85 gen0 seed 6.768</title></circle>
 <circle class="hit" data-h="0b445b76df85" cx="221" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1a54d042c633" cx="267" cy="144" r="9.0" fill="#4c4b46" stroke="#6b6a60" stroke-width="1.2"><title>1a54d042c633 gen1 crossover 7.095</title></circle>
+<circle class="nd" data-h="1a54d042c633" cx="267" cy="144" r="9.0" fill="#64625b" stroke="#6b6a60" stroke-width="1.2"><title>1a54d042c633 gen1 crossover 7.095</title></circle>
 <circle class="hit" data-h="1a54d042c633" cx="267" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="aa4b8ec2b4a7" cx="313" cy="144" r="9.0" fill="#5d5b55" stroke="#6b6a60" stroke-width="1.2"><title>aa4b8ec2b4a7 gen1 crossover 7.579</title></circle>
+<circle class="nd" data-h="aa4b8ec2b4a7" cx="313" cy="144" r="9.0" fill="#7c7a71" stroke="#6b6a60" stroke-width="1.2"><title>aa4b8ec2b4a7 gen1 crossover 7.579</title></circle>
 <circle class="hit" data-h="aa4b8ec2b4a7" cx="313" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="98346f93ec0c" cx="359" cy="144" r="9.0" fill="#605e57" stroke="#6b6a60" stroke-width="1.2"><title>98346f93ec0c gen1 crossover 7.658</title></circle>
+<circle class="nd" data-h="98346f93ec0c" cx="359" cy="144" r="9.0" fill="#807e74" stroke="#6b6a60" stroke-width="1.2"><title>98346f93ec0c gen1 crossover 7.658</title></circle>
 <circle class="hit" data-h="98346f93ec0c" cx="359" cy="144" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="2d764c0e910e" cx="405" cy="144" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>2d764c0e910e gen1 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="2d764c0e910e" cx="405" cy="144" r="14.0" fill="transparent" stroke="none"/>
@@ -660,17 +470,18 @@
 <circle class="hit" data-h="bdf8dc8e47c7" cx="727" cy="144" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="dc1537b7bd6f" cx="773" cy="144" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>dc1537b7bd6f gen1 immigrant arm root tongues overlap in the deck</title></circle>
 <circle class="hit" data-h="dc1537b7bd6f" cx="773" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="16ebfaae3836" cx="83" cy="228" r="9.0" fill="#32312e" stroke="#6b6a60" stroke-width="1.2"><title>16ebfaae3836 gen2 crossover 6.322</title></circle>
+<circle class="nd" data-h="16ebfaae3836" cx="83" cy="228" r="9.0" fill="#3d3c38" stroke="#6b6a60" stroke-width="1.2"><title>16ebfaae3836 gen2 crossover 6.322</title></circle>
+<circle class="bs" data-h="16ebfaae3836" cx="83" cy="228" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="16ebfaae3836" cx="83" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ced89b9b5ac9" cx="129" cy="228" r="5.0" fill="#363532" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
+<circle class="nd" data-h="ced89b9b5ac9" cx="129" cy="228" r="5.0" fill="#43423d" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
 <circle class="hit" data-h="ced89b9b5ac9" cx="129" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1721cf7b96b7" cx="175" cy="228" r="9.0" fill="#383734" stroke="#6b6a60" stroke-width="1.2"><title>1721cf7b96b7 gen2 crossover 6.512</title></circle>
+<circle class="nd" data-h="1721cf7b96b7" cx="175" cy="228" r="9.0" fill="#464540" stroke="#6b6a60" stroke-width="1.2"><title>1721cf7b96b7 gen2 crossover 6.512</title></circle>
 <circle class="hit" data-h="1721cf7b96b7" cx="175" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c371a6123a5a" cx="221" cy="228" r="5.0" fill="#393834" stroke="#6b6a60" stroke-width="1.2"><title>c371a6123a5a gen1 mutation 6.528</title></circle>
+<circle class="nd" data-h="c371a6123a5a" cx="221" cy="228" r="5.0" fill="#474641" stroke="#6b6a60" stroke-width="1.2"><title>c371a6123a5a gen1 mutation 6.528</title></circle>
 <circle class="hit" data-h="c371a6123a5a" cx="221" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="9c5604a42a64" cx="267" cy="228" r="9.0" fill="#3b3a36" stroke="#6b6a60" stroke-width="1.2"><title>9c5604a42a64 gen2 crossover 6.577</title></circle>
+<circle class="nd" data-h="9c5604a42a64" cx="267" cy="228" r="9.0" fill="#4a4843" stroke="#6b6a60" stroke-width="1.2"><title>9c5604a42a64 gen2 crossover 6.577</title></circle>
 <circle class="hit" data-h="9c5604a42a64" cx="267" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e342f0bbbd8b" cx="313" cy="228" r="9.0" fill="#6a6860" stroke="#6b6a60" stroke-width="1.2"><title>e342f0bbbd8b gen2 crossover 7.953</title></circle>
+<circle class="nd" data-h="e342f0bbbd8b" cx="313" cy="228" r="9.0" fill="#8f8d81" stroke="#6b6a60" stroke-width="1.2"><title>e342f0bbbd8b gen2 crossover 7.953</title></circle>
 <circle class="hit" data-h="e342f0bbbd8b" cx="313" cy="228" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="8ae5e0167f50" cx="359" cy="228" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>8ae5e0167f50 gen2 crossover arm root tongues overlap in the deck</title></circle>
 <circle class="hit" data-h="8ae5e0167f50" cx="359" cy="228" r="14.0" fill="transparent" stroke="none"/>
@@ -692,27 +503,28 @@
 <circle class="hit" data-h="11abd459df06" cx="727" cy="228" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="2ddf7ada3e37" cx="773" cy="228" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>2ddf7ada3e37 gen2 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="2ddf7ada3e37" cx="773" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e0fa16a2070b" cx="83" cy="312" r="9.0" fill="#272624" stroke="#6b6a60" stroke-width="1.2"><title>e0fa16a2070b gen3 crossover 5.995</title></circle>
+<circle class="nd" data-h="e0fa16a2070b" cx="83" cy="312" r="9.0" fill="#2c2c29" stroke="#6b6a60" stroke-width="1.2"><title>e0fa16a2070b gen3 crossover 5.995</title></circle>
+<circle class="bs" data-h="e0fa16a2070b" cx="83" cy="312" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="e0fa16a2070b" cx="83" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="16ebfaae3836" cx="129" cy="312" r="5.0" fill="#32312e" stroke="#6b6a60" stroke-width="1.2"><title>16ebfaae3836 gen2 crossover 6.322</title></circle>
+<circle class="nd" data-h="16ebfaae3836" cx="129" cy="312" r="5.0" fill="#3d3c38" stroke="#6b6a60" stroke-width="1.2"><title>16ebfaae3836 gen2 crossover 6.322</title></circle>
 <circle class="hit" data-h="16ebfaae3836" cx="129" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="44f0aec82875" cx="175" cy="312" r="9.0" fill="#353431" stroke="#6b6a60" stroke-width="1.2"><title>44f0aec82875 gen3 crossover 6.407</title></circle>
+<circle class="nd" data-h="44f0aec82875" cx="175" cy="312" r="9.0" fill="#41403c" stroke="#6b6a60" stroke-width="1.2"><title>44f0aec82875 gen3 crossover 6.407</title></circle>
 <circle class="hit" data-h="44f0aec82875" cx="175" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ced89b9b5ac9" cx="221" cy="312" r="5.0" fill="#363532" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
+<circle class="nd" data-h="ced89b9b5ac9" cx="221" cy="312" r="5.0" fill="#43423d" stroke="#6b6a60" stroke-width="1.2"><title>ced89b9b5ac9 gen0 seed 6.441</title></circle>
 <circle class="hit" data-h="ced89b9b5ac9" cx="221" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="37f644d70486" cx="267" cy="312" r="9.0" fill="#383734" stroke="#6b6a60" stroke-width="1.2"><title>37f644d70486 gen3 crossover 6.504</title></circle>
+<circle class="nd" data-h="37f644d70486" cx="267" cy="312" r="9.0" fill="#464540" stroke="#6b6a60" stroke-width="1.2"><title>37f644d70486 gen3 crossover 6.504</title></circle>
 <circle class="hit" data-h="37f644d70486" cx="267" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ea6c4caca678" cx="313" cy="312" r="9.0" fill="#3a3935" stroke="#6b6a60" stroke-width="1.2"><title>ea6c4caca678 gen3 crossover 6.550</title></circle>
+<circle class="nd" data-h="ea6c4caca678" cx="313" cy="312" r="9.0" fill="#484742" stroke="#6b6a60" stroke-width="1.2"><title>ea6c4caca678 gen3 crossover 6.550</title></circle>
 <circle class="hit" data-h="ea6c4caca678" cx="313" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="988d2c828bdc" cx="359" cy="312" r="9.0" fill="#3a3a36" stroke="#6b6a60" stroke-width="1.2"><title>988d2c828bdc gen3 crossover 6.576</title></circle>
+<circle class="nd" data-h="988d2c828bdc" cx="359" cy="312" r="9.0" fill="#4a4843" stroke="#6b6a60" stroke-width="1.2"><title>988d2c828bdc gen3 crossover 6.576</title></circle>
 <circle class="hit" data-h="988d2c828bdc" cx="359" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="61f996428a03" cx="405" cy="312" r="9.0" fill="#3c3b37" stroke="#6b6a60" stroke-width="1.2"><title>61f996428a03 gen3 crossover 6.610</title></circle>
+<circle class="nd" data-h="61f996428a03" cx="405" cy="312" r="9.0" fill="#4b4a45" stroke="#6b6a60" stroke-width="1.2"><title>61f996428a03 gen3 crossover 6.610</title></circle>
 <circle class="hit" data-h="61f996428a03" cx="405" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="641ec1a57754" cx="451" cy="312" r="9.0" fill="#42413d" stroke="#6b6a60" stroke-width="1.2"><title>641ec1a57754 gen3 crossover 6.805</title></circle>
+<circle class="nd" data-h="641ec1a57754" cx="451" cy="312" r="9.0" fill="#55544e" stroke="#6b6a60" stroke-width="1.2"><title>641ec1a57754 gen3 crossover 6.805</title></circle>
 <circle class="hit" data-h="641ec1a57754" cx="451" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="58997c3eabaa" cx="497" cy="312" r="9.0" fill="#5f5e57" stroke="#6b6a60" stroke-width="1.2"><title>58997c3eabaa gen3 crossover 7.648</title></circle>
+<circle class="nd" data-h="58997c3eabaa" cx="497" cy="312" r="9.0" fill="#807e74" stroke="#6b6a60" stroke-width="1.2"><title>58997c3eabaa gen3 crossover 7.648</title></circle>
 <circle class="hit" data-h="58997c3eabaa" cx="497" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="28ce9788d9a2" cx="543" cy="312" r="9.0" fill="#7a786e" stroke="#6b6a60" stroke-width="1.2"><title>28ce9788d9a2 gen3 crossover 8.422</title></circle>
+<circle class="nd" data-h="28ce9788d9a2" cx="543" cy="312" r="9.0" fill="#a7a497" stroke="#6b6a60" stroke-width="1.2"><title>28ce9788d9a2 gen3 crossover 8.422</title></circle>
 <circle class="hit" data-h="28ce9788d9a2" cx="543" cy="312" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="e98b21f66bd9" cx="589" cy="312" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>e98b21f66bd9 gen3 immigrant arm root tongues overlap in the deck</title></circle>
 <circle class="hit" data-h="e98b21f66bd9" cx="589" cy="312" r="14.0" fill="transparent" stroke="none"/>
@@ -724,27 +536,28 @@
 <circle class="hit" data-h="bd18678c48f2" cx="727" cy="312" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="920305f2907a" cx="773" cy="312" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>920305f2907a gen3 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="920305f2907a" cx="773" cy="312" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="96aa2fb19dc7" cx="83" cy="396" r="9.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
+<circle class="nd" data-h="96aa2fb19dc7" cx="83" cy="396" r="9.0" fill="#1f1f1e" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
+<circle class="bs" data-h="96aa2fb19dc7" cx="83" cy="396" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="96aa2fb19dc7" cx="83" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e0fa16a2070b" cx="129" cy="396" r="5.0" fill="#272624" stroke="#6b6a60" stroke-width="1.2"><title>e0fa16a2070b gen3 crossover 5.995</title></circle>
+<circle class="nd" data-h="e0fa16a2070b" cx="129" cy="396" r="5.0" fill="#2c2c29" stroke="#6b6a60" stroke-width="1.2"><title>e0fa16a2070b gen3 crossover 5.995</title></circle>
 <circle class="hit" data-h="e0fa16a2070b" cx="129" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="83e938b53657" cx="175" cy="396" r="9.0" fill="#272625" stroke="#6b6a60" stroke-width="1.2"><title>83e938b53657 gen4 crossover 6.006</title></circle>
+<circle class="nd" data-h="83e938b53657" cx="175" cy="396" r="9.0" fill="#2d2c2a" stroke="#6b6a60" stroke-width="1.2"><title>83e938b53657 gen4 crossover 6.006</title></circle>
 <circle class="hit" data-h="83e938b53657" cx="175" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="40d1f8d775ce" cx="221" cy="396" r="9.0" fill="#2b2a28" stroke="#6b6a60" stroke-width="1.2"><title>40d1f8d775ce gen4 crossover 6.117</title></circle>
+<circle class="nd" data-h="40d1f8d775ce" cx="221" cy="396" r="9.0" fill="#32322f" stroke="#6b6a60" stroke-width="1.2"><title>40d1f8d775ce gen4 crossover 6.117</title></circle>
 <circle class="hit" data-h="40d1f8d775ce" cx="221" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="16ebfaae3836" cx="267" cy="396" r="5.0" fill="#32312e" stroke="#6b6a60" stroke-width="1.2"><title>16ebfaae3836 gen2 crossover 6.322</title></circle>
+<circle class="nd" data-h="16ebfaae3836" cx="267" cy="396" r="5.0" fill="#3d3c38" stroke="#6b6a60" stroke-width="1.2"><title>16ebfaae3836 gen2 crossover 6.322</title></circle>
 <circle class="hit" data-h="16ebfaae3836" cx="267" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ec8762678f99" cx="313" cy="396" r="9.0" fill="#393835" stroke="#6b6a60" stroke-width="1.2"><title>ec8762678f99 gen4 crossover 6.537</title></circle>
+<circle class="nd" data-h="ec8762678f99" cx="313" cy="396" r="9.0" fill="#484742" stroke="#6b6a60" stroke-width="1.2"><title>ec8762678f99 gen4 crossover 6.537</title></circle>
 <circle class="hit" data-h="ec8762678f99" cx="313" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f9a39e09dffb" cx="359" cy="396" r="9.0" fill="#3a3935" stroke="#6b6a60" stroke-width="1.2"><title>f9a39e09dffb gen4 crossover 6.553</title></circle>
+<circle class="nd" data-h="f9a39e09dffb" cx="359" cy="396" r="9.0" fill="#484742" stroke="#6b6a60" stroke-width="1.2"><title>f9a39e09dffb gen4 crossover 6.553</title></circle>
 <circle class="hit" data-h="f9a39e09dffb" cx="359" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ff331882b515" cx="405" cy="396" r="9.0" fill="#3d3c38" stroke="#6b6a60" stroke-width="1.2"><title>ff331882b515 gen4 crossover 6.649</title></circle>
+<circle class="nd" data-h="ff331882b515" cx="405" cy="396" r="9.0" fill="#4d4c47" stroke="#6b6a60" stroke-width="1.2"><title>ff331882b515 gen4 crossover 6.649</title></circle>
 <circle class="hit" data-h="ff331882b515" cx="405" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="061edba0c319" cx="451" cy="396" r="9.0" fill="#42413d" stroke="#6b6a60" stroke-width="1.2"><title>061edba0c319 gen4 crossover 6.800</title></circle>
+<circle class="nd" data-h="061edba0c319" cx="451" cy="396" r="9.0" fill="#55544d" stroke="#6b6a60" stroke-width="1.2"><title>061edba0c319 gen4 crossover 6.800</title></circle>
 <circle class="hit" data-h="061edba0c319" cx="451" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="aafecbb1ca01" cx="497" cy="396" r="9.0" fill="#4d4b46" stroke="#6b6a60" stroke-width="1.2"><title>aafecbb1ca01 gen4 crossover 7.104</title></circle>
+<circle class="nd" data-h="aafecbb1ca01" cx="497" cy="396" r="9.0" fill="#64635b" stroke="#6b6a60" stroke-width="1.2"><title>aafecbb1ca01 gen4 crossover 7.104</title></circle>
 <circle class="hit" data-h="aafecbb1ca01" cx="497" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f7df8ae4a00b" cx="543" cy="396" r="9.0" fill="#5f5d56" stroke="#6b6a60" stroke-width="1.2"><title>f7df8ae4a00b gen4 crossover 7.631</title></circle>
+<circle class="nd" data-h="f7df8ae4a00b" cx="543" cy="396" r="9.0" fill="#7f7d73" stroke="#6b6a60" stroke-width="1.2"><title>f7df8ae4a00b gen4 crossover 7.631</title></circle>
 <circle class="hit" data-h="f7df8ae4a00b" cx="543" cy="396" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="8313e13d8d5d" cx="589" cy="396" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>8313e13d8d5d gen4 immigrant rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="8313e13d8d5d" cx="589" cy="396" r="14.0" fill="transparent" stroke="none"/>
@@ -756,91 +569,93 @@
 <circle class="hit" data-h="e81671817e4f" cx="727" cy="396" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="322fea9ad143" cx="773" cy="396" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>322fea9ad143 gen4 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="322fea9ad143" cx="773" cy="396" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="96aa2fb19dc7" cx="83" cy="480" r="5.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
+<circle class="nd" data-h="96aa2fb19dc7" cx="83" cy="480" r="5.0" fill="#1f1f1e" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
 <circle class="hit" data-h="96aa2fb19dc7" cx="83" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2024c78a6691" cx="129" cy="480" r="9.0" fill="#242322" stroke="#6b6a60" stroke-width="1.2"><title>2024c78a6691 gen5 mutation 5.916</title></circle>
+<circle class="nd" data-h="2024c78a6691" cx="129" cy="480" r="9.0" fill="#282826" stroke="#6b6a60" stroke-width="1.2"><title>2024c78a6691 gen5 mutation 5.916</title></circle>
 <circle class="hit" data-h="2024c78a6691" cx="129" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e9622dfe4dc2" cx="175" cy="480" r="9.0" fill="#262624" stroke="#6b6a60" stroke-width="1.2"><title>e9622dfe4dc2 gen5 crossover 5.979</title></circle>
+<circle class="nd" data-h="e9622dfe4dc2" cx="175" cy="480" r="9.0" fill="#2b2b28" stroke="#6b6a60" stroke-width="1.2"><title>e9622dfe4dc2 gen5 crossover 5.979</title></circle>
 <circle class="hit" data-h="e9622dfe4dc2" cx="175" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e0fa16a2070b" cx="221" cy="480" r="5.0" fill="#272624" stroke="#6b6a60" stroke-width="1.2"><title>e0fa16a2070b gen3 crossover 5.995</title></circle>
+<circle class="nd" data-h="e0fa16a2070b" cx="221" cy="480" r="5.0" fill="#2c2c29" stroke="#6b6a60" stroke-width="1.2"><title>e0fa16a2070b gen3 crossover 5.995</title></circle>
 <circle class="hit" data-h="e0fa16a2070b" cx="221" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="161b7430edcb" cx="267" cy="480" r="9.0" fill="#2d2c2a" stroke="#6b6a60" stroke-width="1.2"><title>161b7430edcb gen5 crossover 6.175</title></circle>
+<circle class="nd" data-h="161b7430edcb" cx="267" cy="480" r="9.0" fill="#353531" stroke="#6b6a60" stroke-width="1.2"><title>161b7430edcb gen5 crossover 6.175</title></circle>
 <circle class="hit" data-h="161b7430edcb" cx="267" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5c73d144a88e" cx="313" cy="480" r="9.0" fill="#2f2f2c" stroke="#6b6a60" stroke-width="1.2"><title>5c73d144a88e gen5 crossover 6.253</title></circle>
+<circle class="nd" data-h="5c73d144a88e" cx="313" cy="480" r="9.0" fill="#393835" stroke="#6b6a60" stroke-width="1.2"><title>5c73d144a88e gen5 crossover 6.253</title></circle>
 <circle class="hit" data-h="5c73d144a88e" cx="313" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e4854bfaf75e" cx="359" cy="480" r="9.0" fill="#31302d" stroke="#6b6a60" stroke-width="1.2"><title>e4854bfaf75e gen5 crossover 6.287</title></circle>
+<circle class="nd" data-h="e4854bfaf75e" cx="359" cy="480" r="9.0" fill="#3b3a36" stroke="#6b6a60" stroke-width="1.2"><title>e4854bfaf75e gen5 crossover 6.287</title></circle>
 <circle class="hit" data-h="e4854bfaf75e" cx="359" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2d470805247e" cx="405" cy="480" r="9.0" fill="#31312e" stroke="#6b6a60" stroke-width="1.2"><title>2d470805247e gen5 crossover 6.311</title></circle>
+<circle class="nd" data-h="2d470805247e" cx="405" cy="480" r="9.0" fill="#3c3b37" stroke="#6b6a60" stroke-width="1.2"><title>2d470805247e gen5 crossover 6.311</title></circle>
 <circle class="hit" data-h="2d470805247e" cx="405" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c400e92deb59" cx="451" cy="480" r="9.0" fill="#32322f" stroke="#6b6a60" stroke-width="1.2"><title>c400e92deb59 gen5 mutation 6.343</title></circle>
+<circle class="nd" data-h="c400e92deb59" cx="451" cy="480" r="9.0" fill="#3e3d39" stroke="#6b6a60" stroke-width="1.2"><title>c400e92deb59 gen5 mutation 6.343</title></circle>
 <circle class="hit" data-h="c400e92deb59" cx="451" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="91e47b5e7462" cx="497" cy="480" r="9.0" fill="#353431" stroke="#6b6a60" stroke-width="1.2"><title>91e47b5e7462 gen5 crossover 6.413</title></circle>
+<circle class="nd" data-h="91e47b5e7462" cx="497" cy="480" r="9.0" fill="#41403c" stroke="#6b6a60" stroke-width="1.2"><title>91e47b5e7462 gen5 crossover 6.413</title></circle>
 <circle class="hit" data-h="91e47b5e7462" cx="497" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b4bb6787f757" cx="543" cy="480" r="9.0" fill="#363532" stroke="#6b6a60" stroke-width="1.2"><title>b4bb6787f757 gen5 crossover 6.442</title></circle>
+<circle class="nd" data-h="b4bb6787f757" cx="543" cy="480" r="9.0" fill="#43423d" stroke="#6b6a60" stroke-width="1.2"><title>b4bb6787f757 gen5 crossover 6.442</title></circle>
 <circle class="hit" data-h="b4bb6787f757" cx="543" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f6ca227d4e79" cx="589" cy="480" r="9.0" fill="#3b3a36" stroke="#6b6a60" stroke-width="1.2"><title>f6ca227d4e79 gen5 crossover 6.581</title></circle>
+<circle class="nd" data-h="f6ca227d4e79" cx="589" cy="480" r="9.0" fill="#4a4944" stroke="#6b6a60" stroke-width="1.2"><title>f6ca227d4e79 gen5 crossover 6.581</title></circle>
 <circle class="hit" data-h="f6ca227d4e79" cx="589" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="85f0b8fd2890" cx="635" cy="480" r="9.0" fill="#43423d" stroke="#6b6a60" stroke-width="1.2"><title>85f0b8fd2890 gen5 crossover 6.815</title></circle>
+<circle class="nd" data-h="85f0b8fd2890" cx="635" cy="480" r="9.0" fill="#56544e" stroke="#6b6a60" stroke-width="1.2"><title>85f0b8fd2890 gen5 crossover 6.815</title></circle>
 <circle class="hit" data-h="85f0b8fd2890" cx="635" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="81582307b863" cx="681" cy="480" r="9.0" fill="#9c998c" stroke="#6b6a60" stroke-width="1.2"><title>81582307b863 gen5 immigrant 9.408</title></circle>
+<circle class="nd" data-h="81582307b863" cx="681" cy="480" r="9.0" fill="#d9d5c3" stroke="#6b6a60" stroke-width="1.2"><title>81582307b863 gen5 immigrant 9.408</title></circle>
 <circle class="hit" data-h="81582307b863" cx="681" cy="480" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="8e0bc8efd2c5" cx="727" cy="480" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>8e0bc8efd2c5 gen5 crossover top plate too small to support battery</title></circle>
 <circle class="hit" data-h="8e0bc8efd2c5" cx="727" cy="480" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="63db018551cd" cx="773" cy="480" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>63db018551cd gen5 immigrant arm overstressed (petg)</title></circle>
 <circle class="hit" data-h="63db018551cd" cx="773" cy="480" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="53dc4cfa6878" cx="83" cy="564" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>53dc4cfa6878 gen6 crossover 5.686</title></circle>
+<circle class="nd" data-h="53dc4cfa6878" cx="83" cy="564" r="9.0" fill="#1d1c1b" stroke="#6b6a60" stroke-width="1.2"><title>53dc4cfa6878 gen6 crossover 5.686</title></circle>
+<circle class="bs" data-h="53dc4cfa6878" cx="83" cy="564" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="53dc4cfa6878" cx="83" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="96aa2fb19dc7" cx="129" cy="564" r="5.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
+<circle class="nd" data-h="96aa2fb19dc7" cx="129" cy="564" r="5.0" fill="#1f1f1e" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
 <circle class="hit" data-h="96aa2fb19dc7" cx="129" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5da1b3ef7725" cx="175" cy="564" r="9.0" fill="#20201f" stroke="#6b6a60" stroke-width="1.2"><title>5da1b3ef7725 gen6 crossover 5.810</title></circle>
+<circle class="nd" data-h="5da1b3ef7725" cx="175" cy="564" r="9.0" fill="#232221" stroke="#6b6a60" stroke-width="1.2"><title>5da1b3ef7725 gen6 crossover 5.810</title></circle>
 <circle class="hit" data-h="5da1b3ef7725" cx="175" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b74b0dc83f32" cx="221" cy="564" r="9.0" fill="#21211f" stroke="#6b6a60" stroke-width="1.2"><title>b74b0dc83f32 gen6 crossover 5.836</title></circle>
+<circle class="nd" data-h="b74b0dc83f32" cx="221" cy="564" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>b74b0dc83f32 gen6 crossover 5.836</title></circle>
 <circle class="hit" data-h="b74b0dc83f32" cx="221" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="9c062a8eb2ce" cx="267" cy="564" r="9.0" fill="#232221" stroke="#6b6a60" stroke-width="1.2"><title>9c062a8eb2ce gen6 crossover 5.877</title></circle>
+<circle class="nd" data-h="9c062a8eb2ce" cx="267" cy="564" r="9.0" fill="#262624" stroke="#6b6a60" stroke-width="1.2"><title>9c062a8eb2ce gen6 crossover 5.877</title></circle>
 <circle class="hit" data-h="9c062a8eb2ce" cx="267" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2024c78a6691" cx="313" cy="564" r="5.0" fill="#242322" stroke="#6b6a60" stroke-width="1.2"><title>2024c78a6691 gen5 mutation 5.916</title></circle>
+<circle class="nd" data-h="2024c78a6691" cx="313" cy="564" r="5.0" fill="#282826" stroke="#6b6a60" stroke-width="1.2"><title>2024c78a6691 gen5 mutation 5.916</title></circle>
 <circle class="hit" data-h="2024c78a6691" cx="313" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a9b2de8a08e9" cx="359" cy="564" r="9.0" fill="#2b2b28" stroke="#6b6a60" stroke-width="1.2"><title>a9b2de8a08e9 gen6 crossover 6.133</title></circle>
+<circle class="nd" data-h="a9b2de8a08e9" cx="359" cy="564" r="9.0" fill="#33322f" stroke="#6b6a60" stroke-width="1.2"><title>a9b2de8a08e9 gen6 crossover 6.133</title></circle>
 <circle class="hit" data-h="a9b2de8a08e9" cx="359" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="02ea35b6847d" cx="405" cy="564" r="9.0" fill="#2d2c2a" stroke="#6b6a60" stroke-width="1.2"><title>02ea35b6847d gen6 crossover 6.177</title></circle>
+<circle class="nd" data-h="02ea35b6847d" cx="405" cy="564" r="9.0" fill="#353531" stroke="#6b6a60" stroke-width="1.2"><title>02ea35b6847d gen6 crossover 6.177</title></circle>
 <circle class="hit" data-h="02ea35b6847d" cx="405" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2c1df872afd7" cx="451" cy="564" r="9.0" fill="#2d2d2a" stroke="#6b6a60" stroke-width="1.2"><title>2c1df872afd7 gen6 crossover 6.198</title></circle>
+<circle class="nd" data-h="2c1df872afd7" cx="451" cy="564" r="9.0" fill="#363632" stroke="#6b6a60" stroke-width="1.2"><title>2c1df872afd7 gen6 crossover 6.198</title></circle>
 <circle class="hit" data-h="2c1df872afd7" cx="451" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ca7019866955" cx="497" cy="564" r="9.0" fill="#302f2c" stroke="#6b6a60" stroke-width="1.2"><title>ca7019866955 gen6 crossover 6.261</title></circle>
+<circle class="nd" data-h="ca7019866955" cx="497" cy="564" r="9.0" fill="#3a3935" stroke="#6b6a60" stroke-width="1.2"><title>ca7019866955 gen6 crossover 6.261</title></circle>
 <circle class="hit" data-h="ca7019866955" cx="497" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e6c13d1eed95" cx="543" cy="564" r="9.0" fill="#353431" stroke="#6b6a60" stroke-width="1.2"><title>e6c13d1eed95 gen6 crossover 6.410</title></circle>
+<circle class="nd" data-h="e6c13d1eed95" cx="543" cy="564" r="9.0" fill="#41403c" stroke="#6b6a60" stroke-width="1.2"><title>e6c13d1eed95 gen6 crossover 6.410</title></circle>
 <circle class="hit" data-h="e6c13d1eed95" cx="543" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f09c85680abb" cx="589" cy="564" r="9.0" fill="#363532" stroke="#6b6a60" stroke-width="1.2"><title>f09c85680abb gen6 crossover 6.432</title></circle>
+<circle class="nd" data-h="f09c85680abb" cx="589" cy="564" r="9.0" fill="#42413d" stroke="#6b6a60" stroke-width="1.2"><title>f09c85680abb gen6 crossover 6.432</title></circle>
 <circle class="hit" data-h="f09c85680abb" cx="589" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6538ef6d27e8" cx="635" cy="564" r="9.0" fill="#3b3a36" stroke="#6b6a60" stroke-width="1.2"><title>6538ef6d27e8 gen6 crossover 6.578</title></circle>
+<circle class="nd" data-h="6538ef6d27e8" cx="635" cy="564" r="9.0" fill="#4a4943" stroke="#6b6a60" stroke-width="1.2"><title>6538ef6d27e8 gen6 crossover 6.578</title></circle>
 <circle class="hit" data-h="6538ef6d27e8" cx="635" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2395d562fcd1" cx="681" cy="564" r="9.0" fill="#5b5a53" stroke="#6b6a60" stroke-width="1.2"><title>2395d562fcd1 gen6 mutation 7.527</title></circle>
+<circle class="nd" data-h="2395d562fcd1" cx="681" cy="564" r="9.0" fill="#7a786e" stroke="#6b6a60" stroke-width="1.2"><title>2395d562fcd1 gen6 mutation 7.527</title></circle>
 <circle class="hit" data-h="2395d562fcd1" cx="681" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4035fffd068e" cx="727" cy="564" r="9.0" fill="#817e74" stroke="#6b6a60" stroke-width="1.2"><title>4035fffd068e gen6 mutation 8.620</title></circle>
+<circle class="nd" data-h="4035fffd068e" cx="727" cy="564" r="9.0" fill="#b1ae9f" stroke="#6b6a60" stroke-width="1.2"><title>4035fffd068e gen6 mutation 8.620</title></circle>
 <circle class="hit" data-h="4035fffd068e" cx="727" cy="564" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="dd7d8bcaa8c0" cx="773" cy="564" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>dd7d8bcaa8c0 gen6 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="dd7d8bcaa8c0" cx="773" cy="564" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="83" cy="648" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="83" cy="648" r="9.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="bs" data-h="7a3845e5d178" cx="83" cy="648" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="7a3845e5d178" cx="83" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="53dc4cfa6878" cx="129" cy="648" r="5.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>53dc4cfa6878 gen6 crossover 5.686</title></circle>
+<circle class="nd" data-h="53dc4cfa6878" cx="129" cy="648" r="5.0" fill="#1d1c1b" stroke="#6b6a60" stroke-width="1.2"><title>53dc4cfa6878 gen6 crossover 5.686</title></circle>
 <circle class="hit" data-h="53dc4cfa6878" cx="129" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="315e42b194d5" cx="175" cy="648" r="9.0" fill="#1e1d1c" stroke="#6b6a60" stroke-width="1.2"><title>315e42b194d5 gen7 crossover 5.733</title></circle>
+<circle class="nd" data-h="315e42b194d5" cx="175" cy="648" r="9.0" fill="#1f1f1d" stroke="#6b6a60" stroke-width="1.2"><title>315e42b194d5 gen7 crossover 5.733</title></circle>
 <circle class="hit" data-h="315e42b194d5" cx="175" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="96aa2fb19dc7" cx="221" cy="648" r="5.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
+<circle class="nd" data-h="96aa2fb19dc7" cx="221" cy="648" r="5.0" fill="#1f1f1e" stroke="#6b6a60" stroke-width="1.2"><title>96aa2fb19dc7 gen4 crossover 5.745</title></circle>
 <circle class="hit" data-h="96aa2fb19dc7" cx="221" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a064193b15a4" cx="267" cy="648" r="9.0" fill="#201f1e" stroke="#6b6a60" stroke-width="1.2"><title>a064193b15a4 gen7 crossover 5.793</title></circle>
+<circle class="nd" data-h="a064193b15a4" cx="267" cy="648" r="9.0" fill="#222220" stroke="#6b6a60" stroke-width="1.2"><title>a064193b15a4 gen7 crossover 5.793</title></circle>
 <circle class="hit" data-h="a064193b15a4" cx="267" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="82949b6229bd" cx="313" cy="648" r="9.0" fill="#20201e" stroke="#6b6a60" stroke-width="1.2"><title>82949b6229bd gen7 mutation 5.803</title></circle>
+<circle class="nd" data-h="82949b6229bd" cx="313" cy="648" r="9.0" fill="#222221" stroke="#6b6a60" stroke-width="1.2"><title>82949b6229bd gen7 mutation 5.803</title></circle>
 <circle class="hit" data-h="82949b6229bd" cx="313" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="82e68a5b74f5" cx="359" cy="648" r="9.0" fill="#21201f" stroke="#6b6a60" stroke-width="1.2"><title>82e68a5b74f5 gen7 crossover 5.823</title></circle>
+<circle class="nd" data-h="82e68a5b74f5" cx="359" cy="648" r="9.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>82e68a5b74f5 gen7 crossover 5.823</title></circle>
 <circle class="hit" data-h="82e68a5b74f5" cx="359" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d5027b233a20" cx="405" cy="648" r="9.0" fill="#222120" stroke="#6b6a60" stroke-width="1.2"><title>d5027b233a20 gen7 crossover 5.855</title></circle>
+<circle class="nd" data-h="d5027b233a20" cx="405" cy="648" r="9.0" fill="#252523" stroke="#6b6a60" stroke-width="1.2"><title>d5027b233a20 gen7 crossover 5.855</title></circle>
 <circle class="hit" data-h="d5027b233a20" cx="405" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ea484b3f7634" cx="451" cy="648" r="9.0" fill="#282826" stroke="#6b6a60" stroke-width="1.2"><title>ea484b3f7634 gen7 crossover 6.051</title></circle>
+<circle class="nd" data-h="ea484b3f7634" cx="451" cy="648" r="9.0" fill="#2f2e2c" stroke="#6b6a60" stroke-width="1.2"><title>ea484b3f7634 gen7 crossover 6.051</title></circle>
 <circle class="hit" data-h="ea484b3f7634" cx="451" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f516cb5268d0" cx="497" cy="648" r="9.0" fill="#2d2c2a" stroke="#6b6a60" stroke-width="1.2"><title>f516cb5268d0 gen7 crossover 6.170</title></circle>
+<circle class="nd" data-h="f516cb5268d0" cx="497" cy="648" r="9.0" fill="#353431" stroke="#6b6a60" stroke-width="1.2"><title>f516cb5268d0 gen7 crossover 6.170</title></circle>
 <circle class="hit" data-h="f516cb5268d0" cx="497" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="07e3cf3d73e0" cx="543" cy="648" r="9.0" fill="#2e2d2a" stroke="#6b6a60" stroke-width="1.2"><title>07e3cf3d73e0 gen7 crossover 6.200</title></circle>
+<circle class="nd" data-h="07e3cf3d73e0" cx="543" cy="648" r="9.0" fill="#373632" stroke="#6b6a60" stroke-width="1.2"><title>07e3cf3d73e0 gen7 crossover 6.200</title></circle>
 <circle class="hit" data-h="07e3cf3d73e0" cx="543" cy="648" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="f118797af1fa" cx="589" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>f118797af1fa gen7 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="f118797af1fa" cx="589" cy="648" r="14.0" fill="transparent" stroke="none"/>
@@ -852,29 +667,29 @@
 <circle class="hit" data-h="4bc2cbae47a9" cx="727" cy="648" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="9d53647e0f4b" cx="773" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>9d53647e0f4b gen7 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="9d53647e0f4b" cx="773" cy="648" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="83" cy="732" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="83" cy="732" r="5.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
 <circle class="hit" data-h="7a3845e5d178" cx="83" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="87e09fcbe40e" cx="129" cy="732" r="9.0" fill="#1c1b1b" stroke="#6b6a60" stroke-width="1.2"><title>87e09fcbe40e gen8 crossover 5.679</title></circle>
+<circle class="nd" data-h="87e09fcbe40e" cx="129" cy="732" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>87e09fcbe40e gen8 crossover 5.679</title></circle>
 <circle class="hit" data-h="87e09fcbe40e" cx="129" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="53dc4cfa6878" cx="175" cy="732" r="5.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>53dc4cfa6878 gen6 crossover 5.686</title></circle>
+<circle class="nd" data-h="53dc4cfa6878" cx="175" cy="732" r="5.0" fill="#1d1c1b" stroke="#6b6a60" stroke-width="1.2"><title>53dc4cfa6878 gen6 crossover 5.686</title></circle>
 <circle class="hit" data-h="53dc4cfa6878" cx="175" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="da8ed89dfea6" cx="221" cy="732" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>da8ed89dfea6 gen8 crossover 5.689</title></circle>
+<circle class="nd" data-h="da8ed89dfea6" cx="221" cy="732" r="9.0" fill="#1d1c1b" stroke="#6b6a60" stroke-width="1.2"><title>da8ed89dfea6 gen8 crossover 5.689</title></circle>
 <circle class="hit" data-h="da8ed89dfea6" cx="221" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3eff34cc8e1a" cx="267" cy="732" r="9.0" fill="#1e1d1c" stroke="#6b6a60" stroke-width="1.2"><title>3eff34cc8e1a gen8 crossover 5.735</title></circle>
+<circle class="nd" data-h="3eff34cc8e1a" cx="267" cy="732" r="9.0" fill="#1f1f1d" stroke="#6b6a60" stroke-width="1.2"><title>3eff34cc8e1a gen8 crossover 5.735</title></circle>
 <circle class="hit" data-h="3eff34cc8e1a" cx="267" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f301d82a5656" cx="313" cy="732" r="9.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>f301d82a5656 gen8 crossover 5.753</title></circle>
+<circle class="nd" data-h="f301d82a5656" cx="313" cy="732" r="9.0" fill="#20201e" stroke="#6b6a60" stroke-width="1.2"><title>f301d82a5656 gen8 crossover 5.753</title></circle>
 <circle class="hit" data-h="f301d82a5656" cx="313" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f333ec35a0aa" cx="359" cy="732" r="9.0" fill="#20201e" stroke="#6b6a60" stroke-width="1.2"><title>f333ec35a0aa gen8 crossover 5.807</title></circle>
+<circle class="nd" data-h="f333ec35a0aa" cx="359" cy="732" r="9.0" fill="#232221" stroke="#6b6a60" stroke-width="1.2"><title>f333ec35a0aa gen8 crossover 5.807</title></circle>
 <circle class="hit" data-h="f333ec35a0aa" cx="359" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="fbd1a5a2dbf0" cx="405" cy="732" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>fbd1a5a2dbf0 gen8 crossover 5.931</title></circle>
+<circle class="nd" data-h="fbd1a5a2dbf0" cx="405" cy="732" r="9.0" fill="#292826" stroke="#6b6a60" stroke-width="1.2"><title>fbd1a5a2dbf0 gen8 crossover 5.931</title></circle>
 <circle class="hit" data-h="fbd1a5a2dbf0" cx="405" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="8a3a888a551d" cx="451" cy="732" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>8a3a888a551d gen8 crossover 5.932</title></circle>
+<circle class="nd" data-h="8a3a888a551d" cx="451" cy="732" r="9.0" fill="#292926" stroke="#6b6a60" stroke-width="1.2"><title>8a3a888a551d gen8 crossover 5.932</title></circle>
 <circle class="hit" data-h="8a3a888a551d" cx="451" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a1d2d71ada16" cx="497" cy="732" r="9.0" fill="#252523" stroke="#6b6a60" stroke-width="1.2"><title>a1d2d71ada16 gen8 crossover 5.954</title></circle>
+<circle class="nd" data-h="a1d2d71ada16" cx="497" cy="732" r="9.0" fill="#2a2a27" stroke="#6b6a60" stroke-width="1.2"><title>a1d2d71ada16 gen8 crossover 5.954</title></circle>
 <circle class="hit" data-h="a1d2d71ada16" cx="497" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d539a6a13f62" cx="543" cy="732" r="9.0" fill="#2a2927" stroke="#6b6a60" stroke-width="1.2"><title>d539a6a13f62 gen8 mutation 6.081</title></circle>
+<circle class="nd" data-h="d539a6a13f62" cx="543" cy="732" r="9.0" fill="#31302d" stroke="#6b6a60" stroke-width="1.2"><title>d539a6a13f62 gen8 mutation 6.081</title></circle>
 <circle class="hit" data-h="d539a6a13f62" cx="543" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="86645ea8b4e5" cx="589" cy="732" r="9.0" fill="#2a2a27" stroke="#6b6a60" stroke-width="1.2"><title>86645ea8b4e5 gen8 crossover 6.103</title></circle>
+<circle class="nd" data-h="86645ea8b4e5" cx="589" cy="732" r="9.0" fill="#32312e" stroke="#6b6a60" stroke-width="1.2"><title>86645ea8b4e5 gen8 crossover 6.103</title></circle>
 <circle class="hit" data-h="86645ea8b4e5" cx="589" cy="732" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="bb24e1adbee1" cx="635" cy="732" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>bb24e1adbee1 gen8 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="bb24e1adbee1" cx="635" cy="732" r="14.0" fill="transparent" stroke="none"/>
@@ -884,23 +699,23 @@
 <circle class="hit" data-h="94a1fc354d4c" cx="727" cy="732" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="f648c6a62a6e" cx="773" cy="732" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>f648c6a62a6e gen8 mutation rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="f648c6a62a6e" cx="773" cy="732" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="83" cy="816" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="83" cy="816" r="5.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
 <circle class="hit" data-h="7a3845e5d178" cx="83" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="87e09fcbe40e" cx="129" cy="816" r="5.0" fill="#1c1b1b" stroke="#6b6a60" stroke-width="1.2"><title>87e09fcbe40e gen8 crossover 5.679</title></circle>
+<circle class="nd" data-h="87e09fcbe40e" cx="129" cy="816" r="5.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>87e09fcbe40e gen8 crossover 5.679</title></circle>
 <circle class="hit" data-h="87e09fcbe40e" cx="129" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="244f11bf2c66" cx="175" cy="816" r="9.0" fill="#20201f" stroke="#6b6a60" stroke-width="1.2"><title>244f11bf2c66 gen9 crossover 5.815</title></circle>
+<circle class="nd" data-h="244f11bf2c66" cx="175" cy="816" r="9.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>244f11bf2c66 gen9 crossover 5.815</title></circle>
 <circle class="hit" data-h="244f11bf2c66" cx="175" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="36e1b8271d58" cx="221" cy="816" r="9.0" fill="#21211f" stroke="#6b6a60" stroke-width="1.2"><title>36e1b8271d58 gen9 crossover 5.835</title></circle>
+<circle class="nd" data-h="36e1b8271d58" cx="221" cy="816" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>36e1b8271d58 gen9 crossover 5.835</title></circle>
 <circle class="hit" data-h="36e1b8271d58" cx="221" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="355c4449427a" cx="267" cy="816" r="9.0" fill="#222120" stroke="#6b6a60" stroke-width="1.2"><title>355c4449427a gen9 mutation 5.854</title></circle>
+<circle class="nd" data-h="355c4449427a" cx="267" cy="816" r="9.0" fill="#252523" stroke="#6b6a60" stroke-width="1.2"><title>355c4449427a gen9 mutation 5.854</title></circle>
 <circle class="hit" data-h="355c4449427a" cx="267" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6a850979ea90" cx="313" cy="816" r="9.0" fill="#222220" stroke="#6b6a60" stroke-width="1.2"><title>6a850979ea90 gen9 crossover 5.868</title></circle>
+<circle class="nd" data-h="6a850979ea90" cx="313" cy="816" r="9.0" fill="#262523" stroke="#6b6a60" stroke-width="1.2"><title>6a850979ea90 gen9 crossover 5.868</title></circle>
 <circle class="hit" data-h="6a850979ea90" cx="313" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d9678ec5aa82" cx="359" cy="816" r="9.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>d9678ec5aa82 gen9 crossover 5.889</title></circle>
+<circle class="nd" data-h="d9678ec5aa82" cx="359" cy="816" r="9.0" fill="#272624" stroke="#6b6a60" stroke-width="1.2"><title>d9678ec5aa82 gen9 crossover 5.889</title></circle>
 <circle class="hit" data-h="d9678ec5aa82" cx="359" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="de9c510ea434" cx="405" cy="816" r="9.0" fill="#252523" stroke="#6b6a60" stroke-width="1.2"><title>de9c510ea434 gen9 crossover 5.958</title></circle>
+<circle class="nd" data-h="de9c510ea434" cx="405" cy="816" r="9.0" fill="#2a2a27" stroke="#6b6a60" stroke-width="1.2"><title>de9c510ea434 gen9 crossover 5.958</title></circle>
 <circle class="hit" data-h="de9c510ea434" cx="405" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="99830beec67d" cx="451" cy="816" r="9.0" fill="#282826" stroke="#6b6a60" stroke-width="1.2"><title>99830beec67d gen9 crossover 6.048</title></circle>
+<circle class="nd" data-h="99830beec67d" cx="451" cy="816" r="9.0" fill="#2f2e2c" stroke="#6b6a60" stroke-width="1.2"><title>99830beec67d gen9 crossover 6.048</title></circle>
 <circle class="hit" data-h="99830beec67d" cx="451" cy="816" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="4b87b06b40bd" cx="497" cy="816" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>4b87b06b40bd gen9 crossover rotor too close to deck</title></circle>
 <circle class="hit" data-h="4b87b06b40bd" cx="497" cy="816" r="14.0" fill="transparent" stroke="none"/>
@@ -916,25 +731,25 @@
 <circle class="hit" data-h="45242d0f04b9" cx="727" cy="816" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="b917e8902f81" cx="773" cy="816" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>b917e8902f81 gen9 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="b917e8902f81" cx="773" cy="816" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="83" cy="900" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="83" cy="900" r="5.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
 <circle class="hit" data-h="7a3845e5d178" cx="83" cy="900" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="e7e4186b0310" cx="129" cy="900" r="9.0" fill="#1a1a19" stroke="#6b6a60" stroke-width="1.2"><title>e7e4186b0310 gen10 crossover 5.643</title></circle>
 <circle class="hit" data-h="e7e4186b0310" cx="129" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="87e09fcbe40e" cx="175" cy="900" r="5.0" fill="#1c1b1b" stroke="#6b6a60" stroke-width="1.2"><title>87e09fcbe40e gen8 crossover 5.679</title></circle>
+<circle class="nd" data-h="87e09fcbe40e" cx="175" cy="900" r="5.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>87e09fcbe40e gen8 crossover 5.679</title></circle>
 <circle class="hit" data-h="87e09fcbe40e" cx="175" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f94975b36fdc" cx="221" cy="900" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>f94975b36fdc gen10 crossover 5.700</title></circle>
+<circle class="nd" data-h="f94975b36fdc" cx="221" cy="900" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>f94975b36fdc gen10 crossover 5.700</title></circle>
 <circle class="hit" data-h="f94975b36fdc" cx="221" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c245f595db4b" cx="267" cy="900" r="9.0" fill="#20201e" stroke="#6b6a60" stroke-width="1.2"><title>c245f595db4b gen10 crossover 5.799</title></circle>
+<circle class="nd" data-h="c245f595db4b" cx="267" cy="900" r="9.0" fill="#222220" stroke="#6b6a60" stroke-width="1.2"><title>c245f595db4b gen10 crossover 5.799</title></circle>
 <circle class="hit" data-h="c245f595db4b" cx="267" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="00ab430658a9" cx="313" cy="900" r="9.0" fill="#222220" stroke="#6b6a60" stroke-width="1.2"><title>00ab430658a9 gen10 crossover 5.867</title></circle>
+<circle class="nd" data-h="00ab430658a9" cx="313" cy="900" r="9.0" fill="#262523" stroke="#6b6a60" stroke-width="1.2"><title>00ab430658a9 gen10 crossover 5.867</title></circle>
 <circle class="hit" data-h="00ab430658a9" cx="313" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="56f139666df7" cx="359" cy="900" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>56f139666df7 gen10 crossover 5.924</title></circle>
+<circle class="nd" data-h="56f139666df7" cx="359" cy="900" r="9.0" fill="#292826" stroke="#6b6a60" stroke-width="1.2"><title>56f139666df7 gen10 crossover 5.924</title></circle>
 <circle class="hit" data-h="56f139666df7" cx="359" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a53461b0378c" cx="405" cy="900" r="9.0" fill="#252523" stroke="#6b6a60" stroke-width="1.2"><title>a53461b0378c gen10 crossover 5.949</title></circle>
+<circle class="nd" data-h="a53461b0378c" cx="405" cy="900" r="9.0" fill="#2a2927" stroke="#6b6a60" stroke-width="1.2"><title>a53461b0378c gen10 crossover 5.949</title></circle>
 <circle class="hit" data-h="a53461b0378c" cx="405" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6cf5c0394c80" cx="451" cy="900" r="9.0" fill="#292826" stroke="#6b6a60" stroke-width="1.2"><title>6cf5c0394c80 gen10 crossover 6.054</title></circle>
+<circle class="nd" data-h="6cf5c0394c80" cx="451" cy="900" r="9.0" fill="#2f2f2c" stroke="#6b6a60" stroke-width="1.2"><title>6cf5c0394c80 gen10 crossover 6.054</title></circle>
 <circle class="hit" data-h="6cf5c0394c80" cx="451" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4491b89841fa" cx="497" cy="900" r="9.0" fill="#302f2c" stroke="#6b6a60" stroke-width="1.2"><title>4491b89841fa gen10 mutation 6.266</title></circle>
+<circle class="nd" data-h="4491b89841fa" cx="497" cy="900" r="9.0" fill="#3a3935" stroke="#6b6a60" stroke-width="1.2"><title>4491b89841fa gen10 mutation 6.266</title></circle>
 <circle class="hit" data-h="4491b89841fa" cx="497" cy="900" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="07c729a39406" cx="543" cy="900" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>07c729a39406 gen10 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="07c729a39406" cx="543" cy="900" r="14.0" fill="transparent" stroke="none"/>
@@ -948,59 +763,59 @@
 <circle class="hit" data-h="45a15155fd99" cx="727" cy="900" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="132b1a3fb218" cx="773" cy="900" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>132b1a3fb218 gen10 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="132b1a3fb218" cx="773" cy="900" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="83" cy="984" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="83" cy="984" r="5.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
 <circle class="hit" data-h="7a3845e5d178" cx="83" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2325cbe12ee8" cx="129" cy="984" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>2325cbe12ee8 gen11 crossover 5.595</title></circle>
+<circle class="nd" data-h="2325cbe12ee8" cx="129" cy="984" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>2325cbe12ee8 gen11 crossover 5.595</title></circle>
 <circle class="hit" data-h="2325cbe12ee8" cx="129" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="92b824abbb85" cx="175" cy="984" r="9.0" fill="#1a1a19" stroke="#6b6a60" stroke-width="1.2"><title>92b824abbb85 gen11 crossover 5.621</title></circle>
+<circle class="nd" data-h="92b824abbb85" cx="175" cy="984" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>92b824abbb85 gen11 crossover 5.621</title></circle>
 <circle class="hit" data-h="92b824abbb85" cx="175" cy="984" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="e7e4186b0310" cx="221" cy="984" r="5.0" fill="#1a1a19" stroke="#6b6a60" stroke-width="1.2"><title>e7e4186b0310 gen10 crossover 5.643</title></circle>
 <circle class="hit" data-h="e7e4186b0310" cx="221" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b710c0fa47e3" cx="267" cy="984" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>b710c0fa47e3 gen11 crossover 5.687</title></circle>
+<circle class="nd" data-h="b710c0fa47e3" cx="267" cy="984" r="9.0" fill="#1d1c1b" stroke="#6b6a60" stroke-width="1.2"><title>b710c0fa47e3 gen11 crossover 5.687</title></circle>
 <circle class="hit" data-h="b710c0fa47e3" cx="267" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a4e8b1d406f5" cx="313" cy="984" r="9.0" fill="#1d1d1b" stroke="#6b6a60" stroke-width="1.2"><title>a4e8b1d406f5 gen11 crossover 5.710</title></circle>
+<circle class="nd" data-h="a4e8b1d406f5" cx="313" cy="984" r="9.0" fill="#1e1d1c" stroke="#6b6a60" stroke-width="1.2"><title>a4e8b1d406f5 gen11 crossover 5.710</title></circle>
 <circle class="hit" data-h="a4e8b1d406f5" cx="313" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="bc96152778e8" cx="359" cy="984" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>bc96152778e8 gen11 crossover 5.713</title></circle>
+<circle class="nd" data-h="bc96152778e8" cx="359" cy="984" r="9.0" fill="#1e1e1c" stroke="#6b6a60" stroke-width="1.2"><title>bc96152778e8 gen11 crossover 5.713</title></circle>
 <circle class="hit" data-h="bc96152778e8" cx="359" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5de6afe0e59c" cx="405" cy="984" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>5de6afe0e59c gen11 crossover 5.724</title></circle>
+<circle class="nd" data-h="5de6afe0e59c" cx="405" cy="984" r="9.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>5de6afe0e59c gen11 crossover 5.724</title></circle>
 <circle class="hit" data-h="5de6afe0e59c" cx="405" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="dc3ee5e1e65e" cx="451" cy="984" r="9.0" fill="#1f1e1d" stroke="#6b6a60" stroke-width="1.2"><title>dc3ee5e1e65e gen11 crossover 5.766</title></circle>
+<circle class="nd" data-h="dc3ee5e1e65e" cx="451" cy="984" r="9.0" fill="#21201f" stroke="#6b6a60" stroke-width="1.2"><title>dc3ee5e1e65e gen11 crossover 5.766</title></circle>
 <circle class="hit" data-h="dc3ee5e1e65e" cx="451" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="51f678c691d9" cx="497" cy="984" r="9.0" fill="#1f1f1e" stroke="#6b6a60" stroke-width="1.2"><title>51f678c691d9 gen11 crossover 5.778</title></circle>
+<circle class="nd" data-h="51f678c691d9" cx="497" cy="984" r="9.0" fill="#21211f" stroke="#6b6a60" stroke-width="1.2"><title>51f678c691d9 gen11 crossover 5.778</title></circle>
 <circle class="hit" data-h="51f678c691d9" cx="497" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6d7f6d89f90f" cx="543" cy="984" r="9.0" fill="#20201e" stroke="#6b6a60" stroke-width="1.2"><title>6d7f6d89f90f gen11 crossover 5.799</title></circle>
+<circle class="nd" data-h="6d7f6d89f90f" cx="543" cy="984" r="9.0" fill="#222220" stroke="#6b6a60" stroke-width="1.2"><title>6d7f6d89f90f gen11 crossover 5.799</title></circle>
 <circle class="hit" data-h="6d7f6d89f90f" cx="543" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f1fd449dbcd8" cx="589" cy="984" r="9.0" fill="#21211f" stroke="#6b6a60" stroke-width="1.2"><title>f1fd449dbcd8 gen11 crossover 5.836</title></circle>
+<circle class="nd" data-h="f1fd449dbcd8" cx="589" cy="984" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>f1fd449dbcd8 gen11 crossover 5.836</title></circle>
 <circle class="hit" data-h="f1fd449dbcd8" cx="589" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a96dc3c68772" cx="635" cy="984" r="9.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>a96dc3c68772 gen11 crossover 5.892</title></circle>
+<circle class="nd" data-h="a96dc3c68772" cx="635" cy="984" r="9.0" fill="#272625" stroke="#6b6a60" stroke-width="1.2"><title>a96dc3c68772 gen11 crossover 5.892</title></circle>
 <circle class="hit" data-h="a96dc3c68772" cx="635" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ea0f8399aa74" cx="681" cy="984" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>ea0f8399aa74 gen11 crossover 5.932</title></circle>
+<circle class="nd" data-h="ea0f8399aa74" cx="681" cy="984" r="9.0" fill="#292926" stroke="#6b6a60" stroke-width="1.2"><title>ea0f8399aa74 gen11 crossover 5.932</title></circle>
 <circle class="hit" data-h="ea0f8399aa74" cx="681" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7f4b24c1ad52" cx="727" cy="984" r="9.0" fill="#252523" stroke="#6b6a60" stroke-width="1.2"><title>7f4b24c1ad52 gen11 crossover 5.949</title></circle>
+<circle class="nd" data-h="7f4b24c1ad52" cx="727" cy="984" r="9.0" fill="#2a2927" stroke="#6b6a60" stroke-width="1.2"><title>7f4b24c1ad52 gen11 crossover 5.949</title></circle>
 <circle class="hit" data-h="7f4b24c1ad52" cx="727" cy="984" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="8d9944a6627f" cx="773" cy="984" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>8d9944a6627f gen11 immigrant rotor too close to deck</title></circle>
 <circle class="hit" data-h="8d9944a6627f" cx="773" cy="984" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="83" cy="1068" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="83" cy="1068" r="5.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
 <circle class="hit" data-h="7a3845e5d178" cx="83" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2325cbe12ee8" cx="129" cy="1068" r="5.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>2325cbe12ee8 gen11 crossover 5.595</title></circle>
+<circle class="nd" data-h="2325cbe12ee8" cx="129" cy="1068" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>2325cbe12ee8 gen11 crossover 5.595</title></circle>
 <circle class="hit" data-h="2325cbe12ee8" cx="129" cy="1068" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="f7e0d22860ff" cx="175" cy="1068" r="9.0" fill="#1a1a19" stroke="#6b6a60" stroke-width="1.2"><title>f7e0d22860ff gen12 crossover 5.633</title></circle>
 <circle class="hit" data-h="f7e0d22860ff" cx="175" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="941ee30b6469" cx="221" cy="1068" r="9.0" fill="#1b1a1a" stroke="#6b6a60" stroke-width="1.2"><title>941ee30b6469 gen12 crossover 5.646</title></circle>
+<circle class="nd" data-h="941ee30b6469" cx="221" cy="1068" r="9.0" fill="#1a1a19" stroke="#6b6a60" stroke-width="1.2"><title>941ee30b6469 gen12 crossover 5.646</title></circle>
 <circle class="hit" data-h="941ee30b6469" cx="221" cy="1068" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="3203d3bc07d9" cx="267" cy="1068" r="9.0" fill="#1b1b1a" stroke="#6b6a60" stroke-width="1.2"><title>3203d3bc07d9 gen12 crossover 5.654</title></circle>
 <circle class="hit" data-h="3203d3bc07d9" cx="267" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d633e7280ec0" cx="313" cy="1068" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>d633e7280ec0 gen12 crossover 5.724</title></circle>
+<circle class="nd" data-h="d633e7280ec0" cx="313" cy="1068" r="9.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>d633e7280ec0 gen12 crossover 5.724</title></circle>
 <circle class="hit" data-h="d633e7280ec0" cx="313" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f3d3903b15ca" cx="359" cy="1068" r="9.0" fill="#1e1d1c" stroke="#6b6a60" stroke-width="1.2"><title>f3d3903b15ca gen12 crossover 5.734</title></circle>
+<circle class="nd" data-h="f3d3903b15ca" cx="359" cy="1068" r="9.0" fill="#1f1f1d" stroke="#6b6a60" stroke-width="1.2"><title>f3d3903b15ca gen12 crossover 5.734</title></circle>
 <circle class="hit" data-h="f3d3903b15ca" cx="359" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ead210d1c984" cx="405" cy="1068" r="9.0" fill="#20201f" stroke="#6b6a60" stroke-width="1.2"><title>ead210d1c984 gen12 crossover 5.816</title></circle>
+<circle class="nd" data-h="ead210d1c984" cx="405" cy="1068" r="9.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>ead210d1c984 gen12 crossover 5.816</title></circle>
 <circle class="hit" data-h="ead210d1c984" cx="405" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ac323dcf49a7" cx="451" cy="1068" r="9.0" fill="#212120" stroke="#6b6a60" stroke-width="1.2"><title>ac323dcf49a7 gen12 crossover 5.842</title></circle>
+<circle class="nd" data-h="ac323dcf49a7" cx="451" cy="1068" r="9.0" fill="#242422" stroke="#6b6a60" stroke-width="1.2"><title>ac323dcf49a7 gen12 crossover 5.842</title></circle>
 <circle class="hit" data-h="ac323dcf49a7" cx="451" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c7d3955474e8" cx="497" cy="1068" r="9.0" fill="#292926" stroke="#6b6a60" stroke-width="1.2"><title>c7d3955474e8 gen12 crossover 6.068</title></circle>
+<circle class="nd" data-h="c7d3955474e8" cx="497" cy="1068" r="9.0" fill="#302f2c" stroke="#6b6a60" stroke-width="1.2"><title>c7d3955474e8 gen12 crossover 6.068</title></circle>
 <circle class="hit" data-h="c7d3955474e8" cx="497" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c94c1c10973c" cx="543" cy="1068" r="9.0" fill="#2c2b29" stroke="#6b6a60" stroke-width="1.2"><title>c94c1c10973c gen12 mutation 6.146</title></circle>
+<circle class="nd" data-h="c94c1c10973c" cx="543" cy="1068" r="9.0" fill="#343330" stroke="#6b6a60" stroke-width="1.2"><title>c94c1c10973c gen12 mutation 6.146</title></circle>
 <circle class="hit" data-h="c94c1c10973c" cx="543" cy="1068" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="ab8a61688c74" cx="589" cy="1068" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>ab8a61688c74 gen12 mutation no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="ab8a61688c74" cx="589" cy="1068" r="14.0" fill="transparent" stroke="none"/>
@@ -1012,25 +827,26 @@
 <circle class="hit" data-h="d6f0aee2aced" cx="727" cy="1068" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="bf179e736f24" cx="773" cy="1068" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>bf179e736f24 gen12 crossover arm tip deflection (pa12_cf)</title></circle>
 <circle class="hit" data-h="bf179e736f24" cx="773" cy="1068" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="967487263994" cx="83" cy="1152" r="9.0" fill="#161615" stroke="#6b6a60" stroke-width="1.2"><title>967487263994 gen13 crossover 5.512</title></circle>
+<circle class="nd" data-h="967487263994" cx="83" cy="1152" r="9.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>967487263994 gen13 crossover 5.512</title></circle>
+<circle class="bs" data-h="967487263994" cx="83" cy="1152" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="967487263994" cx="83" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cd4d586b8998" cx="129" cy="1152" r="9.0" fill="#161616" stroke="#6b6a60" stroke-width="1.2"><title>cd4d586b8998 gen13 crossover 5.520</title></circle>
+<circle class="nd" data-h="cd4d586b8998" cx="129" cy="1152" r="9.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>cd4d586b8998 gen13 crossover 5.520</title></circle>
 <circle class="hit" data-h="cd4d586b8998" cx="129" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e88a67fa3548" cx="175" cy="1152" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>e88a67fa3548 gen13 crossover 5.572</title></circle>
+<circle class="nd" data-h="e88a67fa3548" cx="175" cy="1152" r="9.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>e88a67fa3548 gen13 crossover 5.572</title></circle>
 <circle class="hit" data-h="e88a67fa3548" cx="175" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a3845e5d178" cx="221" cy="1152" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
+<circle class="nd" data-h="7a3845e5d178" cx="221" cy="1152" r="5.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>7a3845e5d178 gen7 crossover 5.575</title></circle>
 <circle class="hit" data-h="7a3845e5d178" cx="221" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d5565b622a98" cx="267" cy="1152" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>d5565b622a98 gen13 crossover 5.590</title></circle>
+<circle class="nd" data-h="d5565b622a98" cx="267" cy="1152" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>d5565b622a98 gen13 crossover 5.590</title></circle>
 <circle class="hit" data-h="d5565b622a98" cx="267" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2325cbe12ee8" cx="313" cy="1152" r="5.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>2325cbe12ee8 gen11 crossover 5.595</title></circle>
+<circle class="nd" data-h="2325cbe12ee8" cx="313" cy="1152" r="5.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>2325cbe12ee8 gen11 crossover 5.595</title></circle>
 <circle class="hit" data-h="2325cbe12ee8" cx="313" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c39ff456a40f" cx="359" cy="1152" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>c39ff456a40f gen13 crossover 5.596</title></circle>
+<circle class="nd" data-h="c39ff456a40f" cx="359" cy="1152" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>c39ff456a40f gen13 crossover 5.596</title></circle>
 <circle class="hit" data-h="c39ff456a40f" cx="359" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="67535d54b578" cx="405" cy="1152" r="9.0" fill="#1c1b1a" stroke="#6b6a60" stroke-width="1.2"><title>67535d54b578 gen13 crossover 5.674</title></circle>
+<circle class="nd" data-h="67535d54b578" cx="405" cy="1152" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>67535d54b578 gen13 crossover 5.674</title></circle>
 <circle class="hit" data-h="67535d54b578" cx="405" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2bb6c056d0c4" cx="451" cy="1152" r="9.0" fill="#1c1b1b" stroke="#6b6a60" stroke-width="1.2"><title>2bb6c056d0c4 gen13 crossover 5.678</title></circle>
+<circle class="nd" data-h="2bb6c056d0c4" cx="451" cy="1152" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>2bb6c056d0c4 gen13 crossover 5.678</title></circle>
 <circle class="hit" data-h="2bb6c056d0c4" cx="451" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6f332dee2a9a" cx="497" cy="1152" r="9.0" fill="#302f2c" stroke="#6b6a60" stroke-width="1.2"><title>6f332dee2a9a gen13 crossover 6.266</title></circle>
+<circle class="nd" data-h="6f332dee2a9a" cx="497" cy="1152" r="9.0" fill="#3a3935" stroke="#6b6a60" stroke-width="1.2"><title>6f332dee2a9a gen13 crossover 6.266</title></circle>
 <circle class="hit" data-h="6f332dee2a9a" cx="497" cy="1152" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="cf3992223995" cx="543" cy="1152" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>cf3992223995 gen13 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="cf3992223995" cx="543" cy="1152" r="14.0" fill="transparent" stroke="none"/>
@@ -1044,21 +860,22 @@
 <circle class="hit" data-h="0111472c4e0b" cx="727" cy="1152" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="00cb6c6d6b94" cx="773" cy="1152" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>00cb6c6d6b94 gen13 crossover no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="00cb6c6d6b94" cx="773" cy="1152" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3ec3ea5d98c7" cx="83" cy="1236" r="9.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>3ec3ea5d98c7 gen14 crossover 5.487</title></circle>
+<circle class="nd" data-h="3ec3ea5d98c7" cx="83" cy="1236" r="9.0" fill="#121212" stroke="#6b6a60" stroke-width="1.2"><title>3ec3ea5d98c7 gen14 crossover 5.487</title></circle>
+<circle class="bs" data-h="3ec3ea5d98c7" cx="83" cy="1236" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="3ec3ea5d98c7" cx="83" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="967487263994" cx="129" cy="1236" r="5.0" fill="#161615" stroke="#6b6a60" stroke-width="1.2"><title>967487263994 gen13 crossover 5.512</title></circle>
+<circle class="nd" data-h="967487263994" cx="129" cy="1236" r="5.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>967487263994 gen13 crossover 5.512</title></circle>
 <circle class="hit" data-h="967487263994" cx="129" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cd4d586b8998" cx="175" cy="1236" r="5.0" fill="#161616" stroke="#6b6a60" stroke-width="1.2"><title>cd4d586b8998 gen13 crossover 5.520</title></circle>
+<circle class="nd" data-h="cd4d586b8998" cx="175" cy="1236" r="5.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>cd4d586b8998 gen13 crossover 5.520</title></circle>
 <circle class="hit" data-h="cd4d586b8998" cx="175" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="9eaa96ac2d4b" cx="221" cy="1236" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>9eaa96ac2d4b gen14 crossover 5.563</title></circle>
+<circle class="nd" data-h="9eaa96ac2d4b" cx="221" cy="1236" r="9.0" fill="#161616" stroke="#6b6a60" stroke-width="1.2"><title>9eaa96ac2d4b gen14 crossover 5.563</title></circle>
 <circle class="hit" data-h="9eaa96ac2d4b" cx="221" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="bafaf0cd8981" cx="267" cy="1236" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>bafaf0cd8981 gen14 crossover 5.577</title></circle>
+<circle class="nd" data-h="bafaf0cd8981" cx="267" cy="1236" r="9.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>bafaf0cd8981 gen14 crossover 5.577</title></circle>
 <circle class="hit" data-h="bafaf0cd8981" cx="267" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f06b349e7092" cx="313" cy="1236" r="9.0" fill="#1a1919" stroke="#6b6a60" stroke-width="1.2"><title>f06b349e7092 gen14 crossover 5.620</title></circle>
+<circle class="nd" data-h="f06b349e7092" cx="313" cy="1236" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>f06b349e7092 gen14 crossover 5.620</title></circle>
 <circle class="hit" data-h="f06b349e7092" cx="313" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b1198541fc1e" cx="359" cy="1236" r="9.0" fill="#1c1b1a" stroke="#6b6a60" stroke-width="1.2"><title>b1198541fc1e gen14 crossover 5.674</title></circle>
+<circle class="nd" data-h="b1198541fc1e" cx="359" cy="1236" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>b1198541fc1e gen14 crossover 5.674</title></circle>
 <circle class="hit" data-h="b1198541fc1e" cx="359" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="9e152bdc65a1" cx="405" cy="1236" r="9.0" fill="#222220" stroke="#6b6a60" stroke-width="1.2"><title>9e152bdc65a1 gen14 crossover 5.868</title></circle>
+<circle class="nd" data-h="9e152bdc65a1" cx="405" cy="1236" r="9.0" fill="#262523" stroke="#6b6a60" stroke-width="1.2"><title>9e152bdc65a1 gen14 crossover 5.868</title></circle>
 <circle class="hit" data-h="9e152bdc65a1" cx="405" cy="1236" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="9ac8be9c3b8f" cx="451" cy="1236" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>9ac8be9c3b8f gen14 crossover rotor too close to deck</title></circle>
 <circle class="hit" data-h="9ac8be9c3b8f" cx="451" cy="1236" r="14.0" fill="transparent" stroke="none"/>
@@ -1076,25 +893,26 @@
 <circle class="hit" data-h="b96f040b1cd6" cx="727" cy="1236" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="63cf157fd8ba" cx="773" cy="1236" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>63cf157fd8ba gen14 crossover rotor too close to deck</title></circle>
 <circle class="hit" data-h="63cf157fd8ba" cx="773" cy="1236" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0a526b9226b6" cx="83" cy="1320" r="9.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
+<circle class="nd" data-h="0a526b9226b6" cx="83" cy="1320" r="9.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
+<circle class="bs" data-h="0a526b9226b6" cx="83" cy="1320" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="0a526b9226b6" cx="83" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3ec3ea5d98c7" cx="129" cy="1320" r="5.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>3ec3ea5d98c7 gen14 crossover 5.487</title></circle>
+<circle class="nd" data-h="3ec3ea5d98c7" cx="129" cy="1320" r="5.0" fill="#121212" stroke="#6b6a60" stroke-width="1.2"><title>3ec3ea5d98c7 gen14 crossover 5.487</title></circle>
 <circle class="hit" data-h="3ec3ea5d98c7" cx="129" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="967487263994" cx="175" cy="1320" r="5.0" fill="#161615" stroke="#6b6a60" stroke-width="1.2"><title>967487263994 gen13 crossover 5.512</title></circle>
+<circle class="nd" data-h="967487263994" cx="175" cy="1320" r="5.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>967487263994 gen13 crossover 5.512</title></circle>
 <circle class="hit" data-h="967487263994" cx="175" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4c1c9562a691" cx="221" cy="1320" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>4c1c9562a691 gen15 crossover 5.607</title></circle>
+<circle class="nd" data-h="4c1c9562a691" cx="221" cy="1320" r="9.0" fill="#191818" stroke="#6b6a60" stroke-width="1.2"><title>4c1c9562a691 gen15 crossover 5.607</title></circle>
 <circle class="hit" data-h="4c1c9562a691" cx="221" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c6af2c20d148" cx="267" cy="1320" r="9.0" fill="#1a1919" stroke="#6b6a60" stroke-width="1.2"><title>c6af2c20d148 gen15 mutation 5.616</title></circle>
+<circle class="nd" data-h="c6af2c20d148" cx="267" cy="1320" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>c6af2c20d148 gen15 mutation 5.616</title></circle>
 <circle class="hit" data-h="c6af2c20d148" cx="267" cy="1320" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="47b28db1ac9f" cx="313" cy="1320" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>47b28db1ac9f gen15 crossover 5.682</title></circle>
 <circle class="hit" data-h="47b28db1ac9f" cx="313" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d52b3ec43f48" cx="359" cy="1320" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>d52b3ec43f48 gen15 mutation 5.701</title></circle>
+<circle class="nd" data-h="d52b3ec43f48" cx="359" cy="1320" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>d52b3ec43f48 gen15 mutation 5.701</title></circle>
 <circle class="hit" data-h="d52b3ec43f48" cx="359" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f767034c81f4" cx="405" cy="1320" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>f767034c81f4 gen15 crossover 5.711</title></circle>
+<circle class="nd" data-h="f767034c81f4" cx="405" cy="1320" r="9.0" fill="#1e1e1c" stroke="#6b6a60" stroke-width="1.2"><title>f767034c81f4 gen15 crossover 5.711</title></circle>
 <circle class="hit" data-h="f767034c81f4" cx="405" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="49aa58024aa5" cx="451" cy="1320" r="9.0" fill="#1d1d1c" stroke="#6b6a60" stroke-width="1.2"><title>49aa58024aa5 gen15 crossover 5.717</title></circle>
+<circle class="nd" data-h="49aa58024aa5" cx="451" cy="1320" r="9.0" fill="#1e1e1d" stroke="#6b6a60" stroke-width="1.2"><title>49aa58024aa5 gen15 crossover 5.717</title></circle>
 <circle class="hit" data-h="49aa58024aa5" cx="451" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c28789a7cbfa" cx="497" cy="1320" r="9.0" fill="#75736a" stroke="#6b6a60" stroke-width="1.2"><title>c28789a7cbfa gen15 immigrant 8.275</title></circle>
+<circle class="nd" data-h="c28789a7cbfa" cx="497" cy="1320" r="9.0" fill="#a09d90" stroke="#6b6a60" stroke-width="1.2"><title>c28789a7cbfa gen15 immigrant 8.275</title></circle>
 <circle class="hit" data-h="c28789a7cbfa" cx="497" cy="1320" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="e9dc42a9475a" cx="543" cy="1320" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>e9dc42a9475a gen15 crossover rotor disks overlap (tip clearance)</title></circle>
 <circle class="hit" data-h="e9dc42a9475a" cx="543" cy="1320" r="14.0" fill="transparent" stroke="none"/>
@@ -1108,262 +926,6 @@
 <circle class="hit" data-h="0ef46f19a20e" cx="727" cy="1320" r="14.0" fill="transparent" stroke="none"/>
 <circle class="nd" data-h="36670cda77a1" cx="773" cy="1320" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>36670cda77a1 gen15 immigrant no flat area for flight-controller mount</title></circle>
 <circle class="hit" data-h="36670cda77a1" cx="773" cy="1320" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0a526b9226b6" cx="83" cy="1404" r="5.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
-<circle class="hit" data-h="0a526b9226b6" cx="83" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3ec3ea5d98c7" cx="129" cy="1404" r="5.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>3ec3ea5d98c7 gen14 crossover 5.487</title></circle>
-<circle class="hit" data-h="3ec3ea5d98c7" cx="129" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4220d8ecc950" cx="175" cy="1404" r="9.0" fill="#171717" stroke="#6b6a60" stroke-width="1.2"><title>4220d8ecc950 gen16 crossover 5.548</title></circle>
-<circle class="hit" data-h="4220d8ecc950" cx="175" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="11656ac43192" cx="221" cy="1404" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>11656ac43192 gen16 crossover 5.567</title></circle>
-<circle class="hit" data-h="11656ac43192" cx="221" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d48b0bee063c" cx="267" cy="1404" r="9.0" fill="#20201e" stroke="#6b6a60" stroke-width="1.2"><title>d48b0bee063c gen16 crossover 5.803</title></circle>
-<circle class="hit" data-h="d48b0bee063c" cx="267" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5a984b083de8" cx="313" cy="1404" r="9.0" fill="#20201f" stroke="#6b6a60" stroke-width="1.2"><title>5a984b083de8 gen16 crossover 5.816</title></circle>
-<circle class="hit" data-h="5a984b083de8" cx="313" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ae18d8af9626" cx="359" cy="1404" r="9.0" fill="#262523" stroke="#6b6a60" stroke-width="1.2"><title>ae18d8af9626 gen16 crossover 5.968</title></circle>
-<circle class="hit" data-h="ae18d8af9626" cx="359" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="29d27d85f713" cx="405" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>29d27d85f713 gen16 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="29d27d85f713" cx="405" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="320bbf5fa566" cx="451" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>320bbf5fa566 gen16 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="320bbf5fa566" cx="451" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="01c725c7401c" cx="497" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>01c725c7401c gen16 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="01c725c7401c" cx="497" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="88b2c0774ff2" cx="543" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>88b2c0774ff2 gen16 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="88b2c0774ff2" cx="543" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1e529558be9d" cx="589" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>1e529558be9d gen16 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="1e529558be9d" cx="589" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d740157fa5b2" cx="635" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>d740157fa5b2 gen16 immigrant rotor too close to deck</title></circle>
-<circle class="hit" data-h="d740157fa5b2" cx="635" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cb737312aeb4" cx="681" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>cb737312aeb4 gen16 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="cb737312aeb4" cx="681" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ed79e7f56863" cx="727" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>ed79e7f56863 gen16 immigrant no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="ed79e7f56863" cx="727" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5f21d1e6575f" cx="773" cy="1404" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>5f21d1e6575f gen16 immigrant arm root tongues overlap in the deck</title></circle>
-<circle class="hit" data-h="5f21d1e6575f" cx="773" cy="1404" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cffaa3023702" cx="83" cy="1488" r="9.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>cffaa3023702 gen17 crossover 5.445</title></circle>
-<circle class="hit" data-h="cffaa3023702" cx="83" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0a526b9226b6" cx="129" cy="1488" r="5.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
-<circle class="hit" data-h="0a526b9226b6" cx="129" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="08c5a7555d80" cx="175" cy="1488" r="9.0" fill="#151514" stroke="#6b6a60" stroke-width="1.2"><title>08c5a7555d80 gen17 crossover 5.478</title></circle>
-<circle class="hit" data-h="08c5a7555d80" cx="175" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3ec3ea5d98c7" cx="221" cy="1488" r="5.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>3ec3ea5d98c7 gen14 crossover 5.487</title></circle>
-<circle class="hit" data-h="3ec3ea5d98c7" cx="221" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2385b1ab8334" cx="267" cy="1488" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>2385b1ab8334 gen17 crossover 5.562</title></circle>
-<circle class="hit" data-h="2385b1ab8334" cx="267" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d412abdc104e" cx="313" cy="1488" r="9.0" fill="#262523" stroke="#6b6a60" stroke-width="1.2"><title>d412abdc104e gen17 crossover 5.969</title></circle>
-<circle class="hit" data-h="d412abdc104e" cx="313" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6a3754b95832" cx="359" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>6a3754b95832 gen17 crossover no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="6a3754b95832" cx="359" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4e007dc37085" cx="405" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>4e007dc37085 gen17 crossover arm tip deflection (pa12_cf)</title></circle>
-<circle class="hit" data-h="4e007dc37085" cx="405" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="881120e63a5f" cx="451" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>881120e63a5f gen17 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="881120e63a5f" cx="451" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6efd5f5386cb" cx="497" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>6efd5f5386cb gen17 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="6efd5f5386cb" cx="497" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="12b4ac600f8e" cx="543" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>12b4ac600f8e gen17 crossover top plate too small to support battery</title></circle>
-<circle class="hit" data-h="12b4ac600f8e" cx="543" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="dccc59e1ddf5" cx="589" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>dccc59e1ddf5 gen17 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="dccc59e1ddf5" cx="589" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="afc0c8db2af0" cx="635" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>afc0c8db2af0 gen17 crossover arm tip deflection (pa12_cf)</title></circle>
-<circle class="hit" data-h="afc0c8db2af0" cx="635" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c79fb0f9640c" cx="681" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c79fb0f9640c gen17 crossover no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="c79fb0f9640c" cx="681" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="aa61d7859327" cx="727" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>aa61d7859327 gen17 immigrant no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="aa61d7859327" cx="727" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="9f2c111a73ee" cx="773" cy="1488" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>9f2c111a73ee gen17 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="9f2c111a73ee" cx="773" cy="1488" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cffaa3023702" cx="83" cy="1572" r="5.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>cffaa3023702 gen17 crossover 5.445</title></circle>
-<circle class="hit" data-h="cffaa3023702" cx="83" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0a526b9226b6" cx="129" cy="1572" r="5.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
-<circle class="hit" data-h="0a526b9226b6" cx="129" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="93359eab57ec" cx="175" cy="1572" r="9.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>93359eab57ec gen18 crossover 5.488</title></circle>
-<circle class="hit" data-h="93359eab57ec" cx="175" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="327472b3450d" cx="221" cy="1572" r="9.0" fill="#353531" stroke="#6b6a60" stroke-width="1.2"><title>327472b3450d gen18 immigrant 6.427</title></circle>
-<circle class="hit" data-h="327472b3450d" cx="221" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f935634d802d" cx="267" cy="1572" r="9.0" fill="#605f58" stroke="#6b6a60" stroke-width="1.2"><title>f935634d802d gen18 immigrant 7.676</title></circle>
-<circle class="hit" data-h="f935634d802d" cx="267" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="237c023add5d" cx="313" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>237c023add5d gen18 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="237c023add5d" cx="313" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7048de5b88d0" cx="359" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>7048de5b88d0 gen18 immigrant arm root tongues overlap in the deck</title></circle>
-<circle class="hit" data-h="7048de5b88d0" cx="359" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="246ee6e8d597" cx="405" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>246ee6e8d597 gen18 immigrant arm tip deflection (asa)</title></circle>
-<circle class="hit" data-h="246ee6e8d597" cx="405" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f6829fc342c0" cx="451" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>f6829fc342c0 gen18 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="f6829fc342c0" cx="451" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e29addfbcb16" cx="497" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>e29addfbcb16 gen18 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="e29addfbcb16" cx="497" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d7be0fdf35e5" cx="543" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>d7be0fdf35e5 gen18 crossover no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="d7be0fdf35e5" cx="543" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1c7086615449" cx="589" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>1c7086615449 gen18 immigrant rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="1c7086615449" cx="589" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4bcb8c8d15b2" cx="635" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>4bcb8c8d15b2 gen18 immigrant rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="4bcb8c8d15b2" cx="635" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cf30de5aa735" cx="681" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>cf30de5aa735 gen18 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="cf30de5aa735" cx="681" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0d46a9d92a36" cx="727" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>0d46a9d92a36 gen18 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="0d46a9d92a36" cx="727" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a2a615ab2e7f" cx="773" cy="1572" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>a2a615ab2e7f gen18 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="a2a615ab2e7f" cx="773" cy="1572" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cffaa3023702" cx="83" cy="1656" r="5.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>cffaa3023702 gen17 crossover 5.445</title></circle>
-<circle class="hit" data-h="cffaa3023702" cx="83" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0a526b9226b6" cx="129" cy="1656" r="5.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
-<circle class="hit" data-h="0a526b9226b6" cx="129" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4257f770ff86" cx="175" cy="1656" r="9.0" fill="#151414" stroke="#6b6a60" stroke-width="1.2"><title>4257f770ff86 gen19 mutation 5.471</title></circle>
-<circle class="hit" data-h="4257f770ff86" cx="175" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a93a437c1fdb" cx="221" cy="1656" r="9.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>a93a437c1fdb gen19 crossover 5.486</title></circle>
-<circle class="hit" data-h="a93a437c1fdb" cx="221" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c326068ac286" cx="267" cy="1656" r="9.0" fill="#161615" stroke="#6b6a60" stroke-width="1.2"><title>c326068ac286 gen19 crossover 5.510</title></circle>
-<circle class="hit" data-h="c326068ac286" cx="267" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="508696c48a31" cx="313" cy="1656" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>508696c48a31 gen19 crossover 5.575</title></circle>
-<circle class="hit" data-h="508696c48a31" cx="313" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="95da3fcfed1b" cx="359" cy="1656" r="9.0" fill="#373633" stroke="#6b6a60" stroke-width="1.2"><title>95da3fcfed1b gen19 mutation 6.468</title></circle>
-<circle class="hit" data-h="95da3fcfed1b" cx="359" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7faba7f601a8" cx="405" cy="1656" r="9.0" fill="#6f6e65" stroke="#6b6a60" stroke-width="1.2"><title>7faba7f601a8 gen19 mutation 8.119</title></circle>
-<circle class="hit" data-h="7faba7f601a8" cx="405" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="12e7add8af4a" cx="451" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>12e7add8af4a gen19 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="12e7add8af4a" cx="451" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="ac0f9e55c028" cx="497" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>ac0f9e55c028 gen19 mutation rotor too close to deck</title></circle>
-<circle class="hit" data-h="ac0f9e55c028" cx="497" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f8b93178be7d" cx="543" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>f8b93178be7d gen19 crossover arm tip deflection (petg)</title></circle>
-<circle class="hit" data-h="f8b93178be7d" cx="543" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7119771338fc" cx="589" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>7119771338fc gen19 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="7119771338fc" cx="589" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="10c4084acdae" cx="635" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>10c4084acdae gen19 crossover arm root tongues overlap in the deck</title></circle>
-<circle class="hit" data-h="10c4084acdae" cx="635" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a5e89b2d9f03" cx="681" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>a5e89b2d9f03 gen19 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="a5e89b2d9f03" cx="681" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5b5453a17489" cx="727" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>5b5453a17489 gen19 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="5b5453a17489" cx="727" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0efb7529d04c" cx="773" cy="1656" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>0efb7529d04c gen19 immigrant no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="0efb7529d04c" cx="773" cy="1656" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c48cd4bbe1bc" cx="83" cy="1740" r="9.0" fill="#131313" stroke="#6b6a60" stroke-width="1.2"><title>c48cd4bbe1bc gen20 crossover 5.439</title></circle>
-<circle class="hit" data-h="c48cd4bbe1bc" cx="83" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cffaa3023702" cx="129" cy="1740" r="5.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>cffaa3023702 gen17 crossover 5.445</title></circle>
-<circle class="hit" data-h="cffaa3023702" cx="129" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0a526b9226b6" cx="175" cy="1740" r="5.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>0a526b9226b6 gen15 crossover 5.459</title></circle>
-<circle class="hit" data-h="0a526b9226b6" cx="175" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2292100cfb5a" cx="221" cy="1740" r="9.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>2292100cfb5a gen20 crossover 5.459</title></circle>
-<circle class="hit" data-h="2292100cfb5a" cx="221" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="00388f7adc8a" cx="267" cy="1740" r="9.0" fill="#151514" stroke="#6b6a60" stroke-width="1.2"><title>00388f7adc8a gen20 crossover 5.478</title></circle>
-<circle class="hit" data-h="00388f7adc8a" cx="267" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d19625f5765b" cx="313" cy="1740" r="9.0" fill="#151515" stroke="#6b6a60" stroke-width="1.2"><title>d19625f5765b gen20 mutation 5.486</title></circle>
-<circle class="hit" data-h="d19625f5765b" cx="313" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4d0a413dc9b6" cx="359" cy="1740" r="9.0" fill="#171716" stroke="#6b6a60" stroke-width="1.2"><title>4d0a413dc9b6 gen20 mutation 5.536</title></circle>
-<circle class="hit" data-h="4d0a413dc9b6" cx="359" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1a9319da0b79" cx="405" cy="1740" r="9.0" fill="#4a4944" stroke="#6b6a60" stroke-width="1.2"><title>1a9319da0b79 gen20 crossover 7.031</title></circle>
-<circle class="hit" data-h="1a9319da0b79" cx="405" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c9492cd90bcf" cx="451" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c9492cd90bcf gen20 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="c9492cd90bcf" cx="451" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1ad2d4448725" cx="497" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>1ad2d4448725 gen20 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="1ad2d4448725" cx="497" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="94aa0f4afeef" cx="543" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>94aa0f4afeef gen20 crossover arm tip deflection (pa12_cf)</title></circle>
-<circle class="hit" data-h="94aa0f4afeef" cx="543" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7a152bffb322" cx="589" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>7a152bffb322 gen20 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="7a152bffb322" cx="589" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="f17a51464ca7" cx="635" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>f17a51464ca7 gen20 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="f17a51464ca7" cx="635" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="2e28be491d99" cx="681" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>2e28be491d99 gen20 immigrant rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="2e28be491d99" cx="681" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0e468a60472c" cx="727" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>0e468a60472c gen20 crossover arm tip deflection (asa)</title></circle>
-<circle class="hit" data-h="0e468a60472c" cx="727" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c2ec5d666c30" cx="773" cy="1740" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c2ec5d666c30 gen20 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="c2ec5d666c30" cx="773" cy="1740" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="02567ecbf1a3" cx="83" cy="1824" r="9.0" fill="#121212" stroke="#6b6a60" stroke-width="1.2"><title>02567ecbf1a3 gen21 crossover 5.409</title></circle>
-<circle class="hit" data-h="02567ecbf1a3" cx="83" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c48cd4bbe1bc" cx="129" cy="1824" r="5.0" fill="#131313" stroke="#6b6a60" stroke-width="1.2"><title>c48cd4bbe1bc gen20 crossover 5.439</title></circle>
-<circle class="hit" data-h="c48cd4bbe1bc" cx="129" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cffaa3023702" cx="175" cy="1824" r="5.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>cffaa3023702 gen17 crossover 5.445</title></circle>
-<circle class="hit" data-h="cffaa3023702" cx="175" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cabfdc0c21bb" cx="221" cy="1824" r="9.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>cabfdc0c21bb gen21 crossover 5.447</title></circle>
-<circle class="hit" data-h="cabfdc0c21bb" cx="221" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3d7020fdc49f" cx="267" cy="1824" r="9.0" fill="#161616" stroke="#6b6a60" stroke-width="1.2"><title>3d7020fdc49f gen21 mutation 5.516</title></circle>
-<circle class="hit" data-h="3d7020fdc49f" cx="267" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="781511545388" cx="313" cy="1824" r="9.0" fill="#d4d0be" stroke="#6b6a60" stroke-width="1.2"><title>781511545388 gen21 immigrant 11.045</title></circle>
-<circle class="hit" data-h="781511545388" cx="313" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="71814569302b" cx="359" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>71814569302b gen21 crossover arm tip deflection (asa)</title></circle>
-<circle class="hit" data-h="71814569302b" cx="359" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="dc63be2395f0" cx="405" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>dc63be2395f0 gen21 immigrant no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="dc63be2395f0" cx="405" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="41eb6e2335b7" cx="451" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>41eb6e2335b7 gen21 crossover arm tip deflection (asa)</title></circle>
-<circle class="hit" data-h="41eb6e2335b7" cx="451" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="774c803157e5" cx="497" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>774c803157e5 gen21 crossover arm tip deflection (pla_plus)</title></circle>
-<circle class="hit" data-h="774c803157e5" cx="497" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="5820825a03e1" cx="543" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>5820825a03e1 gen21 immigrant no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="5820825a03e1" cx="543" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="cdb935174898" cx="589" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>cdb935174898 gen21 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="cdb935174898" cx="589" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="27b8035a1f68" cx="635" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>27b8035a1f68 gen21 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="27b8035a1f68" cx="635" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="eefef6a292f8" cx="681" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>eefef6a292f8 gen21 crossover rotor too close to deck</title></circle>
-<circle class="hit" data-h="eefef6a292f8" cx="681" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="08552ce22a76" cx="727" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>08552ce22a76 gen21 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="08552ce22a76" cx="727" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="28fdac52ea30" cx="773" cy="1824" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>28fdac52ea30 gen21 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="28fdac52ea30" cx="773" cy="1824" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="02567ecbf1a3" cx="83" cy="1908" r="5.0" fill="#121212" stroke="#6b6a60" stroke-width="1.2"><title>02567ecbf1a3 gen21 crossover 5.409</title></circle>
-<circle class="hit" data-h="02567ecbf1a3" cx="83" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="dc6a1b05409a" cx="129" cy="1908" r="9.0" fill="#131313" stroke="#6b6a60" stroke-width="1.2"><title>dc6a1b05409a gen22 crossover 5.437</title></circle>
-<circle class="hit" data-h="dc6a1b05409a" cx="129" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c48cd4bbe1bc" cx="175" cy="1908" r="5.0" fill="#131313" stroke="#6b6a60" stroke-width="1.2"><title>c48cd4bbe1bc gen20 crossover 5.439</title></circle>
-<circle class="hit" data-h="c48cd4bbe1bc" cx="175" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b6c8cd2c6053" cx="221" cy="1908" r="9.0" fill="#161615" stroke="#6b6a60" stroke-width="1.2"><title>b6c8cd2c6053 gen22 crossover 5.509</title></circle>
-<circle class="hit" data-h="b6c8cd2c6053" cx="221" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="240121a3257d" cx="267" cy="1908" r="9.0" fill="#181817" stroke="#6b6a60" stroke-width="1.2"><title>240121a3257d gen22 crossover 5.573</title></circle>
-<circle class="hit" data-h="240121a3257d" cx="267" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="a3efb98814dd" cx="313" cy="1908" r="9.0" fill="#191918" stroke="#6b6a60" stroke-width="1.2"><title>a3efb98814dd gen22 crossover 5.600</title></circle>
-<circle class="hit" data-h="a3efb98814dd" cx="313" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="fe77417e71d3" cx="359" cy="1908" r="9.0" fill="#20201f" stroke="#6b6a60" stroke-width="1.2"><title>fe77417e71d3 gen22 crossover 5.810</title></circle>
-<circle class="hit" data-h="fe77417e71d3" cx="359" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3180ad524392" cx="405" cy="1908" r="9.0" fill="#d9d5c3" stroke="#6b6a60" stroke-width="1.2"><title>3180ad524392 gen22 crossover 11.195</title></circle>
-<circle class="hit" data-h="3180ad524392" cx="405" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="fb74dcf8348b" cx="451" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>fb74dcf8348b gen22 immigrant no flat area for flight-controller mount</title></circle>
-<circle class="hit" data-h="fb74dcf8348b" cx="451" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="eb48d7f1a03f" cx="497" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>eb48d7f1a03f gen22 immigrant arm tip deflection (asa)</title></circle>
-<circle class="hit" data-h="eb48d7f1a03f" cx="497" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="0c1ce559f128" cx="543" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>0c1ce559f128 gen22 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="0c1ce559f128" cx="543" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="c1fc38cb7484" cx="589" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c1fc38cb7484 gen22 mutation rotor too close to deck</title></circle>
-<circle class="hit" data-h="c1fc38cb7484" cx="589" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="6465ab47ac7f" cx="635" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>6465ab47ac7f gen22 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="6465ab47ac7f" cx="635" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="95ee442d13d7" cx="681" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>95ee442d13d7 gen22 immigrant arm root tongues overlap in the deck</title></circle>
-<circle class="hit" data-h="95ee442d13d7" cx="681" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="d7f80635db06" cx="727" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>d7f80635db06 gen22 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="d7f80635db06" cx="727" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="90119f91c97a" cx="773" cy="1908" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>90119f91c97a gen22 mutation arm tip deflection (pla_plus)</title></circle>
-<circle class="hit" data-h="90119f91c97a" cx="773" cy="1908" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="3b308d18df46" cx="83" cy="1992" r="9.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>3b308d18df46 gen23 crossover 5.367</title></circle>
-<circle class="hit" data-h="3b308d18df46" cx="83" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="02567ecbf1a3" cx="129" cy="1992" r="5.0" fill="#121212" stroke="#6b6a60" stroke-width="1.2"><title>02567ecbf1a3 gen21 crossover 5.409</title></circle>
-<circle class="hit" data-h="02567ecbf1a3" cx="129" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="bbdabd69b543" cx="175" cy="1992" r="9.0" fill="#131312" stroke="#6b6a60" stroke-width="1.2"><title>bbdabd69b543 gen23 crossover 5.413</title></circle>
-<circle class="hit" data-h="bbdabd69b543" cx="175" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="00b88557d068" cx="221" cy="1992" r="9.0" fill="#131313" stroke="#6b6a60" stroke-width="1.2"><title>00b88557d068 gen23 crossover 5.426</title></circle>
-<circle class="hit" data-h="00b88557d068" cx="221" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="dc6a1b05409a" cx="267" cy="1992" r="5.0" fill="#131313" stroke="#6b6a60" stroke-width="1.2"><title>dc6a1b05409a gen22 crossover 5.437</title></circle>
-<circle class="hit" data-h="dc6a1b05409a" cx="267" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="1243c1b98171" cx="313" cy="1992" r="9.0" fill="#141413" stroke="#6b6a60" stroke-width="1.2"><title>1243c1b98171 gen23 mutation 5.442</title></circle>
-<circle class="hit" data-h="1243c1b98171" cx="313" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="60df4212ac47" cx="359" cy="1992" r="9.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>60df4212ac47 gen23 crossover 5.451</title></circle>
-<circle class="hit" data-h="60df4212ac47" cx="359" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b81582023784" cx="405" cy="1992" r="9.0" fill="#141414" stroke="#6b6a60" stroke-width="1.2"><title>b81582023784 gen23 crossover 5.469</title></circle>
-<circle class="hit" data-h="b81582023784" cx="405" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="720df497fa80" cx="451" cy="1992" r="9.0" fill="#161615" stroke="#6b6a60" stroke-width="1.2"><title>720df497fa80 gen23 crossover 5.503</title></circle>
-<circle class="hit" data-h="720df497fa80" cx="451" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4dbd83d1aa62" cx="497" cy="1992" r="9.0" fill="#1c1c1b" stroke="#6b6a60" stroke-width="1.2"><title>4dbd83d1aa62 gen23 crossover 5.687</title></circle>
-<circle class="hit" data-h="4dbd83d1aa62" cx="497" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="40a747db9741" cx="543" cy="1992" r="9.0" fill="#737168" stroke="#6b6a60" stroke-width="1.2"><title>40a747db9741 gen23 immigrant 8.225</title></circle>
-<circle class="hit" data-h="40a747db9741" cx="543" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="b3016bd6618c" cx="589" cy="1992" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>b3016bd6618c gen23 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="b3016bd6618c" cx="589" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="698844809c2e" cx="635" cy="1992" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>698844809c2e gen23 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="698844809c2e" cx="635" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="e3486bede6ac" cx="681" cy="1992" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>e3486bede6ac gen23 crossover rotor disks overlap (tip clearance)</title></circle>
-<circle class="hit" data-h="e3486bede6ac" cx="681" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="79046c27ec38" cx="727" cy="1992" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>79046c27ec38 gen23 crossover arm tip deflection (pa12_cf)</title></circle>
-<circle class="hit" data-h="79046c27ec38" cx="727" cy="1992" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="79a0d585d6cb" cx="773" cy="1992" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>79a0d585d6cb gen23 crossover arm tip deflection (asa)</title></circle>
-<circle class="hit" data-h="79a0d585d6cb" cx="773" cy="1992" r="14.0" fill="transparent" stroke="none"/>
 <text x="16" y="64" font-size="11" fill="#9b998c">g0</text>
 <text x="16" y="148" font-size="11" fill="#9b998c">g1</text>
 <text x="16" y="232" font-size="11" fill="#9b998c">g2</text>
@@ -1380,24 +942,20 @@
 <text x="16" y="1156" font-size="11" fill="#9b998c">g13</text>
 <text x="16" y="1240" font-size="11" fill="#9b998c">g14</text>
 <text x="16" y="1324" font-size="11" fill="#9b998c">g15</text>
-<text x="16" y="1408" font-size="11" fill="#9b998c">g16</text>
-<text x="16" y="1492" font-size="11" fill="#9b998c">g17</text>
-<text x="16" y="1576" font-size="11" fill="#9b998c">g18</text>
-<text x="16" y="1660" font-size="11" fill="#9b998c">g19</text>
-<text x="16" y="1744" font-size="11" fill="#9b998c">g20</text>
-<text x="16" y="1828" font-size="11" fill="#9b998c">g21</text>
-<text x="16" y="1912" font-size="11" fill="#9b998c">g22</text>
-<text x="16" y="1996" font-size="11" fill="#9b998c">g23</text>
-<line x1="60" y1="2110" x2="76" y2="2110" stroke="#4a6fa5" stroke-width="2"/>
-<text x="80" y="2114" font-size="10" fill="#6b6a60">crossover</text>
-<line x1="153" y1="2110" x2="169" y2="2110" stroke="#8c2f1f" stroke-width="2"/>
-<text x="173" y="2114" font-size="10" fill="#6b6a60">mutation</text>
-<line x1="239" y1="2110" x2="255" y2="2110" stroke="#8a6a1e" stroke-width="2"/>
-<text x="259" y="2114" font-size="10" fill="#6b6a60">immigrant</text>
-<line x1="332" y1="2110" x2="348" y2="2110" stroke="#9b998c" stroke-width="2"/>
-<text x="352" y="2114" font-size="10" fill="#6b6a60">elite</text>
-<line x1="397" y1="2110" x2="413" y2="2110" stroke="#b9b6a6" stroke-width="2"/>
-<text x="417" y="2114" font-size="10" fill="#6b6a60">seed</text>
-<line x1="455" y1="2110" x2="471" y2="2110" stroke="#888888" stroke-width="2"/>
-<text x="475" y="2114" font-size="10" fill="#6b6a60">cmaes</text>
+<line x1="60" y1="24" x2="76" y2="24" stroke="#4a6fa5" stroke-width="2"/>
+<text x="80" y="28" font-size="10" fill="#6b6a60">crossover</text>
+<line x1="153" y1="24" x2="169" y2="24" stroke="#2e6e63" stroke-width="2"/>
+<text x="173" y="28" font-size="10" fill="#6b6a60">pivot</text>
+<line x1="218" y1="24" x2="234" y2="24" stroke="#8c2f1f" stroke-width="2"/>
+<text x="238" y="28" font-size="10" fill="#6b6a60">mutation</text>
+<line x1="304" y1="24" x2="320" y2="24" stroke="#8a6a1e" stroke-width="2"/>
+<text x="324" y="28" font-size="10" fill="#6b6a60">immigrant</text>
+<line x1="397" y1="24" x2="413" y2="24" stroke="#9b998c" stroke-width="2" stroke-dasharray="3,3"/>
+<text x="417" y="28" font-size="10" fill="#6b6a60">elite carry-over</text>
+<line x1="539" y1="24" x2="555" y2="24" stroke="#b9b6a6" stroke-width="2"/>
+<text x="559" y="28" font-size="10" fill="#6b6a60">seed</text>
+<line x1="597" y1="24" x2="613" y2="24" stroke="#888888" stroke-width="2"/>
+<text x="617" y="28" font-size="10" fill="#6b6a60">cmaes</text>
+<circle cx="670" cy="24" r="5.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
+<text x="682" y="28" font-size="10" fill="#6b6a60">best so far</text>
 </svg>

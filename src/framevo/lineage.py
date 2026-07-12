@@ -195,7 +195,6 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
 .ncard .anc{{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}}
 </style>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="30">
 <title>framevo family tree</title>
 <div class="wrap">
 <h1>family tree &mdash; run <code>{run_id}</code></h1>
@@ -205,7 +204,8 @@ nodes are invalid. Dotted lines are elite carry-overs: the same candidate
 surviving unchanged into the next generation, where it reappears as a small
 node. Rust rings mark best-so-far improvements (the candidates labeled in
 the gallery chart). Edge colors name the operator. Hover any node to see
-the candidate and its full ancestry.
+the candidate and its full ancestry; click a node to pin the highlight
+while you scroll (click again or press esc to release).
 &middot; <a href="gallery.html">back to the gallery</a></p>
 <div class="tree">{svg}</div>
 <p class="note">The same graph is exported as Graphviz DOT
@@ -234,7 +234,8 @@ function ancestors(h){{ // hovered candidate + every ancestor, via parent walk
   }}
   return seen;
 }}
-function show(h){{
+var pinned=null;
+function show(h,pin){{
   var c=META[h];
   var set=ancestors(h);
   svg.classList.add("focus");
@@ -276,17 +277,34 @@ function show(h){{
     +'<div class="hash">'+esc(h)+"</div>"
     +head+table
     +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
-      +" highlighted":"seed / immigrant &mdash; no ancestors")+"</div>";
+      +" highlighted":"seed / immigrant &mdash; no ancestors")
+    +(pin?" &middot; pinned &mdash; click again or press esc to release":"")
+    +"</div>";
   card.style.display="block";
 }}
 function clear(){{
   svg.classList.remove("focus");
   card.style.display="none";
 }}
+function unpin(){{
+  if(pinned){{pinned=null;clear()}}
+}}
 svg.querySelectorAll(".hit").forEach(function(hit){{
-  hit.addEventListener("mouseenter",function(){{show(hit.dataset.h)}});
-  hit.addEventListener("mouseleave",clear);
+  hit.addEventListener("mouseenter",function(){{
+    if(!pinned)show(hit.dataset.h,false)}});
+  hit.addEventListener("mouseleave",function(){{
+    if(!pinned)clear()}});
+  hit.addEventListener("click",function(ev){{
+    ev.stopPropagation();
+    if(pinned===hit.dataset.h){{unpin()}}
+    else{{pinned=hit.dataset.h;show(pinned,true)}}
+  }});
 }});
+document.addEventListener("click",unpin);
+document.addEventListener("keydown",function(ev){{
+  if(ev.key==="Escape")unpin()}});
+// auto-refresh (was a meta tag): hold off while a lineage is pinned
+setInterval(function(){{if(!pinned)location.reload()}},30000);
 }})();
 </script>"""
     out = results_dir / "lineage.html"
