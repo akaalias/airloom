@@ -329,27 +329,40 @@ def progress_chart_svg(store: Store, run_id: str,
         s.append(f'<text x="{ml - 10}" y="{y + 4:.1f}" text-anchor="end" '
                  f'font-size="13" fill="#9b998c">{label}</text>')
         fv += step
-    # generation boundaries (pivot generations flagged in teal)
+    # generation boundaries (pivot generations flagged in teal). At high
+    # generation counts, ticks + labels thin to a spaced subset so they stay
+    # readable; pivots take priority and tolerate a tighter gap.
     pivot_gens = {c["generation_born"] for c in cands if c["operator"] == "pivot"}
+    bounds: list[tuple[int, float]] = []
     prev_gen = None
     for i, c in enumerate(cands):
         if c["generation_born"] != prev_gen:
             prev_gen = c["generation_born"]
-            x = ml + pw * i / n
-            s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
-                     f'stroke="#ece9da" stroke-width="1" stroke-dasharray="1,4"/>')
-            if prev_gen in pivot_gens:
-                s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
-                         f'font-weight="700" fill="#2e6e63">g{prev_gen} &#10227;'
-                         f'<title>pivot generation: plateau broken up with '
-                         f'far-parent crossovers</title></text>')
-            else:
-                s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
-                         f'fill="#9b998c">g{prev_gen}</text>')
+            bounds.append((prev_gen, ml + pw * i / n))
+    last_lx = -1e9
+    for g, x in bounds:
+        is_pivot = g in pivot_gens
+        if x - last_lx < (20.0 if is_pivot else 36.0):
+            continue
+        last_lx = x
+        s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
+                 f'stroke="#ece9da" stroke-width="1" stroke-dasharray="1,4"/>')
+        if is_pivot:
+            s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
+                     f'font-weight="700" fill="#2e6e63">g{g} &#10227;'
+                     f'<title>pivot generation: plateau broken up with '
+                     f'far-parent crossovers</title></text>')
+        else:
+            s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
+                     f'fill="#9b998c">g{g}</text>')
 
     # invalid strip (design fails)
     y_inv = mt - 12
-    # discarded dots + invalid marks
+    # discarded dots + invalid marks; both shrink as the run grows so a
+    # 100-generation chart stays legible. Past ~400 candidates the invalid
+    # strip switches from x glyphs to a barcode of thin ticks.
+    r_dot = max(1.6, min(3.4, 1500.0 / n))
+    dense = n > 400
     for i, (c, f) in enumerate(zip(cands, fits)):
         x = xat(i)
         tip = html.escape(f"{c['hash']} g{c['generation_born']} {c['operator']}"
@@ -359,18 +372,25 @@ def progress_chart_svg(store: Store, run_id: str,
             clipped = f > hi
             fill = "#b9b6a6" if not clipped else "none"
             stroke = ' stroke="#b9b6a6" stroke-width="1.2"' if clipped else ""
-            s.append(f'<circle cx="{x:.1f}" cy="{yat(f):.1f}" r="3.4" '
+            s.append(f'<circle cx="{x:.1f}" cy="{yat(f):.1f}" r="{r_dot:.1f}" '
                      f'fill="{fill}"{stroke}><title>{tip}</title></circle>')
+        elif dense:
+            s.append(f'<line x1="{x:.1f}" y1="{y_inv - 5}" x2="{x:.1f}" '
+                     f'y2="{y_inv + 1}" stroke="#8c2f1f" stroke-width="0.8" '
+                     f'opacity="0.7"><title>{tip}</title></line>')
         else:
             s.append(f'<text x="{x:.1f}" y="{y_inv}" text-anchor="middle" '
                      f'font-size="12" font-weight="700" fill="#8c2f1f">'
                      f'&#215;<title>{tip}</title></text>')
 
-    # best-so-far step line with labeled improvements
+    # best-so-far step line with labeled improvements; every improvement
+    # keeps its dot + tooltip, but a hash label is only drawn when it has
+    # ~56px of clearance from the previous label
     best = math.inf
     path: list[str] = []
     labels: list[str] = []
     flip = False
+    last_label_x = -1e9
     for i, (c, f) in enumerate(zip(cands, fits)):
         if not math.isfinite(f) or f >= best:
             continue
@@ -380,12 +400,14 @@ def progress_chart_svg(store: Store, run_id: str,
         else:
             path.append(f"H{x:.1f}")
             path.append(f"V{y:.1f}")
-        dy = -9 if not flip else 18
-        flip = not flip
         labels.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.4" fill="#111111">'
                       f'<title>{html.escape(c["hash"])} &#8594; {f:.3f}</title></circle>')
-        labels.append(f'<text x="{x + 6:.1f}" y="{y + dy:.1f}" font-size="12" '
-                      f'fill="#111111">{c["hash"][:6]}</text>')
+        if x - last_label_x >= 56:
+            dy = -9 if not flip else 18
+            flip = not flip
+            labels.append(f'<text x="{x + 6:.1f}" y="{y + dy:.1f}" font-size="12" '
+                          f'fill="#111111">{c["hash"][:6]}</text>')
+            last_label_x = x
         best = f
     if path:
         path.append(f"H{W - mr}")
@@ -499,15 +521,35 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 detail_ids.append(h)
         parts.append("</div>")
 
+    # embedding a mesh blob for every candidate makes long-run galleries
+    # enormous; interactive viewers go to the interesting subset, everyone
+    # else keeps the static render (and the full genome/scenario tables)
+    viewer_hashes: set[str] = set()
+    ranked_all = sorted(((h, f) for h, f in
+                         ((h, store.fitness_of(r)) for h, r in cands.items())
+                         if math.isfinite(f)), key=lambda t: t[1])
+    viewer_hashes.update(h for h, _ in ranked_all[:100])
+    best_sofar = math.inf
+    for c in store.candidates_in_eval_order(run_id):
+        f = store.fitness_of(c)
+        if math.isfinite(f) and f < best_sofar:
+            best_sofar = f
+            viewer_hashes.add(c["hash"])
+    for g in gens[-3:]:
+        viewer_hashes.update(r["hash"] for r in store.population(run_id, g))
+
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">drag a model to '
-                 "rotate it, scroll to zoom, double-click to reset the view</p>")
+                 "rotate it, scroll to zoom, double-click to reset the view "
+                 "(interactive 3D on the top candidates, improvement-setters "
+                 "and recent generations; static renders elsewhere)</p>")
     blobs: list[str] = []
     for h in detail_ids:
         c = cands[h]
         fit = store.fitness_of(c)
         img = _rel(results_dir, c["png_path"])
-        blob = _mesh_blob_for(results_dir, c["png_path"])
+        blob = _mesh_blob_for(results_dir, c["png_path"]) \
+            if h in viewer_hashes else None
         if blob is not None:
             blobs.append(f'<script type="application/json" id="m-{h}">{blob}</script>')
             viewer = (f'<div class="viewer"><canvas data-mesh="m-{h}" '
