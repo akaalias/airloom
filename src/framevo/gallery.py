@@ -342,7 +342,12 @@ def progress_chart_svg(store: Store, run_id: str,
     last_lx = -1e9
     for g, x in bounds:
         is_pivot = g in pivot_gens
-        if x - last_lx < (20.0 if is_pivot else 36.0):
+        if is_pivot:  # every pivot leaves a teal axis tick, labeled or not
+            s.append(f'<line x1="{x:.1f}" y1="{mt + ph}" x2="{x:.1f}" '
+                     f'y2="{mt + ph + 5}" stroke="#2e6e63" stroke-width="1.6">'
+                     f'<title>g{g}: pivot generation (plateau broken up with '
+                     f'far-parent crossovers)</title></line>')
+        if x - last_lx < 36.0:
             continue
         last_lx = x
         s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
