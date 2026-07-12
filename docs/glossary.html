@@ -109,6 +109,16 @@ birth generation and mutation magnitude &mdash; a self-referencing SQLite table,
 <code>framevo lineage &lt;hash&gt;</code> walks the full ancestor chain
 (<code>WITH RECURSIVE</code>) and shows how fitness improved along it.</dd>
 
+<dt>Patience / pivot</dt>
+<dd>Plateau escape. If the best-so-far fails to improve by &ge;0.5&thinsp;% for
+6 generations (the longest gap healthy searches showed was 4), the next
+generation <em>pivots</em>: half the non-elite offspring are bred by crossing
+a tournament winner with a <em>far parent</em> &mdash; the most genetically
+distant still-decent candidate from the whole run &mdash; with mutation
+temporarily boosted. Plateaus that survive another window escalate to fully
+random far-parents. Pivot generations are marked &#10227; on the progress
+chart and pivot edges are teal in the family tree.</dd>
+
 <dt>Early-reject</dt>
 <dd>Optional cost control: fly the cheap <code>calm_warm</code> scenario first; a
 candidate much worse than the population median skips the other five scenarios

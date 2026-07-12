@@ -4,7 +4,7 @@ SVG family tree (no graphviz binary required).
 Layout: one row per generation showing that generation's population sorted by
 fitness; filled nodes are births (colored dark = better fitness), hollow nodes
 are invalid candidates, small pass-through nodes are elite carry-overs
-connected by vertical edges. Parent edges are colored by operator.
+connected by dotted edges. Parent edges are colored by operator.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from .dbstore import Store
 
 OPERATOR_COLORS = {
     "crossover": "#4a6fa5",
+    "pivot": "#2e6e63",
     "mutation": "#8c2f1f",
     "immigrant": "#8a6a1e",
     "elite": "#9b998c",
@@ -117,6 +118,8 @@ def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
     # drop native <title> tooltips: the hover card replaces them here
     # (they stay in the standalone lineage.svg)
     svg = re.sub(r"<title>.*?</title>", "", svg, flags=re.S)
+    m = re.search(r'width="(\d+)"', svg)
+    svg_w = int(m.group(1)) if m else 900  # dock the card beside the tree
 
     # per-candidate metadata for the hover card + ancestor walk
     meta: dict[str, dict] = {}
@@ -159,15 +162,17 @@ a{{color:var(--accent);text-decoration:none}}
 .tree svg{{display:block;margin:0 auto}}
 .note{{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}}
 /* hover interactivity: dim everything outside the hovered ancestry */
-.nd,.ed,.el{{transition:opacity .12s ease}}
+.nd,.ed,.el,.bs{{transition:opacity .12s ease}}
 .hit{{cursor:pointer}}
-svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit){{opacity:.12}}
+svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit),
+svg.focus .bs:not(.lit){{opacity:.12}}
 svg.focus .ed.lit{{stroke-width:2;opacity:1}}
 svg.focus .el.lit{{stroke-width:2;opacity:1}}
 svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
 /* the candidate card (matches the gallery detail block), docked just to
    the right of the tree so it never covers the highlighted ancestry */
 .ncard{{position:fixed;top:50%;transform:translateY(-50%);
+  left:min(calc(50% + {svg_w // 2 + 26}px),calc(100vw - 372px));
   z-index:10;width:340px;max-height:calc(100vh - 32px);overflow:hidden;
   background:var(--paper);border:1px solid var(--ink);
   padding:14px 16px 14px;pointer-events:none;
@@ -196,9 +201,12 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
 <h1>family tree &mdash; run <code>{run_id}</code></h1>
 <p class="sub">one row per generation, candidates ordered best&#8594;worst.
 Filled nodes are births, shaded dark&thinsp;=&thinsp;better fitness; hollow
-nodes are invalid; small nodes on dotted verticals are elite carry-overs.
-Edge colors name the operator. Hover any node to see the candidate and its
-full ancestry. &middot; <a href="gallery.html">back to the gallery</a></p>
+nodes are invalid. Dotted lines are elite carry-overs: the same candidate
+surviving unchanged into the next generation, where it reappears as a small
+node. Rust rings mark best-so-far improvements (the candidates labeled in
+the gallery chart). Edge colors name the operator. Hover any node to see
+the candidate and its full ancestry.
+&middot; <a href="gallery.html">back to the gallery</a></p>
 <div class="tree">{svg}</div>
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
@@ -230,7 +238,7 @@ function show(h){{
   var c=META[h];
   var set=ancestors(h);
   svg.classList.add("focus");
-  svg.querySelectorAll(".nd").forEach(function(n){{
+  svg.querySelectorAll(".nd,.bs").forEach(function(n){{
     n.classList.toggle("lit",!!set[n.dataset.h])}});
   svg.querySelectorAll(".ed").forEach(function(e){{
     e.classList.toggle("lit",!!set[e.dataset.c])}});
@@ -299,10 +307,19 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                           key=lambda r: (r["fitness"] is None,
                                          r["fitness"] if r["fitness"] is not None else 0))
                 for g in gens}
-    legend_w = margin * 2 + sum(30 + 7 * len(n) for n in OPERATOR_COLORS)
+    legend_w = margin * 2 + sum(30 + 7 * len(n) for n in OPERATOR_COLORS) + 180
     width = max(margin * 2 + max((len(v) for v in pop_rows.values()), default=1)
                 * xstep, legend_w)
     height = margin * 2 + (len(gens)) * ystep
+
+    # best-so-far improvements: the candidates the gallery's step line labels
+    best_hashes: set[str] = set()
+    running_best = math.inf
+    for c in store.candidates_in_eval_order(run_id):
+        f = store.fitness_of(c)
+        if math.isfinite(f) and f < running_best:
+            running_best = f
+            best_hashes.add(c["hash"])
 
     pos: dict[tuple[int, str], tuple[float, float]] = {}
     birth_pos: dict[str, tuple[float, float]] = {}
@@ -376,6 +393,10 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                        f' cx="{x:.0f}" cy="{y:.0f}" r="{rr:.1f}"'
                        f' fill="{fill}" stroke="{stroke}" stroke-width="1.2">'
                        f'<title>{title}</title></circle>')
+            if is_birth and h in best_hashes:  # rust ring = best-so-far
+                svg.append(f'<circle class="bs" data-h="{h}"'
+                           f' cx="{x:.0f}" cy="{y:.0f}" r="{r_node + 3.5:.1f}"'
+                           f' fill="none" stroke="#8c2f1f" stroke-width="1.3"/>')
             # generous invisible hit target for hover on the html page
             svg.append(f'<circle class="hit" data-h="{h}"'
                        f' cx="{x:.0f}" cy="{y:.0f}" r="{max(rr + 5, 14):.1f}"'
@@ -385,14 +406,21 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
         svg.append(f'<text x="{margin - 44}" y="{margin + gi * ystep + 4}"'
                    f' font-size="11" fill="#9b998c">g{g}</text>')
 
-    # legend
-    lx, ly = margin, height - 26
+    # legend, above the first generation row; the elite swatch is dashed
+    # like the carry-over lines it stands for
+    lx, ly = margin, 24
     for name, col in OPERATOR_COLORS.items():
+        label = "elite carry-over" if name == "elite" else name
+        dash = ' stroke-dasharray="3,3"' if name == "elite" else ""
         svg.append(f'<line x1="{lx}" y1="{ly}" x2="{lx + 16}" y2="{ly}"'
-                   f' stroke="{col}" stroke-width="2"/>')
+                   f' stroke="{col}" stroke-width="2"{dash}/>')
         svg.append(f'<text x="{lx + 20}" y="{ly + 4}" font-size="10"'
-                   f' fill="#6b6a60">{name}</text>')
-        lx += 30 + 7 * len(name)
+                   f' fill="#6b6a60">{label}</text>')
+        lx += 30 + 7 * len(label)
+    svg.append(f'<circle cx="{lx + 8}" cy="{ly}" r="5.5" fill="none"'
+               f' stroke="#8c2f1f" stroke-width="1.3"/>')
+    svg.append(f'<text x="{lx + 20}" y="{ly + 4}" font-size="10"'
+               f' fill="#6b6a60">best so far</text>')
     svg.append("</svg>")
     out = results_dir / "lineage.svg"
     out.write_text("\n".join(svg))

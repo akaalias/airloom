@@ -21,7 +21,9 @@ from . import gallery as gallery_mod
 from . import lineage as lineage_mod
 from .config import Config
 from .dbstore import CandidateRow, Store
-from .evolution import CmaEs, Proposal, generation_rng, propose_gen0, propose_next
+from .evolution import (CmaEs, Proposal, generation_rng,
+                        gens_since_significant_improvement, pivot_rank,
+                        propose_gen0, propose_next, select_far_parents)
 from .genome import Genome
 from .parallel import run_tasks
 
@@ -81,7 +83,9 @@ class EvolutionLoop:
                 proposals = propose_gen0(ev.population, rng)
             else:
                 prev = self._load_population(gen - 1)
-                proposals = propose_next(prev, gen, ev.ga, rng)
+                pivot, far = self._patience_state(gen)
+                proposals = propose_next(prev, gen, ev.ga, rng,
+                                         pivot=pivot, far_parents=far)
 
             entries = self._evaluate_generation(gen, proposals)
 
@@ -264,6 +268,39 @@ class EvolutionLoop:
             mean_whkm=mean, worst_whkm=worst, f1_hz=f1_hz,
             stl_path=stl_path or (bv or {}).get("stl_path"),
             png_path=(bv or {}).get("png_path")))
+
+    # ------------------------------------------------------------ patience --
+    def _patience_state(self, gen: int) -> tuple[int, list | None]:
+        """(pivot rank, far-parent pool) for the generation about to be bred.
+        Derived entirely from persisted history, so it survives --resume."""
+        pt = self.cfg.evolution.ga.patience
+        if not pt.enabled:
+            return 0, None
+        best_per_gen = []
+        for g in range(gen):
+            fits = [r["fitness"] for r in self.store.population(self.run_id, g)
+                    if r["fitness"] is not None]
+            best_per_gen.append(min(fits) if fits else math.inf)
+        rank = pivot_rank(best_per_gen, self.cfg.evolution.ga)
+        if rank == 0:
+            return 0, None
+        stall = gens_since_significant_improvement(best_per_gen,
+                                                   pt.min_rel_improvement)
+        history, best = [], (None, math.inf)
+        for r in self.store.candidates_for_run(self.run_id):
+            f = self.store.fitness_of(r)
+            if not math.isfinite(f):
+                continue
+            g = Genome.from_dict(json.loads(r["genome_json"]))
+            history.append((r["hash"], g, f))
+            if f < best[1]:
+                best = (g, f)
+        far = select_far_parents(history, best[0], best[1], pt.decent_factor) \
+            if best[0] is not None else []
+        _log(f"patience exhausted ({stall} gens without >="
+             f"{pt.min_rel_improvement:.1%} improvement) -- pivot rank {rank}"
+             + (f", {len(far)} far parents" if rank == 1 else " (escalated)"))
+        return rank, far or None
 
     # ------------------------------------------------------------- plumbing --
     def _load_population(self, gen: int) -> list[tuple[str, Genome, float]]:

@@ -99,6 +99,13 @@ over the identical mission: 2 km north + 2 km south at 12 m/s, 30 m AGL.
 Each scenario has a fixed turbulence seed, so all candidates fly identical
 gust histories — fitness differences are frame differences, never gust luck.
 
+**Patience:** if the best-so-far stalls for 6 generations (no ≥0.5 %
+improvement), the loop pivots — it crosses tournament winners with *far
+parents* (the most genetically distant still-decent candidates in the run's
+history) under boosted mutation, escalating to random parents if the plateau
+persists. Derived from persisted history, so it survives `--resume`;
+configured under `ga.patience` in `config/evolution.yaml`.
+
 Fitness = mean Wh/km + λ·worst Wh/km (λ = 0.5), or pure worst-case with
 `aggregation: minimax`. Any scenario failure (rotor saturation, mission not
 completed, structural) ⇒ invalid. An optional early-reject screen

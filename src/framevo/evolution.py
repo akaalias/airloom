@@ -77,12 +77,66 @@ def mutation_sigma(params: GAParams, generation: int) -> float:
                params.mutation_sigma_min)
 
 
+# ---------------------------------------------------------------------------
+# Patience: plateau detection + pivot breeding.
+# ---------------------------------------------------------------------------
+def gens_since_significant_improvement(best_per_gen: list[float],
+                                       min_rel: float) -> int:
+    """Generations elapsed since the best-so-far last improved by at least
+    `min_rel` (relative). Derived purely from history -> resume-safe."""
+    best = math.inf
+    last_sig = 0
+    for g, v in enumerate(best_per_gen):
+        if not math.isfinite(v):
+            continue
+        if not math.isfinite(best) or (best - v) / best >= min_rel:
+            last_sig = g
+        best = min(best, v)
+    return len(best_per_gen) - 1 - last_sig
+
+
+def pivot_rank(best_per_gen: list[float], params: GAParams) -> int:
+    """0 = no pivot; 1 = far-parent pivot; >=2 = escalated (random parents).
+    Rank grows by one for each full patience window the plateau survives."""
+    pt = params.patience
+    if not pt.enabled or len(best_per_gen) < pt.generations:
+        return 0
+    stall = gens_since_significant_improvement(best_per_gen,
+                                               pt.min_rel_improvement)
+    return min(stall // pt.generations, 3)
+
+
+def select_far_parents(history: list[tuple[str, Genome, float]],
+                       best_genome: Genome, best_fitness: float,
+                       decent_factor: float, k: int = 5) -> list[tuple[str, Genome]]:
+    """The most genetically distant candidates in the run's history that are
+    still decent (fitness within `decent_factor` of the best): the pool a
+    pivot draws its replacement parent from."""
+    ref = best_genome.normalized
+    pool = [(h, g, float(np.linalg.norm(g.normalized - ref)))
+            for h, g, f in history
+            if math.isfinite(f) and f <= best_fitness * decent_factor
+            and g.hash != best_genome.hash]
+    pool.sort(key=lambda t: -t[2])
+    return [(h, g) for h, g, _ in pool[:k]]
+
+
 def propose_next(prev: list[tuple[str, Genome, float]], generation: int,
-                 params: GAParams, rng: np.random.Generator) -> list[Proposal]:
-    """prev: (hash, genome, fitness) of the previous generation's population."""
+                 params: GAParams, rng: np.random.Generator,
+                 pivot: int = 0,
+                 far_parents: list[tuple[str, Genome]] | None = None
+                 ) -> list[Proposal]:
+    """prev: (hash, genome, fitness) of the previous generation's population.
+
+    pivot > 0 turns this into a pivot generation: `pivot_fraction` of the
+    non-elite slots are bred by crossing a tournament winner with a FAR
+    parent (rank 1: a distant-but-decent candidate from `far_parents`;
+    rank >= 2: a fully random genome), with mutation sigma boosted."""
     population = len(prev)
     ranked = sorted(prev, key=lambda t: t[2])
     sigma = mutation_sigma(params, generation)
+    pt = params.patience
+    pivot_sigma = min(max(sigma * pt.sigma_boost, sigma), 0.30)
 
     out: list[Proposal] = []
     seen: set[str] = set()
@@ -90,10 +144,22 @@ def propose_next(prev: list[tuple[str, Genome, float]], generation: int,
         out.append(Proposal(g, h, None, "elite", None))
         seen.add(g.hash)
 
+    n_pivot = round(pt.pivot_fraction * (population - len(out))) if pivot else 0
+
     attempts = 0
     while len(out) < population:
         attempts += 1
-        if rng.random() < params.immigrant_prob:
+        if n_pivot > 0:
+            pa = _tournament(prev, params.tournament_k, rng)
+            if pivot == 1 and far_parents:
+                pb_hash, pb_genome = far_parents[int(rng.integers(0, len(far_parents)))]
+            else:  # escalated (or no history to draw from): random far parent
+                pb_hash, pb_genome = None, Genome.random(rng)
+            child = _sbx(pa[1].array, pb_genome.array, params.sbx_eta, rng)
+            child, mag = _mutate(child, pivot_sigma,
+                                 params.mutation_prob_per_gene, rng)
+            prop = Proposal(Genome.from_array(child), pa[0], pb_hash, "pivot", mag)
+        elif rng.random() < params.immigrant_prob:
             prop = Proposal(Genome.random(rng), None, None, "immigrant", None)
         elif rng.random() < params.crossover_prob:
             pa = _tournament(prev, params.tournament_k, rng)
@@ -111,6 +177,8 @@ def propose_next(prev: list[tuple[str, Genome, float]], generation: int,
             continue  # duplicates waste evaluations; retry
         seen.add(h)
         out.append(prop)
+        if prop.operator == "pivot":
+            n_pivot -= 1
     return out
 
 

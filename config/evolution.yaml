@@ -14,6 +14,22 @@ ga:
   mutation_sigma_decay: 0.97   # per generation
   mutation_sigma_min: 0.03
   immigrant_prob: 0.10         # chance a non-elite slot is a fresh random genome
+  # -- patience: how long the run may plateau before pivoting.
+  # Derived from run data: healthy searches improve the best-so-far by
+  # >=0.5% every 1-4 generations; plateaus coincide with population
+  # diversity collapsing below ~0.1. After `generations` without a
+  # significant improvement, a PIVOT generation breeds `pivot_fraction` of
+  # the non-elite slots from (tournament winner) x (far parent) -- the most
+  # genetically distant still-decent candidate in the run's history -- with
+  # mutation sigma boosted. Escalates to fully random far-parents if the
+  # plateau survives another patience window. Elites are never touched.
+  patience:
+    enabled: true
+    generations: 6
+    min_rel_improvement: 0.005   # what counts as "moving the needle"
+    pivot_fraction: 0.5          # non-elite slots bred with a far parent
+    sigma_boost: 3.0             # hypermutation multiplier while pivoting
+    decent_factor: 1.3           # far parents must be within 30% of best
 
 cmaes:
   sigma0: 0.25                 # fraction of normalized [0,1] genome space

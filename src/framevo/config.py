@@ -161,6 +161,16 @@ class EarlyReject:
 
 
 @dataclass(frozen=True)
+class Patience:
+    enabled: bool
+    generations: int
+    min_rel_improvement: float
+    pivot_fraction: float
+    sigma_boost: float
+    decent_factor: float
+
+
+@dataclass(frozen=True)
 class GAParams:
     tournament_k: int
     elitism: int
@@ -171,6 +181,7 @@ class GAParams:
     mutation_sigma_decay: float
     mutation_sigma_min: float
     immigrant_prob: float
+    patience: Patience
 
 
 @dataclass(frozen=True)
@@ -308,6 +319,15 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
                      float(rm["film_mass_kg_m2"]))
 
     ga = evo["ga"]
+    pt = ga.get("patience", {})
+    patience = Patience(
+        enabled=bool(pt.get("enabled", False)),
+        generations=int(pt.get("generations", 6)),
+        min_rel_improvement=float(pt.get("min_rel_improvement", 0.005)),
+        pivot_fraction=float(pt.get("pivot_fraction", 0.5)),
+        sigma_boost=float(pt.get("sigma_boost", 3.0)),
+        decent_factor=float(pt.get("decent_factor", 1.3)),
+    )
     ga_params = GAParams(
         tournament_k=int(ga["tournament_k"]), elitism=int(ga["elitism"]),
         crossover_prob=float(ga["crossover_prob"]), sbx_eta=float(ga["sbx_eta"]),
@@ -316,6 +336,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         mutation_sigma_decay=float(ga["mutation_sigma_decay"]),
         mutation_sigma_min=float(ga["mutation_sigma_min"]),
         immigrant_prob=float(ga["immigrant_prob"]),
+        patience=patience,
     )
     ex = evo["execution"]
     workers = overrides.get("workers")

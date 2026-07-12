@@ -327,7 +327,8 @@ def progress_chart_svg(store: Store, run_id: str,
         s.append(f'<text x="{ml - 10}" y="{y + 4:.1f}" text-anchor="end" '
                  f'font-size="13" fill="#9b998c">{label}</text>')
         fv += step
-    # generation boundaries
+    # generation boundaries (pivot generations flagged in teal)
+    pivot_gens = {c["generation_born"] for c in cands if c["operator"] == "pivot"}
     prev_gen = None
     for i, c in enumerate(cands):
         if c["generation_born"] != prev_gen:
@@ -335,8 +336,14 @@ def progress_chart_svg(store: Store, run_id: str,
             x = ml + pw * i / n
             s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
                      f'stroke="#ece9da" stroke-width="1" stroke-dasharray="1,4"/>')
-            s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
-                     f'fill="#9b998c">g{prev_gen}</text>')
+            if prev_gen in pivot_gens:
+                s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
+                         f'font-weight="700" fill="#2e6e63">g{prev_gen} &#10227;'
+                         f'<title>pivot generation: plateau broken up with '
+                         f'far-parent crossovers</title></text>')
+            else:
+                s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
+                         f'fill="#9b998c">g{prev_gen}</text>')
 
     # invalid strip (design fails)
     y_inv = mt - 12
