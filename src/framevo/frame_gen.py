@@ -1,11 +1,18 @@
 """Genome -> parametric plate-deck frame: watertight mesh, mass/CG, hard
 validity checks.
 
-The construction follows the TBS-Source-One-style open-source archetype that
-DroneAid-class 10-inch builds use: a deck of two plates separated by
-standoffs (the flight-controller stack lives in the gap), four plate arms
-attached at bottom-plate level with a motor pad at each tip, and the battery
-pack strapped ON TOP of the deck -- exposed to the airflow, not enclosed.
+The construction follows the TBS Source One V6 assembly (the DroneAid kit's
+frame archetype; baseline dimensions measured from the official 7in DC DXF in
+data/source_one/):
+
+  - bottom plate (2 mm class) with four flat plate arms whose ROOT TONGUES
+    rest on it inside the deck sandwich, clamped by the standoff bolts
+  - M3 standoffs to the top plate; the FC + 4-in-1 ESC stack sits in the gap
+  - battery pack strapped on TOP of the top plate; the wedge gene tilts it
+    about its front bottom edge (a real wedge mount -- it never sinks into
+    the plate)
+  - motor cans and prop disks are visual fixed components; the stack IS part
+    of the bluff body for drag, wiring is visual only
 
 Body axes: x forward, y left, z up, origin at the top surface of the bottom
 plate. Invalid genomes are still meshed when geometrically possible (their
@@ -24,8 +31,15 @@ from .genome import Genome
 from .meshutil import (extrude_convex_polygon, polygon_area, polygon_properties,
                        rounded_rect, superellipse_section, sweep_section, union)
 
-ROTOR_Z_ABOVE_TIP = 0.030  # 3115 motor stack between arm tip and rotor plane
-ARM_EMBED = 0.012          # arms plunge into the deck so the union is one solid
+ROTOR_Z_ABOVE_TIP = 0.030   # motor stack between arm tip and rotor plane
+# root tongue inside the deck sandwich: long enough for an M3 clamp-bolt
+# pair. (The real Source One uses ~22 mm interlocking notched tongues; we do
+# not model notches, so tongues are shorter and must not touch.)
+ARM_EMBED = 0.016
+ROOT_GAP_MIN = 0.004        # clearance between adjacent root tongues (bolts)
+STACK_SIZE = 0.0305         # FC / ESC board footprint
+STACK_BOARD_T = 0.004
+STACK_Z = (0.008, 0.016)    # board undersides above the bottom plate
 
 
 @dataclass
@@ -45,10 +59,10 @@ class FrameModel:
     failure_reason: str | None
     mesh: trimesh.Trimesh | None        # the FRAME only (deck + arms): the STL
     arms_mesh: trimesh.Trimesh | None
-    body_mesh: trimesh.Trimesh | None   # deck + battery: the bluff body (aero)
+    body_mesh: trimesh.Trimesh | None   # deck + battery + stack: bluff body (aero)
     # labeled visual parts for colored renders/viewers. Keys: deck, arms
-    # (evolved geometry); battery, motors, props (fixed platform). Motors and
-    # prop disks are visual only -- they never enter the drag rasterization.
+    # (evolved geometry); battery, stack, wiring, motors, props (fixed
+    # platform). Motors/props/wiring never enter the drag rasterization.
     parts: dict[str, trimesh.Trimesh | None]
     frame_mass: float
     total_mass: float
@@ -84,11 +98,12 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
     material = platform.material_for(g["material"])
     batt = platform.battery
     batt_l, batt_w, batt_h = batt.size_m
+    arm_h = g["arm_height"]
     failure: str | None = None
 
-    # -- hard constraint: the FC/ESC stack must fit between the plates
-    if gap < platform.fc_stack_height_m:
-        failure = "deck gap too small for flight-controller stack"
+    # -- hard constraint: FC/ESC stack and arm tongues must fit in the gap
+    if gap < platform.fc_stack_height_m or gap < arm_h + platform.fc_stack_height_m / 2:
+        failure = "deck gap too small for stack + arm tongues"
 
     # -- hard constraint: the top plate must carry the battery pack
     if failure is None and (bl < batt.support_frac * batt_l
@@ -100,20 +115,22 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
     if failure is None and (bl - 2 * fillet < flat or bw - 2 * fillet < flat):
         failure = "no flat area for flight-controller mount"
 
-    # -- arm layout: front pair at +-sweep from x, rear pair mirrored
+    # -- arm layout: front pair at +-sweep from x, rear pair mirrored.
+    # Root tongues rest ON the bottom plate (inside the sandwich).
     sweep = math.radians(g["arm_sweep_deg"])
     dihedral = math.radians(g["arm_dihedral_deg"])
     azimuths = [sweep, -sweep, math.pi - sweep, -(math.pi - sweep)]
     arm_len = g["arm_length"]
-    arm_z = -plate_t / 2.0  # arms live at bottom-plate level
+    arm_z = arm_h / 2.0
 
-    roots, tips, rotor_centers = [], [], []
+    roots, tips, attaches, rotor_centers = [], [], [], []
     for az in azimuths:
         d = np.array([math.cos(az), math.sin(az)])
         # ray-rectangle intersection for the attach point on the deck outline
         tx = (bl / 2.0) / abs(d[0]) if abs(d[0]) > 1e-9 else math.inf
         ty = (bw / 2.0) / abs(d[1]) if abs(d[1]) > 1e-9 else math.inf
         attach = d * min(tx, ty)
+        attaches.append(attach)
         root = np.array([*(attach - d * ARM_EMBED), arm_z])
         direction = np.array([d[0] * math.cos(dihedral), d[1] * math.cos(dihedral),
                               math.sin(dihedral)])
@@ -123,6 +140,21 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
         rotor_centers.append(tip + np.array([0.0, 0.0,
                                              platform.motor_pad_height_m + ROTOR_Z_ABOVE_TIP]))
     rotor_centers_arr = np.array(rotor_centers)
+
+    # -- hard constraint: root tongues must not collide inside the sandwich
+    # (each needs clamp-bolt room; unlike the real Source One we do not model
+    # interlocking notches, so tongues may not cross at the center either)
+    if failure is None:
+        min_gap = g["arm_width"] + ROOT_GAP_MIN
+        root_ends = [a - (a / np.linalg.norm(a)) * ARM_EMBED for a in attaches]
+        for i in range(4):
+            for j in range(i + 1, 4):
+                if np.linalg.norm(attaches[i] - attaches[j]) < min_gap \
+                        or np.linalg.norm(root_ends[i] - root_ends[j]) < min_gap:
+                    failure = "arm root tongues overlap in the deck"
+                    break
+            if failure:
+                break
 
     # -- hard constraint: rotor-rotor separation
     prop_d = platform.propulsion.prop_diameter_m
@@ -137,29 +169,34 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
             if failure:
                 break
 
-    # -- hard constraint: rotor tip clearance from deck AND battery (plan
-    # view, conservative: ignores any z offset from dihedral)
-    foot_l, foot_w = max(bl, batt_l), max(bw, batt_w)
+    # -- hard constraint: rotor tip clearance from deck AND battery, each
+    # checked against its own footprint (plan view; conservative about the
+    # z offset from dihedral)
     if failure is None:
+        need = prop_d / 2.0 + clear
         for rc in rotor_centers:
-            if _dist_outside_rounded_rect(rc[:2], foot_l, foot_w, fillet) \
-                    < prop_d / 2.0 + clear:
-                failure = "rotor too close to deck/battery"
+            if _dist_outside_rounded_rect(rc[:2], bl, bw, fillet) < need:
+                failure = "rotor too close to deck"
+                break
+            if _dist_outside_rounded_rect(rc[:2], batt_l, batt_w, 0.0) < need:
+                failure = "rotor too close to battery"
                 break
 
     # -- arm section properties (solid print/plate material)
-    section = superellipse_section(g["arm_width"], g["arm_height"], g["section_blend"])
+    section = superellipse_section(g["arm_width"], arm_h, g["section_blend"])
     area, _, i_bend = polygon_properties(section)
     area = abs(area)
     taper = g["arm_taper"]
     rho = material.density_kg_m3
-    # linear scale 1 -> taper: volume = A_root * L * (1 + t + t^2)/3
-    arm_volume = area * arm_len * (1.0 + taper + taper * taper) / 3.0
+    # linear scale 1 -> taper: volume = A_root * L * (1 + t + t^2)/3,
+    # plus the constant-section root tongue inside the sandwich
+    arm_volume = area * arm_len * (1.0 + taper + taper * taper) / 3.0 \
+        + area * ARM_EMBED
     pad_volume = math.pi * platform.motor_pad_radius_m ** 2 * platform.motor_pad_height_m
     arm_mass = (arm_volume + pad_volume) * rho
     arm_props = ArmProperties(
         length=arm_len, root_area=area, root_i_bend=abs(i_bend),
-        root_height=g["arm_height"], mass=arm_mass,
+        root_height=arm_h, mass=arm_mass,
         planform_width_mean=g["arm_width"] * (1.0 + taper) / 2.0,
     )
 
@@ -187,7 +224,8 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
     # -- mesh (also for invalid genomes: their STLs are archived)
     mesh = arms_mesh = body_mesh = None
     parts: dict[str, trimesh.Trimesh | None] = {
-        "deck": None, "arms": None, "battery": None, "motors": None, "props": None}
+        "deck": None, "arms": None, "battery": None, "stack": None,
+        "wiring": None, "motors": None, "props": None}
     if want_mesh:
         try:
             deck_solids = []
@@ -203,16 +241,34 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                 deck_solids.append(s)
             deck_mesh = union(deck_solids)
 
+            # battery wedge: hinged at its FRONT bottom edge so the rear
+            # lifts -- the pack never sinks through the plate
             battery_box = trimesh.creation.box((batt_l, batt_w, batt_h))
-            # body_pitch = battery wedge: the pack tilts nose-down on the top
-            # plate (hinged at its bottom center), presenting less frontal
-            # area when the quad leans into forward flight
             pitch = math.radians(g["body_pitch_deg"])
             if pitch > 1e-9:
                 rot = trimesh.transformations.rotation_matrix(
-                    -pitch, [0, 1, 0], [0, 0, -batt_h / 2.0])
+                    pitch, [0, 1, 0], [batt_l / 2.0, 0.0, -batt_h / 2.0])
                 battery_box.apply_transform(rot)
             battery_box.apply_translation([0.0, 0.0, batt_z])
+
+            # FC + 4-in-1 ESC boards inside the deck gap (a real bluff body
+            # between the plates -> included in the drag mesh)
+            stack_solids = []
+            for z0 in STACK_Z:
+                board = trimesh.creation.box((STACK_SIZE, STACK_SIZE, STACK_BOARD_T))
+                board.apply_translation([0.0, 0.0, z0 + STACK_BOARD_T / 2.0])
+                stack_solids.append(board)
+            stack_mesh = union(stack_solids)
+
+            # wiring (visual only): XT60 block on the top plate rear + cable
+            xt60 = trimesh.creation.box((0.016, 0.009, 0.009))
+            xt60.apply_translation([-bl / 2.0 + 0.010, 0.0,
+                                    gap + plate_t + 0.0045])
+            cable = trimesh.creation.cylinder(
+                radius=0.002,
+                segment=[[-0.005, 0.0, STACK_Z[1]],
+                         [-bl / 2.0 - 0.006, 0.0, gap + plate_t + 0.004]])
+            wiring_mesh = union([xt60, cable])
 
             arm_solids = []
             for root, tip in zip(roots, tips):
@@ -241,11 +297,12 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                 prop_solids.append(disk)
 
             parts = {"deck": deck_mesh, "arms": arms_mesh,
-                     "battery": battery_box,
+                     "battery": battery_box, "stack": stack_mesh,
+                     "wiring": wiring_mesh,
                      "motors": union(motor_solids),
                      "props": union(prop_solids)}
-            body_mesh = union([deck_mesh, battery_box])  # bluff body for aero
-            mesh = union([deck_mesh, arms_mesh])         # the frame: the STL
+            body_mesh = union([deck_mesh, battery_box, stack_mesh])  # aero
+            mesh = union([deck_mesh, arms_mesh])                     # the STL
             if failure is None and not mesh.is_watertight:
                 failure = "mesh not watertight"
         except Exception:
@@ -260,3 +317,33 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                       rotor_centers=rotor_centers_arr, arm=arm_props,
                       material=material,
                       top_area_footprint=max(plate_area, batt_l * batt_w))
+
+
+def export_printable_parts(genome: Genome, platform: Platform,
+                           out_dir) -> list[str]:
+    """The individual frame pieces, each flat in print/cut orientation:
+    bottom_plate.stl, top_plate.stl, arm.stl (x4 identical). Units: meters.
+    Bolt holes are not modeled (see README limitations)."""
+    from pathlib import Path
+
+    g = genome.as_dict()
+    plate_t = platform.plate_base_m * g["thickness_scale"]
+    poly = rounded_rect(g["body_length"], g["body_width"], g["body_fillet"])
+    section = superellipse_section(g["arm_width"], g["arm_height"],
+                                   g["section_blend"])
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    written = []
+    for name, solid in (
+        ("bottom_plate", extrude_convex_polygon(poly, 0.0, plate_t)),
+        ("top_plate", extrude_convex_polygon(poly, 0.0, plate_t)),
+        ("arm", sweep_section(section,
+                              np.array([0.0, 0.0, g["arm_height"] / 2.0]),
+                              np.array([g["arm_length"] + ARM_EMBED, 0.0,
+                                        g["arm_height"] / 2.0]),
+                              g["arm_taper"])),
+    ):
+        p = out / f"{name}.stl"
+        solid.export(p)
+        written.append(str(p))
+    return written

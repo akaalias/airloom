@@ -35,13 +35,18 @@ LOWER = np.array([lo for _, lo, _ in GENOME_SPEC])
 UPPER = np.array([hi for _, _, hi in GENOME_SPEC])
 RANGE = UPPER - LOWER
 
-# A conventional 7-inch-class X deck (Source-One-like proportions, carbon
-# plates, ~0.35 m wheelbase); also the seed of generation 0.
+# Generation-0 seed, MEASURED from the official TBS Source One V6 7in DC
+# plate drawing (data/source_one/So1-V6-7inDC-2025-JUL-07.dxf, GPLv3):
+# bottom plate 106.6 x 48.5 x 2 mm, arms 160.7 mm long x 6 mm thick with a
+# ~22 mm root tongue and ~13-17 mm shaft, M3x30 standoffs, carbon plate.
+# arm_length here is attach-point -> rotor axis (tongue and motor-end flare
+# are inside the deck / under the motor pad), giving a ~0.32 m wheelbase.
+# Symmetric X approximates the DeadCat sweep.
 BASELINE = {
-    "arm_length": 0.135, "arm_width": 0.014, "arm_height": 0.0055,
+    "arm_length": 0.126, "arm_width": 0.018, "arm_height": 0.006,
     "arm_sweep_deg": 45.0, "arm_dihedral_deg": 0.0, "section_blend": 0.25,
-    "arm_taper": 0.85, "body_length": 0.150, "body_width": 0.048,
-    "body_height": 0.026, "body_fillet": 0.005, "body_pitch_deg": 2.0,
+    "arm_taper": 0.75, "body_length": 0.107, "body_width": 0.0485,
+    "body_height": 0.030, "body_fillet": 0.005, "body_pitch_deg": 2.0,
     "thickness_scale": 1.0, "material": 0.05,  # cf_plate
 }
 

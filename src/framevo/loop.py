@@ -288,7 +288,8 @@ class EvolutionLoop:
         glossary = self.cfg.root / "docs" / "glossary.html"
         if glossary.exists():  # keep the gallery's glossary link file://-local
             shutil.copyfile(glossary, self.results / "glossary.html")
-        gallery_mod.write_gallery(self.store, self.run_id, self.results)
+        gallery_mod.write_gallery(self.store, self.run_id, self.results,
+                                  self.cfg.aggregation.target_whkm)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
         gallery_mod.write_convergence(self.store, self.run_id, self.results)
@@ -307,3 +308,8 @@ class EvolutionLoop:
         src = Path(best["stl_path"])
         if src.exists():
             shutil.copyfile(src, self.results / f"gen_{gen:04d}_best.stl")
+        # the champion as individual printable/cuttable pieces
+        from .frame_gen import export_printable_parts
+        genome = Genome.from_dict(json.loads(best["genome_json"]))
+        export_printable_parts(genome, self.cfg.platform,
+                               self.results / f"gen_{gen:04d}_best_parts")

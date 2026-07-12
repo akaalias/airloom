@@ -47,7 +47,9 @@ Worker count auto-scales to the core count.
   per generation sorted by fitness, then **detail blocks with an interactive
   3D model at half width** (vanilla-canvas viewer fed by embedded mesh data:
   drag to rotate, scroll to zoom, double-click to reset) beside the metrics
-  and the parents' thumbnails.
+  and the parents' thumbnails. Parts are colored by role: rust arms and
+  near-black deck plates are the **evolved** geometry; the blue Li-Ion pack,
+  gray motor cans and pale translucent prop disks are the **fixed** kit.
 - `leaderboard.md` — top 10 with all metrics and per-scenario columns.
 - `lineage.html` (+ raw `lineage.svg`, `lineage.dot`) — a dedicated family
   tree page: nodes shaded by fitness (dark = better), hollow nodes = invalid,
@@ -64,14 +66,16 @@ Worker count auto-scales to the core count.
 
 ## The fixed platform (never evolved)
 
-Modeled on the most popular open-source plate-frame archetype — the
-[TBS Source One](https://github.com/tbs-trappy/source_one) family (GPLv3:
-2 mm deck plates, M3 standoffs, sandwiched plate arms) — scaled to the
-**10-inch long-range class that DroneAid Collective (drone-aid.de) chapters
-build in their workshops**: 3115-size 900KV motors, APC 10×5 props (UIUC
-measured data), 6S Li-Ion 8 Ah pack (950 g, strapped on top of the deck),
-30.5 mm Betaflight stack between the plates, GPS/wiring/legs allowance.
-Fixed non-frame mass: 1.37 kg.
+Matched to the **official DroneAid Collective (drone-aid.de) workshop kit**,
+a 7-inch long-range build in the most popular open-source plate-frame
+archetype — the [TBS Source One](https://github.com/tbs-trappy/source_one)
+family (GPLv3: 2 mm deck plates, M3 standoffs, sandwiched plate arms).
+Kit components as modeled: 4× 2806-class ~1300KV motors with 7×4-class
+3-blade props (ground truth: UIUC Master Airscrew GF 7×4 measurements),
+a self-built 6S1P 21700 Li-Ion pack (4.2 Ah, 470 g, strapped on top of the
+deck), 30.5 mm Betaflight FC + 4-in-1 ESC stack between the plates, micro
+FPV camera, VTX + antenna, ELRS receiver. Fixed non-frame mass: 0.78 kg;
+baseline AUW ≈ 1.0 kg.
 
 ## The genome (14 continuous genes)
 
@@ -108,7 +112,7 @@ candidates a finite penalized fitness without flying the other five.
 
 | piece | model | source / check |
 |---|---|---|
-| rotor | CT(J), CP(J) interpolated from measured tables; `T = ρn²D⁴CT`, `P = ρn³D⁵CP / 0.85` (motor+ESC) | UIUC Propeller DB, APC Thin Electric 10×5 (static + 3 RPM sweeps), cached in `data/uiuc/`; unit-tested against tabulated points |
+| rotor | CT(J), CP(J) interpolated from measured tables; `T = ρn²D⁴CT`, `P = ρn³D⁵CP / 0.85` (motor+ESC) | UIUC Propeller DB, Master Airscrew GF 7×4 (static + 4 RPM sweeps), cached in `data/uiuc/`; unit-tested against tabulated points |
 | frame drag | component buildup: projected areas from rasterizing the STL along the flow at 0–60° tilt; Cd per class (arm 1.9→1.1→0.6 by section blend, body 1.05); rotor-wash download on arm planform under the disks | classic flat-plate/cylinder/fairing Cd values |
 | turbulence | Dryden, MIL-F-8785C low-altitude forms, spectral synthesis, fixed seeds | variance unit-tested against σ² spec |
 | rain | (a) water-film added mass ∝ top area, (b) momentum drag via equivalent suspended-water density + vertical impact force, (c) 15 % thrust-coefficient penalty | empirical knobs, see NASA TP-2671 (Dunham et al.) heavy-rain research; all in config |
@@ -117,9 +121,9 @@ candidates a finite penalized fitness without flying the other five.
 
 Sanity anchors (unit-tested): the original spec anchor — a 5-inch quad at
 1.1 kg AUW hovers at ~195 W (180–280 W band), checked against the cached
-GWS 5×4.3 dataset — plus the shipped platform: the baseline 10-inch deck
-(~0.45 m wheelbase, ~1.6 kg AUW) hovers in a plausible 120–280 W band on
-the APC 10×5 data.
+GWS 5×4.3 dataset — plus the shipped platform: the baseline 7-inch deck
+(~0.34 m wheelbase, ~1.0 kg AUW) hovers in a plausible 90–230 W band on
+the MA GF 7×4 data.
 
 ## Known limitations (please read before trusting numbers)
 
@@ -136,8 +140,9 @@ the APC 10×5 data.
   gusts appears as thrust modulation, not motor differential torques. Gust
   series are synthesized at the commanded cruise speed rather than the
   instantaneous airspeed.
-- **UIUC data was measured at 2.5k–6.7k RPM**; hover sits near 5.8k RPM
-  (good), but transients reach higher. CT/CP are treated as Re-independent.
+- **UIUC data was measured at 2.5k–7k RPM and on a 2-blade prop**; the kit
+  flies 3-blade 7×4s and hovers near 9k RPM. CT/CP are treated as
+  Re-independent and blade-count effects are absorbed into the tables.
 - **Print-material properties are XY/datasheet values.** FDM parts are
   weaker across layer lines (often 40–60 % in Z); the 1.5 safety factor is
   the only allowance for anisotropy, print quality, or temperature.

@@ -19,6 +19,13 @@ mission:
 aggregation:
   mode: mean_plus_worst          # or: minimax
   lambda_worst: 0.5
+  # Class benchmark drawn as the target line in the gallery chart.
+  # Derivation: current 7-inch long-range practice reaches ~8 g/W at cruise
+  # (2806-class motor + 7x4 prop); at this mission's 12 m/s and ~1.0 kg AUW
+  # that is ~125 W = ~2.9 Wh/km calm, ~2.6 for a state-of-the-art frame.
+  # Our aggregate (mean of 6 adverse scenarios + 0.5 x worst) runs ~2.0x the
+  # calm figure -> ~5.0 Wh/km aggregate.
+  target_aggregate_whkm: 5.0
 
 early_reject:
   # optional cheap screen: fly calm_warm first; candidates worse than the

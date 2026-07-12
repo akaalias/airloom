@@ -44,7 +44,9 @@ def test_soft_print_material_fails_where_carbon_passes(cfg):
 def test_stiff_print_material_is_usable(cfg):
     """Carbon-fiber nylon should carry a reasonably sized printed arm."""
     g = Genome.baseline().as_dict()
-    g.update(arm_width=0.026, arm_height=0.011, material=0.2)  # pa12_cf
+    # fat printed arms need a wider deck for their root tongues
+    g.update(arm_width=0.026, arm_height=0.011, material=0.2,  # pa12_cf
+             body_length=0.130, body_width=0.062)
     frame = build_frame(Genome.from_dict(g), cfg.platform)
     assert frame.valid
     res = check_structure(frame.arm, 8.0, 150.0, cfg.platform, frame.material)

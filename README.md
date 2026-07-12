@@ -29,8 +29,8 @@ Worker count auto-scales to the core count.
   improvements, invalid candidates as rust ×, generation ticks — so you can
   see what moved the needle and where the search plateaued. Below: one row
   per generation sorted by fitness, then **detail blocks with an interactive
-  3D model at half width** (vanilla-canvas viewer fed by embedded mesh data:
-  drag to rotate, scroll to zoom, double-click to reset) beside the metrics
+  3D model at half width** (a small depth-buffered WebGL viewer fed by
+  embedded mesh data: drag to rotate, scroll to zoom, double-click to reset) beside the metrics
   and the parents' thumbnails. Parts are colored by role: rust arms and
   near-black deck plates are the **evolved** geometry; the blue Li-Ion pack,
   gray motor cans and pale translucent prop disks are the **fixed** kit.
@@ -41,7 +41,8 @@ Worker count auto-scales to the core count.
 - `convergence.png` — fitness vs. generation.
 - `frames/gen_XXXX/<hash>.stl` + `.png` — **every** candidate, including
   invalid ones (`_INVALID` suffix; the failures are instructive).
-- `gen_XXXX_best.stl` — the generation's champion.
+- `gen_XXXX_best.stl` — the generation's champion (fused), plus
+  `gen_XXXX_best_parts/` — the same frame as separate flat, printable pieces.
 - `run.db` — SQLite: genomes, lineage (self-referencing, `WITH RECURSIVE`
   ancestry), per-scenario metrics, populations, config snapshot, git hash.
 - `glossary.html` (copied from `docs/glossary.html`, linked from the gallery)
@@ -60,6 +61,18 @@ a self-built 6S1P 21700 Li-Ion pack (4.2 Ah, 470 g, strapped on top of the
 deck), 30.5 mm Betaflight FC + 4-in-1 ESC stack between the plates, micro
 FPV camera, VTX + antenna, ELRS receiver. Fixed non-frame mass: 0.78 kg;
 baseline AUW ≈ 1.0 kg.
+
+The generation-0 baseline genome is **measured from the official Source One
+V6 7in DC plate drawing** (cached with provenance notes in
+`data/source_one/`): 106.6×48.5 mm bottom plate, 2 mm plates, 6 mm arms,
+M3×30 standoffs, ~160 mm arms. Assembly is modeled the way the real frame
+bolts together: arm root tongues rest on the bottom plate inside the
+sandwich (tongues may not collide — hard constraint), the FC/ESC boards sit
+in the gap (and count as a bluff body for drag), the battery wedge hinges on
+its front bottom edge so it never sinks into the plate, and the XT60/lead
+are modeled visually. The best candidate of each generation is also exported
+as individual print/cut-ready pieces in `gen_XXXX_best_parts/`
+(bottom_plate, top_plate, arm ×4).
 
 ## The genome (14 continuous genes)
 
@@ -132,6 +145,10 @@ the MA GF 7×4 data.
   the only allowance for anisotropy, print quality, or temperature.
 - Structural model checks the arms only (root stress, tip deflection,
   resonance); the deck is assumed rigid and the standoffs ideal.
+- **Printability is enforced by geometry constraints, not full DFM.** Parts
+  are flat plates with non-colliding bolt-clamped tongues and exported as
+  separate pieces, but bolt holes, interlock notches, tolerances and
+  print-orientation strength are not modeled.
 - CMA-ES mode (`--optimizer cmaes`) has no discrete parents — it samples from
   an adapted Gaussian — so the family tree is skipped and distribution-level
   provenance (mean, σ per generation) is stored in `cma_state` instead.

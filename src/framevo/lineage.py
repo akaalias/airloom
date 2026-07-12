@@ -9,7 +9,9 @@ connected by vertical edges. Parent edges are colored by operator.
 from __future__ import annotations
 
 import html
+import json
 import math
+import re
 from pathlib import Path
 
 from .dbstore import Store
@@ -94,29 +96,95 @@ def write_dot(store: Store, run_id: str, results_dir: Path) -> Path:
     return out
 
 
+def _rel(results_dir: Path, p: str | None) -> str:
+    if not p:
+        return ""
+    try:
+        return str(Path(p).relative_to(results_dir))
+    except ValueError:
+        return p
+
+
 def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
     """A dedicated Tufte-styled page for the family tree, linked from the
-    gallery. Embeds lineage.svg inline so tooltips keep working."""
+    gallery. Embeds lineage.svg inline plus per-candidate metadata so that
+    hovering a node shows a small candidate card and lights up the full
+    ancestor lineage (nodes and edges) of that candidate."""
     svg_path = results_dir / "lineage.svg"
     svg = svg_path.read_text() if svg_path.exists() else "<p>no tree yet</p>"
     # drop the paper-colored background rect: the page supplies the paper
     svg = svg.replace('<rect width="100%" height="100%" fill="#fffff8"/>', "", 1)
+    # drop native <title> tooltips: the hover card replaces them here
+    # (they stay in the standalone lineage.svg)
+    svg = re.sub(r"<title>.*?</title>", "", svg, flags=re.S)
+
+    # per-candidate metadata for the hover card + ancestor walk
+    meta: dict[str, dict] = {}
+    for r in store.candidates_for_run(run_id):
+        fit = store.fitness_of(r)
+        meta[r["hash"]] = {
+            "a": r["parent_a"], "b": r["parent_b"],
+            "g": r["generation_born"], "op": r["operator"],
+            "fit": round(fit, 3) if math.isfinite(fit) else None,
+            "mean": round(r["mean_whkm"], 3) if r["mean_whkm"] is not None else None,
+            "worst": round(r["worst_whkm"], 3) if r["worst_whkm"] is not None else None,
+            "png": _rel(results_dir, r["png_path"]),
+            "mat": r["material"],
+            "mass": round(r["frame_mass"] * 1e3, 1) if r["frame_mass"] else None,
+            "mut": round(r["mutation_mag"], 3) if r["mutation_mag"] else None,
+            "fail": r["failure_reason"],
+            "sc": [{"n": s["scenario"], "ok": bool(s["valid"]),
+                    "w": round(s["wh_per_km"], 3) if s["wh_per_km"] is not None else None,
+                    "p": round(s["avg_power_w"], 1) if s["avg_power_w"] is not None else None,
+                    "t": round(s["max_tilt_deg"], 1) if s["max_tilt_deg"] is not None else None}
+                   for s in store.scenario_results_for(run_id, r["hash"])],
+        }
+
     page = f"""<style>
 :root{{--paper:#fffff8;--ink:#111111;--muted:#6b6a60;--faint:#9b998c;
-  --rule:#d9d5c3;--accent:#8c2f1f;
-  --serif:"Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif}}
+  --rule:#d9d5c3;--rule-soft:#ece9da;--accent:#8c2f1f;
+  --serif:"Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace}}
 *{{box-sizing:border-box}}
 html{{background:var(--paper)}}
 body{{margin:0;background:var(--paper);color:var(--ink);
   font:17px/1.55 var(--serif);font-feature-settings:"onum" 1,"liga" 1;
   -webkit-font-smoothing:antialiased}}
 .wrap{{max-width:92vw;margin:0 auto;padding:40px 0 96px}}
-h1{{font-weight:400;font-size:34px;letter-spacing:-.01em;margin:0 0 6px}}
-h1 code{{font:400 26px ui-monospace,Menlo,monospace;color:var(--muted)}}
-.sub{{font-size:15px;color:var(--muted);margin:0 0 22px}}
+h1{{font-weight:400;font-size:34px;letter-spacing:-.01em;margin:0 0 6px;text-align:center}}
+h1 code{{font:400 26px var(--mono);color:var(--muted)}}
+.sub{{font-size:15px;color:var(--muted);margin:0 auto 22px;max-width:820px;text-align:center}}
 a{{color:var(--accent);text-decoration:none}}
 .tree{{border-top:1px solid var(--rule);padding-top:18px;overflow-x:auto}}
-.note{{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px}}
+.tree svg{{display:block;margin:0 auto}}
+.note{{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}}
+/* hover interactivity: dim everything outside the hovered ancestry */
+.nd,.ed,.el{{transition:opacity .12s ease}}
+.hit{{cursor:pointer}}
+svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit){{opacity:.12}}
+svg.focus .ed.lit{{stroke-width:2;opacity:1}}
+svg.focus .el.lit{{stroke-width:2;opacity:1}}
+svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
+/* the candidate card (matches the gallery detail block) */
+.ncard{{position:absolute;z-index:10;width:340px;background:var(--paper);
+  border:1px solid var(--ink);padding:14px 16px 14px;pointer-events:none;
+  box-shadow:6px 6px 0 rgba(17,17,17,.07);display:none}}
+.ncard img{{width:100%;aspect-ratio:4/3;object-fit:contain;display:block;
+  mix-blend-mode:multiply}}
+.ncard .hash{{font:13px var(--mono);color:var(--faint);margin-top:7px;word-break:break-all}}
+.ncard .head{{font-size:14.5px;line-height:1.5;margin-top:3px;
+  font-variant-numeric:lining-nums tabular-nums}}
+.ncard .head b{{font-size:18px}}
+.ncard .fail{{color:var(--accent);font-size:13.5px;font-style:italic;line-height:1.4;margin-top:3px}}
+.ncard table{{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:9px;
+  font-variant-numeric:lining-nums tabular-nums}}
+.ncard th{{text-align:left;font:600 10px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  border-bottom:1.5px solid var(--ink);padding:2px 10px 3px 0;white-space:nowrap}}
+.ncard td{{padding:2.5px 10px 2.5px 0;border-bottom:1px solid var(--rule-soft);
+  color:var(--ink)}}
+.ncard td:first-child{{color:var(--muted)}}
+.ncard .anc{{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}}
 </style>
 <meta charset="utf-8">
 <meta http-equiv="refresh" content="30">
@@ -126,14 +194,97 @@ a{{color:var(--accent);text-decoration:none}}
 <p class="sub">one row per generation, candidates ordered best&#8594;worst.
 Filled nodes are births, shaded dark&thinsp;=&thinsp;better fitness; hollow
 nodes are invalid; small nodes on dotted verticals are elite carry-overs.
-Edge colors name the operator. Hover any node for details.
-&middot; <a href="gallery.html">back to the gallery</a></p>
+Edge colors name the operator. Hover any node to see the candidate and its
+full ancestry. &middot; <a href="gallery.html">back to the gallery</a></p>
 <div class="tree">{svg}</div>
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
 (<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
 <code style="font-size:13px">framevo lineage &lt;hash&gt;</code>.</p>
-</div>"""
+</div>
+<script type="application/json" id="cand-meta">{json.dumps(meta)}</script>
+<script>
+(function(){{
+"use strict";
+var META=JSON.parse(document.getElementById("cand-meta").textContent);
+var svg=document.querySelector(".tree svg");
+if(!svg)return;
+var card=document.createElement("div");
+card.className="ncard";
+document.body.appendChild(card);
+function esc(s){{var d=document.createElement("i");d.textContent=s==null?"":s;
+  return d.innerHTML}}
+function ancestors(h){{ // hovered candidate + every ancestor, via parent walk
+  var seen={{}};seen[h]=1;var q=[h];
+  while(q.length){{
+    var c=META[q.pop()];
+    if(!c)continue;
+    [c.a,c.b].forEach(function(p){{if(p&&!seen[p]){{seen[p]=1;q.push(p)}}}});
+  }}
+  return seen;
+}}
+function show(h,hit){{
+  var c=META[h];
+  var set=ancestors(h);
+  svg.classList.add("focus");
+  svg.querySelectorAll(".nd").forEach(function(n){{
+    n.classList.toggle("lit",!!set[n.dataset.h])}});
+  svg.querySelectorAll(".ed").forEach(function(e){{
+    e.classList.toggle("lit",!!set[e.dataset.c])}});
+  svg.querySelectorAll(".el").forEach(function(e){{
+    e.classList.toggle("lit",!!set[e.dataset.h])}});
+  if(!c){{card.style.display="none";return}}
+  var nAnc=Object.keys(set).length-1;
+  var head;
+  if(c.fit!=null){{ // same headline as the gallery detail block
+    head='<div class="head">agg <b>'+c.fit.toFixed(3)+"</b>"
+      +(c.mean!=null?" &middot; mean "+c.mean.toFixed(3):"")
+      +(c.worst!=null?" &middot; worst "+c.worst.toFixed(3):"")
+      +" Wh/km"
+      +(c.mass?" &middot; frame "+c.mass.toFixed(1)+"&thinsp;g":"")
+      +(c.mat?" &middot; "+esc(c.mat):"")
+      +" &middot; born g"+c.g+" via "+esc(c.op)
+      +(c.mut?" (mut "+c.mut+")":"")+"</div>";
+  }}else{{
+    head='<div class="head">born g'+c.g+" via "+esc(c.op)
+      +(c.mat?" &middot; "+esc(c.mat):"")+"</div>"
+      +'<div class="fail">'+esc(c.fail||"invalid")+"</div>";
+  }}
+  var table="";
+  if(c.sc&&c.sc.length){{
+    table='<table><tr><th>scenario</th><th>wh/km</th>'
+      +"<th>avg power, w</th><th>max tilt</th></tr>"
+      +c.sc.map(function(s){{
+        return "<tr><td>"+esc(s.n)+"</td>"
+          +"<td>"+(s.ok&&s.w!=null?s.w.toFixed(3):"fail")+"</td>"
+          +"<td>"+(s.ok&&s.p!=null?s.p.toFixed(1):"&mdash;")+"</td>"
+          +"<td>"+(s.ok&&s.t!=null?s.t.toFixed(1)+"&deg;":"&mdash;")+"</td></tr>";
+      }}).join("")+"</table>";
+  }}
+  card.innerHTML=(c.png?'<img src="'+esc(c.png)+'" alt="">':"")
+    +'<div class="hash">'+esc(h)+"</div>"
+    +head+table
+    +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
+      +" highlighted":"seed / immigrant &mdash; no ancestors")+"</div>";
+  card.style.display="block";
+  var r=hit.getBoundingClientRect(),cw=card.offsetWidth,ch=card.offsetHeight;
+  var x=r.right+12+window.scrollX,y=r.top+window.scrollY-10;
+  if(r.right+12+cw>document.documentElement.clientWidth)
+    x=r.left-12-cw+window.scrollX;   // flip to the left near the right edge
+  y=Math.max(window.scrollY+6,
+    Math.min(y,window.scrollY+window.innerHeight-ch-6));
+  card.style.left=x+"px";card.style.top=y+"px";
+}}
+function clear(){{
+  svg.classList.remove("focus");
+  card.style.display="none";
+}}
+svg.querySelectorAll(".hit").forEach(function(hit){{
+  hit.addEventListener("mouseenter",function(){{show(hit.dataset.h,hit)}});
+  hit.addEventListener("mouseleave",clear);
+}});
+}})();
+</script>"""
     out = results_dir / "lineage.html"
     out.write_text(page)
     return out
@@ -173,7 +324,8 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
            f' height="{height}" font-family="Helvetica,Arial,sans-serif">',
            '<rect width="100%" height="100%" fill="#fffff8"/>']
 
-    # edges first
+    # edges first (classed + tagged with hashes so the html page can
+    # highlight a hovered candidate's ancestry)
     for g in gens:
         for row in pop_rows[g]:
             h = row["hash"]
@@ -190,14 +342,16 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                     else:
                         continue
                     col = OPERATOR_COLORS.get(cand["operator"], "#888")
-                    svg.append(f'<path d="M{px:.0f},{py + r_node:.0f}'
+                    svg.append(f'<path class="ed" data-c="{h}" data-p="{parent}"'
+                               f' d="M{px:.0f},{py + r_node:.0f}'
                                f' C{px:.0f},{(py + y1) / 2:.0f} {x1:.0f},'
                                f'{(py + y1) / 2:.0f} {x1:.0f},{y1 - r_node:.0f}"'
                                f' stroke="{col}" fill="none" stroke-width="1.1"'
                                f' opacity="0.75"/>')
             elif (g - 1, h) in pos:  # elite pass-through
                 px, py = pos[(g - 1, h)]
-                svg.append(f'<line x1="{px:.0f}" y1="{py + r_node:.0f}"'
+                svg.append(f'<line class="el" data-h="{h}"'
+                           f' x1="{px:.0f}" y1="{py + r_node:.0f}"'
                            f' x2="{x1:.0f}" y2="{y1 - r_node:.0f}"'
                            f' stroke="#999188" stroke-dasharray="3,3"'
                            f' stroke-width="1.2"/>')
@@ -222,9 +376,14 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                 f"{cand['operator'] if cand else ''} "
                 + (f"{fit:.3f}" if math.isfinite(fit)
                    else (cand["failure_reason"] or "invalid") if cand else ""))
-            svg.append(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{rr:.1f}"'
+            svg.append(f'<circle class="nd" data-h="{h}"'
+                       f' cx="{x:.0f}" cy="{y:.0f}" r="{rr:.1f}"'
                        f' fill="{fill}" stroke="{stroke}" stroke-width="1.2">'
                        f'<title>{title}</title></circle>')
+            # generous invisible hit target for hover on the html page
+            svg.append(f'<circle class="hit" data-h="{h}"'
+                       f' cx="{x:.0f}" cy="{y:.0f}" r="{max(rr + 5, 14):.1f}"'
+                       f' fill="transparent" stroke="none"/>')
         # generation label
     for gi, g in enumerate(gens):
         svg.append(f'<text x="{margin - 44}" y="{margin + gi * ystep + 4}"'

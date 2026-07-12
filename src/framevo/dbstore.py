@@ -129,14 +129,18 @@ class CandidateRow:
 class Store:
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
-        if path.exists():  # reset databases written by an older schema
+        if path.exists():  # archive databases written by an older schema --
+            # computed generations are never deleted, just set aside
             probe = sqlite3.connect(path)
             version = probe.execute("PRAGMA user_version").fetchone()[0]
             probe.close()
             if version != SCHEMA_VERSION:
-                print(f"[framevo] {path} has schema v{version}, "
-                      f"expected v{SCHEMA_VERSION} -- resetting it", flush=True)
-                path.unlink()
+                stamp = time.strftime("%Y%m%d_%H%M%S")
+                backup = path.with_name(f"{path.stem}_schema-v{version}_{stamp}.db.bak")
+                path.rename(backup)
+                print(f"[framevo] {path} has schema v{version}, expected "
+                      f"v{SCHEMA_VERSION} -- archived it as {backup.name}",
+                      flush=True)
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)

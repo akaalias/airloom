@@ -103,6 +103,16 @@ VIEWER_JS = r"""
 "use strict";
 function b64bytes(s){var b=atob(s),a=new Uint8Array(b.length);
   for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+var VS="attribute vec3 aP;attribute vec3 aN;attribute vec4 aC;"+
+  "uniform mat3 uR;uniform vec3 uT;uniform float uS;uniform vec2 uA;"+
+  "varying vec3 vN;varying vec4 vC;"+
+  "void main(){vec3 p=uR*(aP-uT);"+
+  "gl_Position=vec4(p.x*uS*uA.x,p.y*uS*uA.y,-p.z*0.25,1.0);"+
+  "vN=uR*aN;vC=aC;}";
+var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
+  "void main(){vec3 L=normalize(vec3(0.35,0.48,0.85));"+
+  "float d=abs(dot(normalize(vN),L));float s=0.45+0.55*d;"+
+  "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a);}";
 function initViewer(canvas){
   var blob=document.getElementById(canvas.dataset.mesh);
   if(!blob)return;
@@ -112,60 +122,77 @@ function initViewer(canvas){
                    :new Uint32Array(b64bytes(d.f).buffer);
   var cx=d.c[0],cy=d.c[1],cz=d.c[2],R=d.r||0.3;
   var nf=F.length/3;
-  // per-face palette index (part colors: evolved vs fixed) with fallback
   var FC=d.fc?new Uint8Array(b64bytes(d.fc)):new Uint8Array(nf);
   var PAL=d.p&&d.p.length?d.p:[[138,151,168,1]];
+  var gl=canvas.getContext("webgl",{antialias:true,alpha:false})
+       ||canvas.getContext("experimental-webgl");
+  if(!gl){ // ancient fallback: swap in the static PNG
+    var img=document.createElement("img");img.src=canvas.dataset.png||"";
+    canvas.parentNode.replaceChild(img,canvas);return}
+  // expand to flat (non-indexed) buffers: per-face normals + colors;
+  // translucent faces (prop disks) drawn in a second, depth-read-only pass
+  var opaque=[],trans=[];
+  for(var f=0;f<nf;f++)((PAL[FC[f]]||PAL[0])[3]<0.999?trans:opaque).push(f);
+  var list=opaque.concat(trans),nOpq=opaque.length;
+  var P=new Float32Array(nf*9),N=new Float32Array(nf*9),C=new Float32Array(nf*12);
+  for(var k=0;k<nf;k++){
+    var f2=list[k],a=F[3*f2],b=F[3*f2+1],c=F[3*f2+2];
+    var pc=PAL[FC[f2]]||PAL[0];
+    var e1x=V[3*b]-V[3*a],e1y=V[3*b+1]-V[3*a+1],e1z=V[3*b+2]-V[3*a+2];
+    var e2x=V[3*c]-V[3*a],e2y=V[3*c+1]-V[3*a+1],e2z=V[3*c+2]-V[3*a+2];
+    var nx=e1y*e2z-e1z*e2y,ny=e1z*e2x-e1x*e2z,nz=e1x*e2y-e1y*e2x;
+    var idx=[a,b,c];
+    for(var v=0;v<3;v++){
+      var o=9*k+3*v,vi=idx[v];
+      P[o]=V[3*vi];P[o+1]=V[3*vi+1];P[o+2]=V[3*vi+2];
+      N[o]=nx;N[o+1]=ny;N[o+2]=nz;
+      var co=12*k+4*v;
+      C[co]=pc[0]/255;C[co+1]=pc[1]/255;C[co+2]=pc[2]/255;C[co+3]=pc[3];
+    }
+  }
+  function shader(type,src){var s=gl.createShader(type);
+    gl.shaderSource(s,src);gl.compileShader(s);return s}
+  var prog=gl.createProgram();
+  gl.attachShader(prog,shader(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  function buf(data,attr,size){var b=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,b);
+    gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+    var loc=gl.getAttribLocation(prog,attr);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0)}
+  buf(P,"aP",3);buf(N,"aN",3);buf(C,"aC",4);
+  var uR=gl.getUniformLocation(prog,"uR"),uT=gl.getUniformLocation(prog,"uT"),
+      uS=gl.getUniformLocation(prog,"uS"),uA=gl.getUniformLocation(prog,"uA");
+  gl.uniform3f(uT,cx,cy,cz);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(1.0,1.0,0.973,1.0);
   var yaw=-0.9,pitch=0.42,zoom=1.0;
   var dpr=window.devicePixelRatio||1;
-  var order=new Array(nf),depth=new Float32Array(nf);
   function draw(){
     var w=canvas.clientWidth,h=canvas.clientHeight;
-    if(canvas.width!==w*dpr){canvas.width=w*dpr;canvas.height=h*dpr}
-    var g=canvas.getContext("2d");
-    g.setTransform(dpr,0,0,dpr,0,0);
-    g.fillStyle="#fffff8";g.fillRect(0,0,w,h);
-    var cyaw=Math.cos(yaw),syaw=Math.sin(yaw),
-        cpi=Math.cos(pitch),spi=Math.sin(pitch);
-    // rows of the view matrix (yaw about z-up, then pitch)
-    var r0x=cyaw,r0y=syaw,r0z=0,
-        r1x=-syaw*spi,r1y=cyaw*spi,r1z=cpi,
-        r2x=syaw*cpi,r2y=-cyaw*cpi,r2z=spi;
-    var s=0.44*Math.min(w,h)/R*zoom,ox=w/2,oy=h/2;
-    var n=V.length/3,px=new Float32Array(n),py=new Float32Array(n),pz=new Float32Array(n);
-    for(var i=0;i<n;i++){
-      var x=V[3*i]-cx,y=V[3*i+1]-cy,z=V[3*i+2]-cz;
-      px[i]=ox+(r0x*x+r0y*y+r0z*z)*s;
-      py[i]=oy-(r1x*x+r1y*y+r1z*z)*s;
-      pz[i]=r2x*x+r2y*y+r2z*z;
-    }
-    for(var f=0;f<nf;f++){
-      order[f]=f;
-      depth[f]=pz[F[3*f]]+pz[F[3*f+1]]+pz[F[3*f+2]];
-    }
-    order.sort(function(a,b){return depth[a]-depth[b]});
-    var lx=0.35,ly=0.48,lz=0.80;
-    for(var k=0;k<nf;k++){
-      var f2=order[k],a=F[3*f2],b=F[3*f2+1],c=F[3*f2+2];
-      var ax=px[a],ay=py[a],bx=px[b],by=py[b],qx=px[c],qy=py[c];
-      // screen-space normal z decides facing; shade from 3D normal
-      var ux=bx-ax,uy=by-ay,vx=qx-ax,vy=qy-ay;
-      if(ux*vy-uy*vx<=0)continue;
-      var e1x=V[3*b]-V[3*a],e1y=V[3*b+1]-V[3*a+1],e1z=V[3*b+2]-V[3*a+2];
-      var e2x=V[3*c]-V[3*a],e2y=V[3*c+1]-V[3*a+1],e2z=V[3*c+2]-V[3*a+2];
-      var nx=e1y*e2z-e1z*e2y,ny=e1z*e2x-e1x*e2z,nz=e1x*e2y-e1y*e2x;
-      var nl=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
-      // rotate normal into view space for stable lighting
-      var vnx=(r0x*nx+r0y*ny+r0z*nz)/nl,
-          vny=(r1x*nx+r1y*ny+r1z*nz)/nl,
-          vnz=(r2x*nx+r2y*ny+r2z*nz)/nl;
-      var lambert=Math.abs(vnx*lx+vny*ly+vnz*lz);
-      var sh=0.55+0.45*lambert;
-      var pc=PAL[FC[f2]]||PAL[0];
-      var rr=Math.round(pc[0]*sh+26),gg=Math.round(pc[1]*sh+26),
-          bb2=Math.round(pc[2]*sh+26);
-      g.fillStyle="rgba("+rr+","+gg+","+bb2+","+pc[3]+")";
-      g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.lineTo(qx,qy);
-      g.closePath();g.fill();
+    if(canvas.width!==Math.round(w*dpr)){
+      canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+    gl.viewport(0,0,canvas.width,canvas.height);
+    var cy2=Math.cos(yaw),sy=Math.sin(yaw),
+        cp=Math.cos(pitch),sp=Math.sin(pitch);
+    // rows: x' = R0.v, y' = R1.v (up), z' = R2.v (toward viewer)
+    gl.uniformMatrix3fv(uR,false,[cy2,-sy*sp,sy*cp,
+                                  sy,cy2*sp,-cy2*cp,
+                                  0,cp,sp]);
+    var asp=w>h?[h/w,1]:[1,w/h];
+    gl.uniform2f(uA,asp[0],asp[1]);
+    gl.uniform1f(uS,0.85*zoom/R);
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.disable(gl.BLEND);gl.depthMask(true);
+    gl.drawArrays(gl.TRIANGLES,0,nOpq*3);
+    if(nf>nOpq){ // translucent prop disks: blend, do not write depth
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+      gl.depthMask(false);
+      gl.drawArrays(gl.TRIANGLES,nOpq*3,(nf-nOpq)*3);
+      gl.depthMask(true);
     }
   }
   var dragging=false,lastX=0,lastY=0;
@@ -242,7 +269,8 @@ def _mesh_blob_for(results_dir: Path, png_path: str | None) -> str | None:
 
 
 # --------------------------------------------------------------- the chart --
-def progress_chart_svg(store: Store, run_id: str) -> str:
+def progress_chart_svg(store: Store, run_id: str,
+                       target_whkm: float | None = None) -> str:
     """Every candidate in evaluation order: discarded dots, a best-so-far
     step line with labeled improvements, invalid marks in a top strip, and
     generation boundaries as faint ticks. Tufte: thin rules, ink data."""
@@ -259,6 +287,8 @@ def progress_chart_svg(store: Store, run_id: str) -> str:
     # squash the interesting region (clipped dots are drawn hollow at the top).
     hi = finite[min(len(finite) - 1, int(len(finite) * 0.95))]
     y_max = hi * 1.06
+    if target_whkm:
+        y_max = max(y_max, target_whkm * 1.2)
     if y_max <= 0:
         y_max = 1.0
 
@@ -350,6 +380,13 @@ def progress_chart_svg(store: Store, run_id: str) -> str:
         s.append(f'<path d="{" ".join(path)}" fill="none" stroke="#111111" '
                  f'stroke-width="1.8"/>')
     s.extend(labels)
+    if target_whkm:
+        yt = yat(target_whkm)
+        s.append(f'<line x1="{ml}" y1="{yt:.1f}" x2="{W - mr}" y2="{yt:.1f}" '
+                 f'stroke="#8c2f1f" stroke-width="1.2" stroke-dasharray="6,4"/>')
+        s.append(f'<text x="{ml + 8}" y="{yt - 6:.1f}" font-size="12.5" '
+                 f'font-style="italic" fill="#8c2f1f">{target_whkm:g} &#183; '
+                 f'class benchmark (7-inch long-range practice)</text>')
     s.append(f'<text x="{ml + pw / 2}" y="{H - 8}" text-anchor="middle" '
              f'font-size="13" font-style="italic" fill="#6b6a60">'
              f'candidate # (evaluation order) &mdash; lower is better</text>')
@@ -358,7 +395,8 @@ def progress_chart_svg(store: Store, run_id: str) -> str:
 
 
 # -------------------------------------------------------------- the gallery --
-def write_gallery(store: Store, run_id: str, results_dir: Path) -> Path:
+def write_gallery(store: Store, run_id: str, results_dir: Path,
+                  target_whkm: float | None = None) -> Path:
     cands = {r["hash"]: r for r in store.candidates_for_run(run_id)}
     gens = store.generations_with_population(run_id)
     scen_cache: dict[str, list] = {}
@@ -386,7 +424,18 @@ def write_gallery(store: Store, run_id: str, results_dir: Path) -> Path:
              '<span class="k"><span class="x">&#215;</span>invalid (design fail)</span>'
              '<span class="k num" style="color:#9b998c">aggregate Wh/km, lower is better</span>'
              "</div>",
-             f'<div class="chart-card">{progress_chart_svg(store, run_id)}</div>']
+             '<div class="legend" style="margin-top:6px">'
+             '<span class="k" style="color:#111;font-weight:700">evolved:</span>'
+             '<span class="k"><span class="dot" style="background:#8c2f1f"></span>arms</span>'
+             '<span class="k"><span class="dot" style="background:#34322e"></span>deck plates + standoffs</span>'
+             '<span class="k" style="color:#111;font-weight:700;margin-left:10px">fixed kit:</span>'
+             '<span class="k"><span class="dot" style="background:#4a6fa5"></span>battery</span>'
+             '<span class="k"><span class="dot" style="background:#5a7a52"></span>FC/ESC stack</span>'
+             '<span class="k"><span class="dot" style="background:#8a6a1e"></span>wiring/XT60</span>'
+             '<span class="k"><span class="dot" style="background:#55534c"></span>motors</span>'
+             '<span class="k"><span class="dot" style="background:#d8d5c8"></span>prop disks</span>'
+             "</div>",
+             f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm)}</div>']
 
     detail_ids: list[str] = []
     for g in reversed(gens):
@@ -429,18 +478,6 @@ def write_gallery(store: Store, run_id: str, results_dir: Path) -> Path:
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">drag a model to '
                  "rotate it, scroll to zoom, double-click to reset the view</p>")
-    parts.append(
-        '<div class="legend" style="margin:0 0 8px">'
-        '<span class="k"><span class="dot" style="background:#8c2f1f"></span>'
-        "arms (evolved)</span>"
-        '<span class="k"><span class="dot" style="background:#34322e"></span>'
-        "deck plates (evolved)</span>"
-        '<span class="k"><span class="dot" style="background:#4a6fa5"></span>'
-        "battery (fixed)</span>"
-        '<span class="k"><span class="dot" style="background:#55534c"></span>'
-        "motors (fixed)</span>"
-        '<span class="k"><span class="dot" style="background:#d8d5c8"></span>'
-        "prop disks (fixed)</span></div>")
     blobs: list[str] = []
     for h in detail_ids:
         c = cands[h]
@@ -449,7 +486,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path) -> Path:
         blob = _mesh_blob_for(results_dir, c["png_path"])
         if blob is not None:
             blobs.append(f'<script type="application/json" id="m-{h}">{blob}</script>')
-            viewer = (f'<div class="viewer"><canvas data-mesh="m-{h}"></canvas>'
+            viewer = (f'<div class="viewer"><canvas data-mesh="m-{h}" '
+                      f'data-png="{img}"></canvas>'
                       f'<div class="hint">drag &middot; scroll &middot; '
                       f"double-click resets</div></div>")
         else:

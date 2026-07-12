@@ -59,7 +59,7 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     if glossary.exists():
         import shutil
         shutil.copyfile(glossary, results / "glossary.html")
-    gallery.write_gallery(store, run_id, results)
+    gallery.write_gallery(store, run_id, results, cfg.aggregation.target_whkm)
     gallery.write_leaderboard(store, run_id, results,
                               [s.name for s in cfg.scenarios])
     gallery.write_convergence(store, run_id, results)

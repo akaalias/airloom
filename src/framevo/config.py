@@ -149,6 +149,7 @@ class Scenario:
 class Aggregation:
     mode: str            # mean_plus_worst | minimax
     lambda_worst: float
+    target_whkm: float | None  # class benchmark shown in the gallery chart
 
 
 @dataclass(frozen=True)
@@ -292,7 +293,10 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         for name, sc in scen["scenarios"].items()
     )
     ag = scen["aggregation"]
-    aggregation = Aggregation(mode=str(ag["mode"]), lambda_worst=float(ag["lambda_worst"]))
+    aggregation = Aggregation(
+        mode=str(ag["mode"]), lambda_worst=float(ag["lambda_worst"]),
+        target_whkm=(float(ag["target_aggregate_whkm"])
+                     if ag.get("target_aggregate_whkm") else None))
     er = scen["early_reject"]
     early = EarlyReject(bool(er["enabled"]), float(er["margin"]), float(er["penalty_factor"]))
     rm = scen["rain_model"]
