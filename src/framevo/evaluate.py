@@ -26,6 +26,52 @@ from .simulator import ScenarioResult, simulate_scenario
 _CACHE: dict[str, tuple[Config, RotorModel]] = {}
 
 
+def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
+    """Compact viewer payload for the gallery's interactive 3D canvases:
+    base64 float32 vertices, uint16/32 face indices, and a per-face palette
+    index so evolved vs fixed parts stay distinguishable. file:// pages
+    cannot fetch local STLs (CORS), so the gallery inlines these blobs."""
+    import base64
+    import json
+
+    import numpy as np
+
+    from .render import DRAW_ORDER, PART_COLORS
+
+    verts_list, faces_list, fc_list, palette = [], [], [], []
+    offset = 0
+    for name in DRAW_ORDER:
+        mesh = parts.get(name)
+        if mesh is None:
+            continue
+        color, alpha = PART_COLORS.get(name, ("#8a97a8", 1.0))
+        pi = len(palette)
+        palette.append([int(color[1:3], 16), int(color[3:5], 16),
+                        int(color[5:7], 16), round(alpha, 2)])
+        v = np.asarray(mesh.vertices, dtype=np.float32)
+        f = np.asarray(mesh.faces, dtype=np.int64) + offset
+        verts_list.append(v)
+        faces_list.append(f)
+        fc_list.append(np.full(len(f), pi, dtype=np.uint8))
+        offset += len(v)
+    if not verts_list:
+        return
+    verts = np.vstack(verts_list)
+    faces = np.vstack(faces_list)
+    fc = np.concatenate(fc_list)
+    idx_dtype = np.uint16 if len(verts) < 65535 else np.uint32
+    blob = {
+        "v": base64.b64encode(verts.tobytes()).decode(),
+        "f": base64.b64encode(faces.astype(idx_dtype).tobytes()).decode(),
+        "i": "u16" if idx_dtype is np.uint16 else "u32",
+        "fc": base64.b64encode(fc.tobytes()).decode(),
+        "p": palette,
+        "c": [float(x) for x in verts.mean(axis=0)],
+        "r": float(np.linalg.norm(verts - verts.mean(axis=0), axis=1).max()),
+    }
+    path.write_text(json.dumps(blob))
+
+
 def _context(root: str) -> tuple[Config, RotorModel]:
     """Per-process config + rotor tables (loaded once, reused across tasks)."""
     if root not in _CACHE:
@@ -40,7 +86,7 @@ def build_task(root: str, genome_values: tuple[float, ...], generation: int,
     picklable summary; the mesh itself stays in the STL file."""
     from .frame_gen import build_frame
     from .aero import build_drag_table
-    from .render import render_placeholder, render_thumbnail
+    from .render import render_parts, render_placeholder
 
     cfg, rotor = _context(root)
     genome = Genome(genome_values)
@@ -52,9 +98,11 @@ def build_task(root: str, genome_values: tuple[float, ...], generation: int,
     stl_path = gen_dir / f"{genome.hash}{suffix}.stl"
     png_path = gen_dir / f"{genome.hash}.png"
 
+    mesh_json_path = gen_dir / f"{genome.hash}.mesh.json"
     if frame.mesh is not None:
         frame.mesh.export(stl_path)
-        render_thumbnail(frame.mesh, png_path, valid=frame.valid)
+        render_parts(frame.parts, png_path, valid=frame.valid)
+        _write_mesh_blob(frame.parts, mesh_json_path)
     else:
         render_placeholder(png_path, frame.failure_reason or "no mesh")
 
@@ -65,6 +113,8 @@ def build_task(root: str, genome_values: tuple[float, ...], generation: int,
         "frame_mass": frame.frame_mass,
         "total_mass": frame.total_mass,
         "cg": [float(x) for x in frame.cg],
+        "material": frame.material.name,
+        "material_gene": genome["material"],
         "stl_path": str(stl_path),
         "png_path": str(png_path),
         "drag": None,
@@ -89,7 +139,8 @@ def scenario_task(root: str, total_mass: float, drag_fields: dict[str, Any],
 
 
 def structural_check(root: str, arm_fields: dict[str, Any], total_mass: float,
-                     peak_rotor_thrust: float) -> tuple[bool, str | None, float]:
+                     peak_rotor_thrust: float,
+                     material_gene: float) -> tuple[bool, str | None, float]:
     """Worst-case-across-scenarios structural constraint (runs in-parent:
     it is a closed-form beam calculation)."""
     from .frame_gen import ArmProperties
@@ -99,7 +150,8 @@ def structural_check(root: str, arm_fields: dict[str, Any], total_mass: float,
     # hover rotor frequency (1P) for the resonance band, ISA sea level
     hover_n, _ = rotor.hover(total_mass, 1.225)
     res = check_structure(ArmProperties(**arm_fields), peak_rotor_thrust,
-                          hover_n, cfg.platform)
+                          hover_n, cfg.platform,
+                          cfg.platform.material_for(material_gene))
     return res.ok, res.reason, res.f1_hz
 
 

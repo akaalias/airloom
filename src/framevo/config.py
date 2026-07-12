@@ -32,6 +32,7 @@ class Battery:
     mass_kg: float
     size_m: tuple[float, float, float]
     fit_clearance_m: float
+    support_frac: float
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,7 @@ class Propulsion:
 
 @dataclass(frozen=True)
 class Material:
+    name: str
     density_kg_m3: float
     tensile_strength_pa: float
     youngs_modulus_pa: float
@@ -63,17 +65,27 @@ class Material:
 class Platform:
     battery: Battery
     propulsion: Propulsion
-    material: Material
+    materials: tuple[Material, ...]
     fc_mount_flat_m: float
+    fc_stack_height_m: float
     fc_mass_kg: float
     wiring_mass_kg: float
     safety_factor: float
     max_tip_deflection_frac: float
     resonance_band_frac: float
-    body_wall_base_m: float
+    plate_base_m: float
+    standoff_radius_m: float
+    standoff_mass_per_m: float
     rotor_tip_clearance_m: float
     motor_pad_radius_m: float
     motor_pad_height_m: float
+    motor_body_radius_m: float
+    motor_body_height_m: float
+
+    def material_for(self, gene_value: float) -> Material:
+        """Map the continuous material gene in [0, 1) to a library entry."""
+        idx = min(int(gene_value * len(self.materials)), len(self.materials) - 1)
+        return self.materials[idx]
 
     @property
     def fixed_mass_kg(self) -> float:
@@ -215,6 +227,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         mass_kg=float(b["mass_kg"]),
         size_m=tuple(float(x) for x in b["size_m"]),  # type: ignore[arg-type]
         fit_clearance_m=float(b["fit_clearance_m"]),
+        support_frac=float(b["support_frac"]),
     )
     p = plat["propulsion"]
     propulsion = Propulsion(
@@ -229,22 +242,29 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         uiuc_static_file=str(p["uiuc_static_file"]),
         uiuc_dynamic_files=tuple(str(x) for x in p["uiuc_dynamic_files"]),
     )
-    m = plat["material"]
-    material = Material(float(m["density_kg_m3"]), float(m["tensile_strength_pa"]),
-                        float(m["youngs_modulus_pa"]))
+    materials = tuple(
+        Material(name=str(m["name"]), density_kg_m3=float(m["density_kg_m3"]),
+                 tensile_strength_pa=float(m["tensile_strength_pa"]),
+                 youngs_modulus_pa=float(m["youngs_modulus_pa"]))
+        for m in plat["materials"])
     fc, st, ge = plat["flight_controller"], plat["structure"], plat["geometry"]
     platform = Platform(
-        battery=battery, propulsion=propulsion, material=material,
+        battery=battery, propulsion=propulsion, materials=materials,
         fc_mount_flat_m=float(fc["mount_flat_m"]),
+        fc_stack_height_m=float(fc["stack_height_m"]),
         fc_mass_kg=float(fc["mass_kg"]),
         wiring_mass_kg=float(fc["wiring_receiver_mass_kg"]),
         safety_factor=float(st["safety_factor"]),
         max_tip_deflection_frac=float(st["max_tip_deflection_frac"]),
         resonance_band_frac=float(st["resonance_band_frac"]),
-        body_wall_base_m=float(st["body_wall_base_m"]),
+        plate_base_m=float(st["plate_base_m"]),
+        standoff_radius_m=float(st["standoff_radius_m"]),
+        standoff_mass_per_m=float(st["standoff_mass_per_m"]),
         rotor_tip_clearance_m=float(ge["rotor_tip_clearance_m"]),
         motor_pad_radius_m=float(ge["motor_pad_radius_m"]),
         motor_pad_height_m=float(ge["motor_pad_height_m"]),
+        motor_body_radius_m=float(ge["motor_body_radius_m"]),
+        motor_body_height_m=float(ge["motor_body_height_m"]),
     )
 
     mi = scen["mission"]

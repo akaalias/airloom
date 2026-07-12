@@ -55,6 +55,10 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     if run_id is None:
         print("no runs found", file=sys.stderr)
         return 1
+    glossary = cfg.root / "docs" / "glossary.html"
+    if glossary.exists():
+        import shutil
+        shutil.copyfile(glossary, results / "glossary.html")
     gallery.write_gallery(store, run_id, results)
     gallery.write_leaderboard(store, run_id, results,
                               [s.name for s in cfg.scenarios])
@@ -63,6 +67,7 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     if run and run["optimizer"] != "cmaes":
         lineage.write_dot(store, run_id, results)
         lineage.write_svg(store, run_id, results)
+        lineage.write_lineage_page(store, run_id, results)
     print(f"gallery: file://{results / 'gallery.html'}")
     return 0
 

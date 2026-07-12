@@ -214,7 +214,8 @@ class EvolutionLoop:
                 peak = max((r.peak_rotor_thrust_n for r in results
                             if math.isfinite(r.peak_rotor_thrust_n)), default=0.0)
                 ok, struct_reason, f1_hz = structural_check(
-                    self.root, bv["arm"], bv["total_mass"], peak)
+                    self.root, bv["arm"], bv["total_mass"], peak,
+                    bv["material_gene"])
                 if not ok:
                     valid = False
                     reason = struct_reason
@@ -258,6 +259,7 @@ class EvolutionLoop:
             mutation_mag=p.mutation_mag, genome=p.genome.as_dict(),
             frame_mass=(bv or {}).get("frame_mass"),
             total_mass=(bv or {}).get("total_mass"),
+            material=(bv or {}).get("material"),
             valid=valid, failure_reason=reason, fitness=fitness,
             mean_whkm=mean, worst_whkm=worst, f1_hz=f1_hz,
             stl_path=stl_path or (bv or {}).get("stl_path"),
@@ -283,6 +285,9 @@ class EvolutionLoop:
         return CmaEs(Genome.baseline().normalized, ev.cmaes_sigma0, ev.population)
 
     def _write_artifacts(self, gen: int) -> None:
+        glossary = self.cfg.root / "docs" / "glossary.html"
+        if glossary.exists():  # keep the gallery's glossary link file://-local
+            shutil.copyfile(glossary, self.results / "glossary.html")
         gallery_mod.write_gallery(self.store, self.run_id, self.results)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
@@ -290,6 +295,7 @@ class EvolutionLoop:
         if self.cfg.evolution.optimizer != "cmaes":
             lineage_mod.write_dot(self.store, self.run_id, self.results)
             lineage_mod.write_svg(self.store, self.run_id, self.results)
+            lineage_mod.write_lineage_page(self.store, self.run_id, self.results)
         self._copy_best_stl(gen)
 
     def _copy_best_stl(self, gen: int) -> None:

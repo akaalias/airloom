@@ -1,4 +1,4 @@
-"""Frame generator: validity checks and watertightness."""
+"""Frame generator: validity checks and watertightness (7-inch plate-deck)."""
 import numpy as np
 
 from framevo.frame_gen import build_frame
@@ -9,14 +9,19 @@ def test_baseline_frame_is_valid_and_watertight(cfg):
     frame = build_frame(Genome.baseline(), cfg.platform)
     assert frame.valid, frame.failure_reason
     assert frame.mesh is not None and frame.mesh.is_watertight
-    # a 220 mm-class CF frame: plausible mass band
-    assert 0.05 < frame.frame_mass < 0.45
+    # a 7-inch-class plate frame: plausible mass band
+    assert 0.05 < frame.frame_mass < 0.40
     assert frame.total_mass == frame.frame_mass + cfg.platform.fixed_mass_kg
+    assert frame.material.name == "cf_plate"
+    # labeled parts exist for colored rendering (evolved + fixed)
+    for name in ("deck", "arms", "battery", "motors", "props"):
+        assert frame.parts.get(name) is not None
 
 
-def test_battery_must_fit(cfg):
+def test_top_plate_must_support_battery(cfg):
     g = Genome.baseline().as_dict()
-    g["body_width"] = 0.048  # battery is 47 mm wide + walls + clearance
+    # narrower than 55% of the 66 mm battery footprint
+    g["body_width"] = 0.036
     frame = build_frame(Genome.from_dict(g), cfg.platform)
     assert not frame.valid
     assert "battery" in frame.failure_reason
@@ -24,20 +29,28 @@ def test_battery_must_fit(cfg):
     assert frame.mesh is not None
 
 
-def test_rotor_body_clearance(cfg):
+def test_fc_mount_needs_flat_area(cfg):
     g = Genome.baseline().as_dict()
-    g["arm_length"] = 0.07
-    g["body_length"] = 0.24
-    g["body_width"] = 0.10
+    # supports the battery (>= 36.3 mm) but the fillet eats the FC flat
+    g["body_width"] = 0.038
+    g["body_fillet"] = 0.004
+    frame = build_frame(Genome.from_dict(g), cfg.platform)
+    assert not frame.valid
+    assert "flight-controller" in frame.failure_reason
+
+
+def test_rotor_clearances(cfg):
+    g = Genome.baseline().as_dict()
+    g["arm_length"] = 0.08
+    g["arm_sweep_deg"] = 25.0  # short arms, front pair nearly parallel
     frame = build_frame(Genome.from_dict(g), cfg.platform)
     assert not frame.valid
     assert "rotor" in frame.failure_reason
 
-
-def test_rotor_rotor_clearance(cfg):
     g = Genome.baseline().as_dict()
-    g["arm_length"] = 0.07
-    g["arm_sweep_deg"] = 25.0  # front pair nearly parallel -> disks collide
+    g["arm_length"] = 0.08
+    g["body_length"] = 0.24
+    g["body_width"] = 0.09
     frame = build_frame(Genome.from_dict(g), cfg.platform)
     assert not frame.valid
     assert "rotor" in frame.failure_reason

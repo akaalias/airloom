@@ -16,10 +16,10 @@ from .dbstore import Store
 
 OPERATOR_COLORS = {
     "crossover": "#4a6fa5",
-    "mutation": "#b3574a",
-    "immigrant": "#7a915a",
-    "elite": "#999188",
-    "seed": "#bbb4ac",
+    "mutation": "#8c2f1f",
+    "immigrant": "#8a6a1e",
+    "elite": "#9b998c",
+    "seed": "#b9b6a6",
     "cmaes": "#888888",
 }
 
@@ -47,8 +47,8 @@ def _fitness_color(fit: float, lo: float, hi: float) -> str:
     if not math.isfinite(fit):
         return "#ffffff"
     x = 0.0 if hi <= lo else (fit - lo) / (hi - lo)
-    # interpolate #14324f (best) -> #cfdceb (worst)
-    c0, c1 = (0x14, 0x32, 0x4f), (0xcf, 0xdc, 0xeb)
+    # interpolate near-black ink (best) -> warm pale (worst), Tufte ramp
+    c0, c1 = (0x11, 0x11, 0x11), (0xd9, 0xd5, 0xc3)
     rgb = tuple(round(a + (b - a) * x) for a, b in zip(c0, c1))
     return "#%02x%02x%02x" % rgb
 
@@ -94,6 +94,51 @@ def write_dot(store: Store, run_id: str, results_dir: Path) -> Path:
     return out
 
 
+def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
+    """A dedicated Tufte-styled page for the family tree, linked from the
+    gallery. Embeds lineage.svg inline so tooltips keep working."""
+    svg_path = results_dir / "lineage.svg"
+    svg = svg_path.read_text() if svg_path.exists() else "<p>no tree yet</p>"
+    # drop the paper-colored background rect: the page supplies the paper
+    svg = svg.replace('<rect width="100%" height="100%" fill="#fffff8"/>', "", 1)
+    page = f"""<style>
+:root{{--paper:#fffff8;--ink:#111111;--muted:#6b6a60;--faint:#9b998c;
+  --rule:#d9d5c3;--accent:#8c2f1f;
+  --serif:"Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif}}
+*{{box-sizing:border-box}}
+html{{background:var(--paper)}}
+body{{margin:0;background:var(--paper);color:var(--ink);
+  font:17px/1.55 var(--serif);font-feature-settings:"onum" 1,"liga" 1;
+  -webkit-font-smoothing:antialiased}}
+.wrap{{max-width:92vw;margin:0 auto;padding:40px 0 96px}}
+h1{{font-weight:400;font-size:34px;letter-spacing:-.01em;margin:0 0 6px}}
+h1 code{{font:400 26px ui-monospace,Menlo,monospace;color:var(--muted)}}
+.sub{{font-size:15px;color:var(--muted);margin:0 0 22px}}
+a{{color:var(--accent);text-decoration:none}}
+.tree{{border-top:1px solid var(--rule);padding-top:18px;overflow-x:auto}}
+.note{{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px}}
+</style>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="30">
+<title>framevo family tree</title>
+<div class="wrap">
+<h1>family tree &mdash; run <code>{run_id}</code></h1>
+<p class="sub">one row per generation, candidates ordered best&#8594;worst.
+Filled nodes are births, shaded dark&thinsp;=&thinsp;better fitness; hollow
+nodes are invalid; small nodes on dotted verticals are elite carry-overs.
+Edge colors name the operator. Hover any node for details.
+&middot; <a href="gallery.html">back to the gallery</a></p>
+<div class="tree">{svg}</div>
+<p class="note">The same graph is exported as Graphviz DOT
+(<a href="lineage.dot">lineage.dot</a>) and raw SVG
+(<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
+<code style="font-size:13px">framevo lineage &lt;hash&gt;</code>.</p>
+</div>"""
+    out = results_dir / "lineage.html"
+    out.write_text(page)
+    return out
+
+
 def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
     """Self-contained SVG family tree, laid out generation-by-generation."""
     gens = store.generations_with_population(run_id)
@@ -107,7 +152,9 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                           key=lambda r: (r["fitness"] is None,
                                          r["fitness"] if r["fitness"] is not None else 0))
                 for g in gens}
-    width = margin * 2 + max((len(v) for v in pop_rows.values()), default=1) * xstep
+    legend_w = margin * 2 + sum(30 + 7 * len(n) for n in OPERATOR_COLORS)
+    width = max(margin * 2 + max((len(v) for v in pop_rows.values()), default=1)
+                * xstep, legend_w)
     height = margin * 2 + (len(gens)) * ystep
 
     pos: dict[tuple[int, str], tuple[float, float]] = {}
@@ -124,7 +171,7 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}"'
            f' height="{height}" font-family="Helvetica,Arial,sans-serif">',
-           '<rect width="100%" height="100%" fill="#faf9f7"/>']
+           '<rect width="100%" height="100%" fill="#fffff8"/>']
 
     # edges first
     for g in gens:
@@ -166,10 +213,10 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
             rr = r_node if is_birth else r_node * 0.55
             if math.isfinite(fit):
                 fill = _fitness_color(fit, lo, hi)
-                stroke = "#5a6572"
+                stroke = "#6b6a60"
             else:
                 fill = "none"  # hollow = invalid
-                stroke = "#b0a9a1"
+                stroke = "#b9b6a6"
             title = html.escape(
                 f"{h} gen{cand['generation_born'] if cand else g} "
                 f"{cand['operator'] if cand else ''} "
@@ -181,7 +228,7 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
         # generation label
     for gi, g in enumerate(gens):
         svg.append(f'<text x="{margin - 44}" y="{margin + gi * ystep + 4}"'
-                   f' font-size="11" fill="#8a8580">g{g}</text>')
+                   f' font-size="11" fill="#9b998c">g{g}</text>')
 
     # legend
     lx, ly = margin, height - 26
@@ -189,7 +236,7 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
         svg.append(f'<line x1="{lx}" y1="{ly}" x2="{lx + 16}" y2="{ly}"'
                    f' stroke="{col}" stroke-width="2"/>')
         svg.append(f'<text x="{lx + 20}" y="{ly + 4}" font-size="10"'
-                   f' fill="#5a5650">{name}</text>')
+                   f' fill="#6b6a60">{name}</text>')
         lx += 30 + 7 * len(name)
     svg.append("</svg>")
     out = results_dir / "lineage.svg"

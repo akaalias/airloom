@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>framevo glossary</title>
+<style>
+:root { color-scheme: light;
+  --paper:#fffff8; --ink:#111111; --muted:#6b6a60; --faint:#9b998c;
+  --rule:#d9d5c3; --accent:#8c2f1f;
+  --serif:"Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace; }
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); margin: 0 auto;
+  max-width: 780px; font: 18px/1.6 var(--serif);
+  font-feature-settings: "onum" 1, "liga" 1; -webkit-font-smoothing: antialiased;
+  padding: 48px 28px 96px; }
+h1 { font-weight: 400; font-size: 34px; line-height: 1.12;
+  letter-spacing: -.01em; margin: 0 0 6px; }
+h2 { font: 600 13px/1.2 var(--serif); font-feature-settings: "smcp" 1;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+  border-bottom: 1px solid var(--rule); padding-bottom: 6px; margin: 44px 0 14px; }
+h3 { font: 600 12px/1.2 var(--serif); font-feature-settings: "smcp" 1;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--faint);
+  margin: 26px 0 8px; }
+.meta { color: var(--muted); font-size: 14.5px; font-style: italic; }
+dl { margin: 0; }
+dt { font-weight: 700; margin-top: 14px; }
+dt code, dd code { font-family: var(--mono); font-size: .82em; }
+dd { margin: 2px 0 0 0; color: #33312b; }
+dd .fm { font-style: italic; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { border-bottom: 1px solid var(--accent); }
+</style>
+</head>
+<body>
+<h1>framevo &mdash; glossary</h1>
+<p class="meta">Terms of the evolutionary algorithm and of the quadcopter-frame
+domain it optimizes. Companion to <code>results/gallery.html</code> and the
+README.</p>
+
+<h2>the evolutionary algorithm</h2>
+<dl>
+<dt>Genome / gene</dt>
+<dd>The complete parametric description of one frame: 14 continuous numbers
+(genes), each bounded (e.g. arm length 140&ndash;320&thinsp;mm) &mdash; 13 geometry genes
+plus one <em>material</em> gene. The genome is all the optimizer is allowed to
+change &mdash; battery, motors, propellers and electronics are fixed platform.</dd>
+
+<dt>Candidate / individual</dt>
+<dd>One genome, built into a frame and evaluated. Identified everywhere by its
+<em>genome hash</em>.</dd>
+
+<dt>Genome hash</dt>
+<dd>A stable 12-hex-digit ID derived (SHA-1) from the gene values rounded to
+10<sup>&minus;6</sup>. Identical genomes always get identical IDs, which is what makes
+caching, resuming and lineage queries trivial.</dd>
+
+<dt>Population</dt>
+<dd>The set of candidates alive in one generation (default 16).</dd>
+
+<dt>Generation</dt>
+<dd>One full cycle: propose a population &rarr; evaluate every candidate in all
+scenarios &rarr; select who breeds. Generation 0 is <em>seeded</em>: one
+conventional 7-inch plate-deck baseline (TBS-Source-One-like proportions)
+plus random genomes.</dd>
+
+<dt>Fitness</dt>
+<dd>The single scalar being minimized. Here: <span class="fm">mean Wh/km across
+scenarios + &lambda; &middot; worst-scenario Wh/km</span> with &lambda; = 0.5. The mean rewards
+general efficiency; the worst-case term punishes designs that are great in five
+scenarios and terrible in one. <code>aggregation: minimax</code> switches to pure
+worst-case. Lower is better; invalid candidates get fitness = &infin;.</dd>
+
+<dt>Selection (tournament)</dt>
+<dd>To pick a parent, draw <span class="fm">k</span> = 3 random candidates from
+the previous generation and keep the fittest. Repeats per parent. Gentle,
+noise-tolerant selection pressure.</dd>
+
+<dt>Crossover (SBX)</dt>
+<dd>Simulated Binary Crossover: a child gene is sampled around its two parents&rsquo;
+values with a spread controlled by the distribution index &eta; (higher &eta; = children
+closer to the parents). The digital analogue of breeding two good frames.</dd>
+
+<dt>Mutation</dt>
+<dd>Gaussian noise added to a subset of genes. Its standard deviation
+(<em>sigma</em>, a fraction of each gene&rsquo;s range) is <em>adaptive</em>: it decays
+per generation, so early search is exploratory and late search fine-tunes. The
+recorded <em>mutation magnitude</em> is the RMS of the normalized perturbation.</dd>
+
+<dt>Operator</dt>
+<dd>How a candidate came to exist: <code>seed</code>, <code>crossover</code>,
+<code>mutation</code>, <code>immigrant</code>, <code>elite</code> (or <code>cmaes</code>).
+Stored per candidate and shown as edge colors in the family tree.</dd>
+
+<dt>Elitism / elite carry-over</dt>
+<dd>The top 2 candidates pass into the next generation unchanged, so the best
+design can never be lost. Drawn as dotted vertical pass-through edges in
+<code>lineage.svg</code>.</dd>
+
+<dt>Random immigrant</dt>
+<dd>An occasional entirely random genome injected into the population
+(10&thinsp;% per non-elite slot) to keep genetic diversity from collapsing.</dd>
+
+<dt>Lineage / parentage</dt>
+<dd>Every candidate records <code>parent_a</code>, <code>parent_b</code>, its operator, its
+birth generation and mutation magnitude &mdash; a self-referencing SQLite table, so
+<code>framevo lineage &lt;hash&gt;</code> walks the full ancestor chain
+(<code>WITH RECURSIVE</code>) and shows how fitness improved along it.</dd>
+
+<dt>Early-reject</dt>
+<dd>Optional cost control: fly the cheap <code>calm_warm</code> scenario first; a
+candidate much worse than the population median skips the other five scenarios
+and receives a finite penalized fitness &mdash; evolution still gets gradient
+information without paying full price.</dd>
+
+<dt>Convergence</dt>
+<dd>Fitness vs. generation (<code>convergence.png</code>): population median and
+best-so-far falling and flattening as the search settles.</dd>
+
+<dt>CMA-ES</dt>
+<dd>Covariance Matrix Adaptation Evolution Strategy, the flag-gated alternative
+optimizer (<code>--optimizer cmaes</code>). It samples each generation from one
+adapted multivariate Gaussian, so candidates have no discrete parents;
+distribution-level provenance (mean and step size &sigma; per generation) is stored
+instead, and the family tree is skipped.</dd>
+
+<dt>Determinism / resume</dt>
+<dd>Per-generation RNG seeds and fixed per-scenario turbulence seeds make
+evaluations reproducible; after a crash, <code>--resume</code> continues from the last
+completed generation, re-using every already-evaluated genome via its hash.</dd>
+</dl>
+
+<h2>the domain</h2>
+
+<h3>the shape (what the genes mean)</h3>
+<dl>
+<dt>Arm length / width / height</dt>
+<dd>Each of the four cantilever arms carrying a motor: its reach from the body
+(sets the rotor footprint) and its structural cross-section. Longer arms clear
+the body easily and lower resonance frequency; fatter arms are stiff but heavy
+and draggy.</dd>
+
+<dt>Arm sweep</dt>
+<dd>Plan-view angle of the front arm pair from the forward axis (rear pair
+mirrored). 45&deg; is a pure X-frame; low sweep pushes rotors forward/backward,
+high sweep pushes them sideways.</dd>
+
+<dt>Arm dihedral</dt>
+<dd>Upward (or downward) tilt of the arms out of the body plane.</dd>
+
+<dt>Cross-section blend</dt>
+<dd>One gene morphing the arm cross-section from rectangle (drag coefficient
+&asymp; 1.9) through ellipse (&asymp; 1.1) to a faired, teardrop-like section (&asymp; 0.6).
+The main aerodynamic lever on the arms.</dd>
+
+<dt>Arm taper</dt>
+<dd>Tip-to-root scale of the arm section (0.5&ndash;1.0). Saves mass and tip drag at
+the cost of tip stiffness.</dd>
+
+<dt>Deck length / width / gap (body genes)</dt>
+<dd>The central deck &mdash; two plates separated by standoffs, in the
+TBS-Source-One style. The plates must offer a 36&thinsp;mm flat for the flight
+controller, the gap must fit the 20&thinsp;mm FC/ESC stack, and the top plate must
+carry the battery pack, which is strapped on top, exposed to the airflow.</dd>
+
+<dt>Body fillet</dt>
+<dd>Plan-view corner radius of the deck plates &mdash; trims projected area and
+mass.</dd>
+
+<dt>Battery wedge (<code>body_pitch_deg</code>)</dt>
+<dd>Nose-down tilt of the battery pack on the deck. Quadcopters lean into the
+wind to fly forward; a wedged pack meets the oncoming flow more edge-on in
+cruise, trimming the biggest bluff body on the aircraft.</dd>
+
+<dt>Thickness scale</dt>
+<dd>Scales the 2&thinsp;mm deck plate thickness: lighter vs. stiffer/heavier.</dd>
+
+<dt>Material (gene)</dt>
+<dd>Selects the frame material &mdash; plates and arms &mdash; from the platform
+library: CNC-cut carbon plate, carbon-fiber nylon (PA12-CF), PET-CF, PLA+,
+PETG or ASA. Each brings its own density, tensile strength and stiffness, so
+the optimizer trades mass against the structural constraints: a slender arm
+that carbon plate carries easily is too floppy in PETG. Printed values are
+XY-direction datasheet numbers; layer-line weakness is only covered by the
+global 1.5 safety factor.</dd>
+</dl>
+
+<h3>the target metric</h3>
+<dl>
+<dt>Wh/km (watt-hours per kilometer)</dt>
+<dd>Electrical energy drawn from the battery per kilometer flown &mdash; the
+quantity being minimized. Computed per scenario over the fixed 4&thinsp;km mission,
+then aggregated (see <em>Fitness</em>). Typical values here for the 7-inch
+class: &asymp; 3.5 Wh/km calm, &asymp; 5&ndash;6 Wh/km in storm conditions.</dd>
+
+<dt>Mission</dt>
+<dd>Identical in every scenario: 2&thinsp;km north, then 2&thinsp;km south, at 12&thinsp;m/s
+commanded <em>ground speed</em>, 30&thinsp;m altitude. Flying both directions keeps
+headwind/tailwind honest.</dd>
+
+<dt>Scenario portfolio</dt>
+<dd>Six weather cases every candidate must fly: <code>calm_warm</code> (baseline),
+<code>cold_headwind</code>, <code>storm</code> (wind + severe gusts + 25&thinsp;mm/h rain),
+<code>crosswind</code>, <code>gusty_light</code> (severe gusts, light mean wind),
+<code>hot_thin</code> (1500&thinsp;m density altitude). Evaluating the portfolio prevents
+overfitting the frame to one weather condition.</dd>
+
+<dt>All-up mass (AUW)</dt>
+<dd>Frame mass (the only variable part, from the genome) plus the fixed
+0.78&thinsp;kg of battery (470&thinsp;g self-built 6S1P 21700 Li-Ion), four 2806-class
+motors with props, FC stack, camera, VTX and receiver. The baseline deck
+comes out around 1.0&thinsp;kg AUW and hovers at &asymp; 150&thinsp;W on the measured
+Master Airscrew GF 7&times;4 data.</dd>
+</dl>
+
+<h3>constraints (fitness = &infin; when violated)</h3>
+<dl>
+<dt>Battery support</dt>
+<dd>The top plate must be large enough to carry the strapped battery pack
+(at least 55&thinsp;% of the pack footprint in each direction).</dd>
+
+<dt>Flight-controller mount</dt>
+<dd>A 36&thinsp;mm flat square must exist on the plates for the standard
+30.5 &times; 30.5&thinsp;mm hole pattern, and the deck gap must fit the 20&thinsp;mm
+FC/ESC stack.</dd>
+
+<dt>Rotor clearance</dt>
+<dd>Rotor disks need &ge; 5&thinsp;mm from each other and from the deck/battery.
+Violations are still meshed and archived (<code>_INVALID</code> STLs) &mdash; the
+failures are instructive &mdash; but never simulated.</dd>
+
+<dt>Rotor saturation</dt>
+<dd>If holding the commanded speed would require rotor speeds above the motor
+ceiling (or per-motor power beyond its limit) for more than half a second
+cumulative, the candidate fails that scenario.</dd>
+
+<dt>Arm stress / deflection</dt>
+<dd>Euler&ndash;Bernoulli cantilever check under the worst per-rotor thrust seen in
+<em>any</em> scenario, times a 1.5 safety factor: root bending stress &le; 600&thinsp;MPa
+(carbon fiber) and tip deflection &le; 5&thinsp;% of arm length.</dd>
+
+<dt>Resonance (1P)</dt>
+<dd>The arm&rsquo;s first bending natural frequency must sit outside &plusmn;15&thinsp;% of the
+rotor&rsquo;s hover rotation frequency (the &ldquo;1P&rdquo; excitation), or vibration would
+shake the frame apart.</dd>
+</dl>
+
+<h3>the physics vocabulary</h3>
+<dl>
+<dt>Advance ratio <span class="fm">J</span>, C<sub>T</sub>, C<sub>P</sub></dt>
+<dd>Propeller performance is tabulated as thrust and power coefficients versus
+advance ratio <span class="fm">J = V/(nD)</span>: thrust
+<span class="fm">T = &rho;n&sup2;D&#8308;C<sub>T</sub></span>, shaft power
+<span class="fm">P = &rho;n&sup3;D&#8309;C<sub>P</sub></span>. Ground truth here: the UIUC
+Propeller Database measurements of the Master Airscrew GF 7&times;4 prop
+(2-blade; the kit's 3-blade 7&times;4 is absorbed into the same tables).</dd>
+
+<dt>Motor + ESC efficiency</dt>
+<dd>Fixed 85&thinsp;% conversion from electrical to shaft power (ESC = electronic
+speed controller). Wh/km is measured on the electrical side.</dd>
+
+<dt>CdA / drag table</dt>
+<dd>Drag area (drag coefficient &times; projected area, m&sup2;). Computed per candidate
+by rasterizing the frame&rsquo;s STL along the flow at tilt angles 0&ndash;60&deg;, per
+component class (arms vs body), each with its own C<sub>d</sub>. Drag =
+<span class="fm">&frac12;&thinsp;&rho;V&sup2;&thinsp;CdA</span>.</dd>
+
+<dt>Rotor wash / download</dt>
+<dd>The induced downwash of each rotor presses on the arm planform underneath
+its disk &mdash; an interference penalty that makes wide arms under rotors
+expensive.</dd>
+
+<dt>Tilt</dt>
+<dd>A quadcopter can only push along its rotor axes, so it leans into the
+relative wind to fly forward or fight gusts; tilt sets both the thrust demand
+and which silhouette the frame shows the airflow.</dd>
+
+<dt>Dryden turbulence (MIL-F-8785C)</dt>
+<dd>The standard military gust model: time-correlated random wind with
+prescribed intensity &sigma; and length scales (light / moderate / severe map to
+15 / 30 / 45&thinsp;kt wind at 20&thinsp;ft). Each scenario uses a fixed seed, so every
+candidate flies the identical gust history &mdash; fitness differences are frame
+differences, never gust luck.</dd>
+
+<dt>Density altitude / air density &rho;</dt>
+<dd>Hot or high air is thin (lower &rho;): rotors must spin faster for the same
+thrust, and drag falls. <code>hot_thin</code> flies at the density found 1500&thinsp;m up a
+standard atmosphere.</dd>
+
+<dt>Rain model</dt>
+<dd>Empirical, per NASA heavy-rain research (NASA TP-2671): a water film adds
+mass on upward-facing area, suspended rain adds momentum drag, and rotor
+thrust coefficient is derated 15&thinsp;%.</dd>
+
+<dt>Component drag buildup</dt>
+<dd>Phase-A method: total drag &asymp; sum of per-component projected areas &times;
+handbook drag coefficients. Fast and honest about being approximate; Phase B
+would replace it with OpenFOAM CFD on the top candidates.</dd>
+</dl>
+
+<p class="meta">See the README for physics assumptions, sources, and known
+limitations in full.</p>
+</body>
+</html>

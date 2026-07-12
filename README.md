@@ -22,31 +22,60 @@ Worker count auto-scales to the core count.
 
 ## What it produces (in `results/`)
 
-- `gallery.html` — static, self-refreshing (30 s meta-refresh), no JavaScript,
-  open with `file://`. One row per generation, thumbnails sorted by fitness,
-  aggregate + per-scenario Wh/km under each, best candidate highlighted,
-  invalid candidates greyed with the failure reason. Every thumbnail links to
-  a detail block showing its **parents' thumbnails** — you can see which two
-  frames were crossed to produce a child.
+- `gallery.html` — static, self-refreshing (30 s meta-refresh), no frameworks,
+  no server, open with `file://`. Tufte-styled (cream paper, ink, one rust
+  accent, hairlines). At the top: a **progress chart** of every candidate in
+  evaluation order — gray dots, a best-so-far step line with labeled
+  improvements, invalid candidates as rust ×, generation ticks — so you can
+  see what moved the needle and where the search plateaued. Below: one row
+  per generation sorted by fitness, then **detail blocks with an interactive
+  3D model at half width** (vanilla-canvas viewer fed by embedded mesh data:
+  drag to rotate, scroll to zoom, double-click to reset) beside the metrics
+  and the parents' thumbnails. Parts are colored by role: rust arms and
+  near-black deck plates are the **evolved** geometry; the blue Li-Ion pack,
+  gray motor cans and pale translucent prop disks are the **fixed** kit.
 - `leaderboard.md` — top 10 with all metrics and per-scenario columns.
-- `lineage.svg` + `lineage.dot` — the full family tree: nodes shaded by
-  fitness (dark = better), hollow nodes = invalid, edges colored by operator,
-  elite carry-overs as dotted vertical pass-throughs.
+- `lineage.html` (+ raw `lineage.svg`, `lineage.dot`) — a dedicated family
+  tree page: nodes shaded by fitness (dark = better), hollow nodes = invalid,
+  edges colored by operator, elite carry-overs as dotted pass-throughs.
 - `convergence.png` — fitness vs. generation.
 - `frames/gen_XXXX/<hash>.stl` + `.png` — **every** candidate, including
   invalid ones (`_INVALID` suffix; the failures are instructive).
 - `gen_XXXX_best.stl` — the generation's champion.
 - `run.db` — SQLite: genomes, lineage (self-referencing, `WITH RECURSIVE`
   ancestry), per-scenario metrics, populations, config snapshot, git hash.
+- `glossary.html` (copied from `docs/glossary.html`, linked from the gallery)
+  — definitions of both the evolutionary-algorithm terms and the domain terms
+  (genes, Wh/km, constraints, physics vocabulary).
 
-## The genome (13 continuous genes)
+## The fixed platform (never evolved)
+
+Matched to the **official DroneAid Collective (drone-aid.de) workshop kit**,
+a 7-inch long-range build in the most popular open-source plate-frame
+archetype — the [TBS Source One](https://github.com/tbs-trappy/source_one)
+family (GPLv3: 2 mm deck plates, M3 standoffs, sandwiched plate arms).
+Kit components as modeled: 4× 2806-class ~1300KV motors with 7×4-class
+3-blade props (ground truth: UIUC Master Airscrew GF 7×4 measurements),
+a self-built 6S1P 21700 Li-Ion pack (4.2 Ah, 470 g, strapped on top of the
+deck), 30.5 mm Betaflight FC + 4-in-1 ESC stack between the plates, micro
+FPV camera, VTX + antenna, ELRS receiver. Fixed non-frame mass: 0.78 kg;
+baseline AUW ≈ 1.0 kg.
+
+## The genome (14 continuous genes)
 
 arm length / width / height / sweep / dihedral / taper, a cross-section shape
-blend (rectangle → ellipse → faired teardrop), body length / width / height /
-corner fillet / pitch, and a material-thickness scale. Hard geometric
-constraints (fitness = ∞, no simulation): the 138×47×38 mm battery must fit
-inside the body shell, a 36 mm flat must exist for the 30.5 mm FC pattern,
-and rotors need ≥ 5 mm clearance from each other and the body.
+blend (rectangle → ellipse → faired teardrop), deck plate length / width /
+standoff gap / corner fillet, a battery wedge angle (`body_pitch_deg`), a
+plate-thickness scale — and a **print material** gene that selects the frame
+material from a config library: CNC carbon plate, carbon-fiber nylon
+(PA12-CF), PET-CF, PLA+, PETG or ASA, each with its own density, tensile
+strength and stiffness. Soft materials save mass but fail the structural
+constraints on slender arms — the optimizer gets to negotiate that trade.
+
+Hard geometric constraints (fitness = ∞, no simulation): the deck gap must
+fit the 20 mm FC/ESC stack, a 36 mm flat must exist for the 30.5 mm mount
+pattern, the top plate must support the battery footprint, and rotors need
+≥ 5 mm clearance from each other and from the deck/battery.
 
 ## Scenario portfolio
 
@@ -67,16 +96,18 @@ candidates a finite penalized fitness without flying the other five.
 
 | piece | model | source / check |
 |---|---|---|
-| rotor | CT(J), CP(J) interpolated from measured tables; `T = ρn²D⁴CT`, `P = ρn³D⁵CP / 0.85` (motor+ESC) | UIUC Propeller DB, GWS Direct Drive 5×4.3 (static + 4 RPM sweeps), cached in `data/uiuc/`; unit-tested against tabulated points |
+| rotor | CT(J), CP(J) interpolated from measured tables; `T = ρn²D⁴CT`, `P = ρn³D⁵CP / 0.85` (motor+ESC) | UIUC Propeller DB, Master Airscrew GF 7×4 (static + 4 RPM sweeps), cached in `data/uiuc/`; unit-tested against tabulated points |
 | frame drag | component buildup: projected areas from rasterizing the STL along the flow at 0–60° tilt; Cd per class (arm 1.9→1.1→0.6 by section blend, body 1.05); rotor-wash download on arm planform under the disks | classic flat-plate/cylinder/fairing Cd values |
 | turbulence | Dryden, MIL-F-8785C low-altitude forms, spectral synthesis, fixed seeds | variance unit-tested against σ² spec |
 | rain | (a) water-film added mass ∝ top area, (b) momentum drag via equivalent suspended-water density + vertical impact force, (c) 15 % thrust-coefficient penalty | empirical knobs, see NASA TP-2671 (Dunham et al.) heavy-rain research; all in config |
 | flight | 100 Hz point-mass 3-DOF sim; quasi-static attitude (the quad tilts into the relative wind), P velocity loop with accel limits; rotor speeds solved each step from the CT tables; electrical energy integrated | zero-wind mission unit-tested against a quasi-static analytic power balance (±6 %) |
-| structure | Euler–Bernoulli cantilever arm: worst-case per-rotor thrust across all scenarios × 1.5 safety factor; stress ≤ 600 MPa, tip deflection ≤ 5 % L, first bending mode outside ±15 % of hover 1P | stress/deflection unit-tested against hand calculations |
+| structure | Euler–Bernoulli cantilever arm: worst-case per-rotor thrust across all scenarios × 1.5 safety factor; stress ≤ material strength, tip deflection ≤ 5 % L, first bending mode outside ±15 % of hover 1P — all with the genome-selected material's properties | stress/deflection unit-tested against hand calculations |
 
-Sanity anchor (unit-tested): at 1.1 kg all-up mass the model hovers at
-**~195 W**, inside the plausible 180–280 W band for a 5-inch quad of that
-weight.
+Sanity anchors (unit-tested): the original spec anchor — a 5-inch quad at
+1.1 kg AUW hovers at ~195 W (180–280 W band), checked against the cached
+GWS 5×4.3 dataset — plus the shipped platform: the baseline 7-inch deck
+(~0.34 m wheelbase, ~1.0 kg AUW) hovers in a plausible 90–230 W band on
+the MA GF 7×4 data.
 
 ## Known limitations (please read before trusting numbers)
 
@@ -93,10 +124,14 @@ weight.
   gusts appears as thrust modulation, not motor differential torques. Gust
   series are synthesized at the commanded cruise speed rather than the
   instantaneous airspeed.
-- **UIUC data was measured at 4k–8k RPM**; our operating band is 12k–20k RPM
-  (higher Reynolds). CT/CP are treated as Re-independent.
+- **UIUC data was measured at 2.5k–7k RPM and on a 2-blade prop**; the kit
+  flies 3-blade 7×4s and hovers near 9k RPM. CT/CP are treated as
+  Re-independent and blade-count effects are absorbed into the tables.
+- **Print-material properties are XY/datasheet values.** FDM parts are
+  weaker across layer lines (often 40–60 % in Z); the 1.5 safety factor is
+  the only allowance for anisotropy, print quality, or temperature.
 - Structural model checks the arms only (root stress, tip deflection,
-  resonance); the body shell is assumed rigid.
+  resonance); the deck is assumed rigid and the standoffs ideal.
 - CMA-ES mode (`--optimizer cmaes`) has no discrete parents — it samples from
   an adapted Gaussian — so the family tree is skipped and distribution-level
   provenance (mean, σ per generation) is stored in `cma_state` instead.

@@ -7,20 +7,26 @@ from dataclasses import dataclass
 import numpy as np
 
 # (name, low, high) -- all lengths in meters, angles in degrees.
+# Sized for the 7-inch DroneAid-kit / TBS-Source-One-style plate-deck class.
+# body_* genes describe the deck: plate footprint, standoff gap (height),
+# corner fillet, pitch of the battery wedge. `material` selects a
+# print/plate material from the platform library (continuous in [0,1),
+# floored onto the list -- see Platform.material_for).
 GENOME_SPEC: tuple[tuple[str, float, float], ...] = (
-    ("arm_length", 0.07, 0.18),
-    ("arm_width", 0.008, 0.028),
-    ("arm_height", 0.005, 0.016),
+    ("arm_length", 0.08, 0.22),
+    ("arm_width", 0.009, 0.030),
+    ("arm_height", 0.0035, 0.012),
     ("arm_sweep_deg", 25.0, 65.0),
     ("arm_dihedral_deg", -8.0, 8.0),
     ("section_blend", 0.0, 1.0),
     ("arm_taper", 0.5, 1.0),
-    ("body_length", 0.150, 0.240),
-    ("body_width", 0.048, 0.100),
-    ("body_height", 0.040, 0.085),
+    ("body_length", 0.090, 0.240),
+    ("body_width", 0.036, 0.090),
+    ("body_height", 0.020, 0.055),
     ("body_fillet", 0.0, 0.012),
     ("body_pitch_deg", 0.0, 15.0),
-    ("thickness_scale", 0.6, 1.6),
+    ("thickness_scale", 0.6, 1.8),
+    ("material", 0.0, 0.999),
 )
 
 N_GENES = len(GENOME_SPEC)
@@ -29,13 +35,14 @@ LOWER = np.array([lo for _, lo, _ in GENOME_SPEC])
 UPPER = np.array([hi for _, _, hi in GENOME_SPEC])
 RANGE = UPPER - LOWER
 
-# A conventional ~220 mm-class X frame; also the seed of generation 0.
+# A conventional 7-inch-class X deck (Source-One-like proportions, carbon
+# plates, ~0.35 m wheelbase); also the seed of generation 0.
 BASELINE = {
-    "arm_length": 0.110, "arm_width": 0.016, "arm_height": 0.008,
+    "arm_length": 0.135, "arm_width": 0.014, "arm_height": 0.0055,
     "arm_sweep_deg": 45.0, "arm_dihedral_deg": 0.0, "section_blend": 0.25,
-    "arm_taper": 0.85, "body_length": 0.160, "body_width": 0.062,
-    "body_height": 0.048, "body_fillet": 0.004, "body_pitch_deg": 3.0,
-    "thickness_scale": 1.0,
+    "arm_taper": 0.85, "body_length": 0.150, "body_width": 0.048,
+    "body_height": 0.026, "body_fillet": 0.005, "body_pitch_deg": 2.0,
+    "thickness_scale": 1.0, "material": 0.05,  # cf_plate
 }
 
 

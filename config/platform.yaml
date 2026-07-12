@@ -1,53 +1,102 @@
 # Fixed platform. Never varied by the optimizer.
+#
+# Matched to the official DroneAid Collective (drone-aid.de) workshop kit,
+# a 7-inch long-range build in the TBS-Source-One plate-frame style
+# (GPLv3, github.com/tbs-trappy/source_one):
+#   - CNC carbon plate kit: two deck plates + standoffs, four flat plate
+#     arms sandwiched at the center (the geometry we evolve)
+#   - 4x 2806-class brushless motors with 7x4 3-blade props
+#   - self-built 6S1P Li-Ion pack from single 21700 cells + XT60/BEC board,
+#     strapped on top of the deck
+#   - 30.5 mm Betaflight FC + 4-in-1 ESC stack between the plates
+#   - micro FPV camera, video transmitter + antenna, ELRS receiver
+
 battery:
-  cells: 4                 # 4S LiPo
-  capacity_mah: 5000
-  voltage_nominal: 14.8    # V
-  mass_kg: 0.520
+  # 6S1P 21700 Li-Ion (Molicel P42A class), 2x3 brick, on the top plate.
+  cells: 6
+  capacity_mah: 4200
+  voltage_nominal: 22.2    # V
+  mass_kg: 0.470           # 6 cells + nickel strip, BEC board, XT60, wrap
   # rigid rectangular block, meters (L x W x H)
-  size_m: [0.138, 0.047, 0.038]
-  fit_clearance_m: 0.001   # required clearance per axis inside the body cavity
+  size_m: [0.070, 0.066, 0.044]
+  fit_clearance_m: 0.001
+  # the deck's top plate must carry the pack: plate length/width may be no
+  # smaller than this fraction of the battery footprint (strap overhang OK)
+  support_frac: 0.55
 
 propulsion:
-  # 4x 2306-size brushless + 5-inch prop.
-  # Ground truth: UIUC Propeller Database, GWS Direct Drive 5x4.3
-  # (5 in diameter, 4.3 in pitch) -- static + 4 dynamic RPM sweeps,
-  # cached in data/uiuc/. See scripts/fetch_uiuc.py.
-  prop_name: "GWS DD 5x4.3 (UIUC volume-2)"
-  prop_diameter_m: 0.127
-  prop_pitch_m: 0.10922
+  # 4x 2806-class ~1300KV brushless with 7-inch props on 6S.
+  # Ground truth: UIUC Propeller Database volume 1, Master Airscrew GF 7x4
+  # (static + 4 dynamic RPM sweeps), cached in data/uiuc/ -- the closest
+  # measured dataset to the kit's 7x4-class propeller (2-blade vs the kit's
+  # 3-blade: see README limitations).
+  prop_name: "Master Airscrew GF 7x4 (UIUC volume-1)"
+  prop_diameter_m: 0.1778
+  prop_pitch_m: 0.1016
   n_rotors: 4
-  motor_mass_kg: 0.032          # each
+  motor_mass_kg: 0.043          # 2806.5 class, each
   motor_esc_efficiency: 0.85    # combined motor + ESC, electrical->shaft
-  max_rpm: 28000                # 2306 ~2400KV on 4S, loaded ceiling
-  max_motor_power_w: 400        # per motor, electrical
+  max_rpm: 22000                # ~1300KV on 6S, loaded ceiling
+  max_motor_power_w: 500        # per motor, electrical
   uiuc_data_dir: "data/uiuc"
-  uiuc_static_file: "gwsdd_5x4.3_static_0493rd.txt"
+  uiuc_static_file: "magf_7x4_static_2911cm.txt"
   uiuc_dynamic_files:
-    - "gwsdd_5x4.3_0511rd_4048.txt"
-    - "gwsdd_5x4.3_0512rd_6047.txt"
-    - "gwsdd_5x4.3_0513rd_8044.txt"
-    - "gwsdd_5x4.3_0514rd_8078.txt"
+    - "magf_7x4_2912cm_4014.txt"
+    - "magf_7x4_2913cm_5015.txt"
+    - "magf_7x4_2914cm_6020.txt"
+    - "magf_7x4_2915cm_6998.txt"
 
 flight_controller:
-  mount_pattern_m: 0.0305       # 30.5 x 30.5 mm hole pattern
-  mount_flat_m: 0.0365          # required flat square on the top plate
+  mount_pattern_m: 0.0305       # 30.5 x 30.5 mm hole pattern, between plates
+  mount_flat_m: 0.0365          # required flat square on the plates
+  stack_height_m: 0.020         # FC + 4-in-1 ESC stack: minimum deck gap
   mass_kg: 0.015
-  wiring_receiver_mass_kg: 0.010
+  # camera 9 g, VTX + antenna 38 g, ELRS RX + dipole 5 g, props 4x8 g,
+  # straps/screws/wiring 42 g
+  wiring_receiver_mass_kg: 0.126
 
-material:
-  # carbon-fiber plate, fixed
-  density_kg_m3: 1600.0
-  tensile_strength_pa: 600.0e6
-  youngs_modulus_pa: 70.0e9
+# 3D-print / plate material library: the LAST genome gene selects one of
+# these for the whole frame (plates + arms). Values are typical
+# datasheet/XY-direction numbers; printed parts are weaker across layers
+# (see README limitations). Ordered stiffest -> softest so neighboring gene
+# values mean similar materials.
+materials:
+  - name: cf_plate        # CNC-cut quasi-isotropic carbon laminate (not printed)
+    density_kg_m3: 1600.0
+    tensile_strength_pa: 600.0e6
+    youngs_modulus_pa: 70.0e9
+  - name: pa12_cf         # carbon-fiber nylon (PA12-CF / PAHT-CF class)
+    density_kg_m3: 1170.0
+    tensile_strength_pa: 110.0e6
+    youngs_modulus_pa: 7.6e9
+  - name: pet_cf          # carbon-fiber PET
+    density_kg_m3: 1310.0
+    tensile_strength_pa: 90.0e6
+    youngs_modulus_pa: 6.2e9
+  - name: pla_plus
+    density_kg_m3: 1240.0
+    tensile_strength_pa: 60.0e6
+    youngs_modulus_pa: 3.6e9
+  - name: petg
+    density_kg_m3: 1270.0
+    tensile_strength_pa: 50.0e6
+    youngs_modulus_pa: 2.1e9
+  - name: asa
+    density_kg_m3: 1070.0
+    tensile_strength_pa: 40.0e6
+    youngs_modulus_pa: 2.0e9
 
 structure:
   safety_factor: 1.5
   max_tip_deflection_frac: 0.05   # of arm length
   resonance_band_frac: 0.15       # reject f1 within +-15% of hover rotor freq (1P)
-  body_wall_base_m: 0.002         # scaled by genome thickness_scale
+  plate_base_m: 0.002             # deck plate thickness, scaled by thickness_scale
+  standoff_radius_m: 0.0025       # M3-ish deck standoffs
+  standoff_mass_per_m: 0.055      # kg per meter of standoff (x4)
 
 geometry:
   rotor_tip_clearance_m: 0.005    # rotor to frame and rotor to rotor
-  motor_pad_radius_m: 0.014
+  motor_pad_radius_m: 0.0135      # 2806 mount footprint
   motor_pad_height_m: 0.005
+  motor_body_radius_m: 0.0155     # visual model of the fixed motor can
+  motor_body_height_m: 0.019

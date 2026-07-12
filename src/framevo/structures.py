@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
-from .config import Platform
+from .config import Material, Platform
 from .frame_gen import ArmProperties
 
 
@@ -45,8 +45,8 @@ def first_bending_frequency(length: float, e_mod: float, i_bend: float,
 
 
 def check_structure(arm: ArmProperties, peak_rotor_thrust: float,
-                    hover_rotor_hz: float, platform: Platform) -> StructResult:
-    mat = platform.material
+                    hover_rotor_hz: float, platform: Platform,
+                    mat: Material) -> StructResult:
     p = peak_rotor_thrust * platform.safety_factor
     fiber = arm.root_height / 2.0
     stress = cantilever_stress(p, arm.length, arm.root_i_bend, fiber)
@@ -55,9 +55,9 @@ def check_structure(arm: ArmProperties, peak_rotor_thrust: float,
                                  arm.root_i_bend,
                                  platform.propulsion.motor_mass_kg, arm.mass)
     if stress > mat.tensile_strength_pa:
-        return StructResult(False, "arm overstressed", stress, defl, f1)
+        return StructResult(False, f"arm overstressed ({mat.name})", stress, defl, f1)
     if defl > platform.max_tip_deflection_frac * arm.length:
-        return StructResult(False, "arm tip deflection", stress, defl, f1)
+        return StructResult(False, f"arm tip deflection ({mat.name})", stress, defl, f1)
     if hover_rotor_hz > 0.0 and \
             abs(f1 - hover_rotor_hz) / hover_rotor_hz < platform.resonance_band_frac:
         return StructResult(False, "arm resonance with rotor 1P", stress, defl, f1)

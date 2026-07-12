@@ -16,6 +16,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+# bump when the schema changes: stale run.db files are reset automatically
+SCHEMA_VERSION = 2
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
     run_id TEXT PRIMARY KEY,
@@ -40,6 +43,7 @@ CREATE TABLE IF NOT EXISTS candidates (
     genome_json TEXT NOT NULL,
     frame_mass REAL,
     total_mass REAL,
+    material TEXT,
     valid INTEGER NOT NULL,
     failure_reason TEXT,
     fitness REAL,
@@ -111,6 +115,7 @@ class CandidateRow:
     genome: dict[str, float]
     frame_mass: float | None
     total_mass: float | None
+    material: str | None
     valid: bool
     failure_reason: str | None
     fitness: float
@@ -124,9 +129,18 @@ class CandidateRow:
 class Store:
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():  # reset databases written by an older schema
+            probe = sqlite3.connect(path)
+            version = probe.execute("PRAGMA user_version").fetchone()[0]
+            probe.close()
+            if version != SCHEMA_VERSION:
+                print(f"[framevo] {path} has schema v{version}, "
+                      f"expected v{SCHEMA_VERSION} -- resetting it", flush=True)
+                path.unlink()
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self.conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         self.conn.commit()
 
     # -- runs ---------------------------------------------------------------
@@ -163,12 +177,13 @@ class Store:
         self.conn.execute(
             "INSERT OR IGNORE INTO candidates (run_id, hash, generation_born,"
             " parent_a, parent_b, operator, mutation_mag, genome_json, frame_mass,"
-            " total_mass, valid, failure_reason, fitness, mean_whkm, worst_whkm,"
-            " f1_hz, stl_path, png_path) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " total_mass, material, valid, failure_reason, fitness, mean_whkm,"
+            " worst_whkm, f1_hz, stl_path, png_path)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (run_id, row.hash, row.generation_born, row.parent_a, row.parent_b,
              row.operator, row.mutation_mag, json.dumps(row.genome),
-             row.frame_mass, row.total_mass, int(row.valid), row.failure_reason,
-             _fit_to_db(row.fitness), _fit_to_db(row.mean_whkm),
+             row.frame_mass, row.total_mass, row.material, int(row.valid),
+             row.failure_reason, _fit_to_db(row.fitness), _fit_to_db(row.mean_whkm),
              _fit_to_db(row.worst_whkm), row.f1_hz, row.stl_path, row.png_path))
         self.conn.commit()
 
@@ -197,6 +212,12 @@ class Store:
     def candidates_for_run(self, run_id: str) -> list[sqlite3.Row]:
         return self.conn.execute(
             "SELECT * FROM candidates WHERE run_id=? ORDER BY generation_born, hash",
+            (run_id,)).fetchall()
+
+    def candidates_in_eval_order(self, run_id: str) -> list[sqlite3.Row]:
+        """Insertion (= evaluation) order: the x-axis of the progress chart."""
+        return self.conn.execute(
+            "SELECT * FROM candidates WHERE run_id=? ORDER BY rowid",
             (run_id,)).fetchall()
 
     def fitness_of(self, row: sqlite3.Row) -> float:

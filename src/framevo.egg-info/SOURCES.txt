@@ -28,6 +28,7 @@ src/framevo.egg-info/top_level.txt
 tests/test_dryden.py
 tests/test_energy.py
 tests/test_frame_gen.py
+tests/test_materials.py
 tests/test_rotor_model.py
 tests/test_sanity_anchor.py
 tests/test_structures.py
