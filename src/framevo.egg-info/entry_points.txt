@@ -1,0 +1,2 @@
+[console_scripts]
+framevo = framevo.cli:main

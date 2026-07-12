@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="488" height="372" font-family="Helvetica,Arial,sans-serif">
+<rect width="100%" height="100%" fill="#faf9f7"/>
+<path d="M83,69 C83,102 83,102 83,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M221,69 C221,102 83,102 83,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line x1="83" y1="69" x2="129" y2="135" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path d="M83,69 C83,102 175,102 175,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M129,69 C129,102 175,102 175,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,69 C83,102 221,102 221,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M221,69 C221,102 221,102 221,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line x1="129" y1="69" x2="267" y2="135" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path d="M221,69 C221,102 313,102 313,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M175,69 C175,102 313,102 313,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M313,69 C313,102 359,102 359,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,69 C83,102 359,102 359,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M221,69 C221,102 405,102 405,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,69 C83,102 405,102 405,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,153 C83,186 83,186 83,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,153 C83,186 83,186 83,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line x1="83" y1="153" x2="129" y2="219" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path d="M129,153 C129,186 175,186 175,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,153 C83,186 175,186 175,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line x1="129" y1="153" x2="221" y2="219" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path d="M175,153 C175,186 267,186 267,219" stroke="#b3574a" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M175,153 C175,186 313,186 313,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,153 C83,186 313,186 313,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M83,153 C83,186 359,186 359,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M221,153 C221,186 359,186 359,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M129,153 C129,186 405,186 405,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path d="M129,153 C129,186 405,186 405,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<circle cx="83" cy="60" r="9.0" fill="#2b4762" stroke="#5a6572" stroke-width="1.2"><title>674e1c33dd4b gen0 seed 5.885</title></circle>
+<circle cx="129" cy="60" r="9.0" fill="#5f778e" stroke="#5a6572" stroke-width="1.2"><title>3e76ba7af4b9 gen0 seed 6.954</title></circle>
+<circle cx="175" cy="60" r="9.0" fill="#869aae" stroke="#5a6572" stroke-width="1.2"><title>e80f9cfd2688 gen0 seed 7.744</title></circle>
+<circle cx="221" cy="60" r="9.0" fill="#8c9fb3" stroke="#5a6572" stroke-width="1.2"><title>465130b73e42 gen0 seed 7.867</title></circle>
+<circle cx="267" cy="60" r="9.0" fill="#adbdcf" stroke="#5a6572" stroke-width="1.2"><title>2c2caf129043 gen0 seed 8.545</title></circle>
+<circle cx="313" cy="60" r="9.0" fill="#bbcada" stroke="#5a6572" stroke-width="1.2"><title>1656909eb120 gen0 seed 8.824</title></circle>
+<circle cx="359" cy="60" r="9.0" fill="#c2d0e0" stroke="#5a6572" stroke-width="1.2"><title>a148614fb2cf gen0 seed 8.960</title></circle>
+<circle cx="405" cy="60" r="9.0" fill="none" stroke="#b0a9a1" stroke-width="1.2"><title>9bb90baba9cb gen0 seed battery does not fit body cavity</title></circle>
+<circle cx="83" cy="144" r="9.0" fill="#1b3855" stroke="#5a6572" stroke-width="1.2"><title>57a6871bb44d gen1 crossover 5.549</title></circle>
+<circle cx="129" cy="144" r="5.0" fill="#2b4762" stroke="#5a6572" stroke-width="1.2"><title>674e1c33dd4b gen0 seed 5.885</title></circle>
+<circle cx="175" cy="144" r="9.0" fill="#314d67" stroke="#5a6572" stroke-width="1.2"><title>4c3859fd829a gen1 crossover 6.010</title></circle>
+<circle cx="221" cy="144" r="9.0" fill="#35506a" stroke="#5a6572" stroke-width="1.2"><title>bc7d3a77e2ce gen1 crossover 6.079</title></circle>
+<circle cx="267" cy="144" r="5.0" fill="#5f778e" stroke="#5a6572" stroke-width="1.2"><title>3e76ba7af4b9 gen0 seed 6.954</title></circle>
+<circle cx="313" cy="144" r="9.0" fill="#94a7ba" stroke="#5a6572" stroke-width="1.2"><title>f2f32e0b3917 gen1 crossover 8.037</title></circle>
+<circle cx="359" cy="144" r="9.0" fill="#cfdceb" stroke="#5a6572" stroke-width="1.2"><title>cd2a0cb149a6 gen1 crossover 9.233</title></circle>
+<circle cx="405" cy="144" r="9.0" fill="none" stroke="#b0a9a1" stroke-width="1.2"><title>51a25179d9e3 gen1 crossover battery does not fit body cavity</title></circle>
+<circle cx="83" cy="228" r="9.0" fill="#14324f" stroke="#5a6572" stroke-width="1.2"><title>e1f0bb5b92d9 gen2 crossover 5.411</title></circle>
+<circle cx="129" cy="228" r="5.0" fill="#1b3855" stroke="#5a6572" stroke-width="1.2"><title>57a6871bb44d gen1 crossover 5.549</title></circle>
+<circle cx="175" cy="228" r="9.0" fill="#25415d" stroke="#5a6572" stroke-width="1.2"><title>4e5823e8e691 gen2 crossover 5.749</title></circle>
+<circle cx="221" cy="228" r="5.0" fill="#2b4762" stroke="#5a6572" stroke-width="1.2"><title>674e1c33dd4b gen0 seed 5.885</title></circle>
+<circle cx="267" cy="228" r="9.0" fill="#2d4964" stroke="#5a6572" stroke-width="1.2"><title>54c6f324e24d gen2 mutation 5.932</title></circle>
+<circle cx="313" cy="228" r="9.0" fill="#334f69" stroke="#5a6572" stroke-width="1.2"><title>c122d93067bf gen2 crossover 6.054</title></circle>
+<circle cx="359" cy="228" r="9.0" fill="none" stroke="#b0a9a1" stroke-width="1.2"><title>9c745cca2ec9 gen2 crossover rotor disks overlap (tip clearance)</title></circle>
+<circle cx="405" cy="228" r="9.0" fill="none" stroke="#b0a9a1" stroke-width="1.2"><title>e278582a1aec gen2 crossover rotor too close to body</title></circle>
+<text x="16" y="64" font-size="11" fill="#8a8580">g0</text>
+<text x="16" y="148" font-size="11" fill="#8a8580">g1</text>
+<text x="16" y="232" font-size="11" fill="#8a8580">g2</text>
+<line x1="60" y1="346" x2="76" y2="346" stroke="#4a6fa5" stroke-width="2"/>
+<text x="80" y="350" font-size="10" fill="#5a5650">crossover</text>
+<line x1="153" y1="346" x2="169" y2="346" stroke="#b3574a" stroke-width="2"/>
+<text x="173" y="350" font-size="10" fill="#5a5650">mutation</text>
+<line x1="239" y1="346" x2="255" y2="346" stroke="#7a915a" stroke-width="2"/>
+<text x="259" y="350" font-size="10" fill="#5a5650">immigrant</text>
+<line x1="332" y1="346" x2="348" y2="346" stroke="#999188" stroke-width="2"/>
+<text x="352" y="350" font-size="10" fill="#5a5650">elite</text>
+<line x1="397" y1="346" x2="413" y2="346" stroke="#bbb4ac" stroke-width="2"/>
+<text x="417" y="350" font-size="10" fill="#5a5650">seed</text>
+<line x1="455" y1="346" x2="471" y2="346" stroke="#888888" stroke-width="2"/>
+<text x="475" y="350" font-size="10" fill="#5a5650">cmaes</text>
+</svg>

@@ -1,0 +1,53 @@
+# Fixed platform. Never varied by the optimizer.
+battery:
+  cells: 4                 # 4S LiPo
+  capacity_mah: 5000
+  voltage_nominal: 14.8    # V
+  mass_kg: 0.520
+  # rigid rectangular block, meters (L x W x H)
+  size_m: [0.138, 0.047, 0.038]
+  fit_clearance_m: 0.001   # required clearance per axis inside the body cavity
+
+propulsion:
+  # 4x 2306-size brushless + 5-inch prop.
+  # Ground truth: UIUC Propeller Database, GWS Direct Drive 5x4.3
+  # (5 in diameter, 4.3 in pitch) -- static + 4 dynamic RPM sweeps,
+  # cached in data/uiuc/. See scripts/fetch_uiuc.py.
+  prop_name: "GWS DD 5x4.3 (UIUC volume-2)"
+  prop_diameter_m: 0.127
+  prop_pitch_m: 0.10922
+  n_rotors: 4
+  motor_mass_kg: 0.032          # each
+  motor_esc_efficiency: 0.85    # combined motor + ESC, electrical->shaft
+  max_rpm: 28000                # 2306 ~2400KV on 4S, loaded ceiling
+  max_motor_power_w: 400        # per motor, electrical
+  uiuc_data_dir: "data/uiuc"
+  uiuc_static_file: "gwsdd_5x4.3_static_0493rd.txt"
+  uiuc_dynamic_files:
+    - "gwsdd_5x4.3_0511rd_4048.txt"
+    - "gwsdd_5x4.3_0512rd_6047.txt"
+    - "gwsdd_5x4.3_0513rd_8044.txt"
+    - "gwsdd_5x4.3_0514rd_8078.txt"
+
+flight_controller:
+  mount_pattern_m: 0.0305       # 30.5 x 30.5 mm hole pattern
+  mount_flat_m: 0.0365          # required flat square on the top plate
+  mass_kg: 0.015
+  wiring_receiver_mass_kg: 0.010
+
+material:
+  # carbon-fiber plate, fixed
+  density_kg_m3: 1600.0
+  tensile_strength_pa: 600.0e6
+  youngs_modulus_pa: 70.0e9
+
+structure:
+  safety_factor: 1.5
+  max_tip_deflection_frac: 0.05   # of arm length
+  resonance_band_frac: 0.15       # reject f1 within +-15% of hover rotor freq (1P)
+  body_wall_base_m: 0.002         # scaled by genome thickness_scale
+
+geometry:
+  rotor_tip_clearance_m: 0.005    # rotor to frame and rotor to rotor
+  motor_pad_radius_m: 0.014
+  motor_pad_height_m: 0.005

@@ -1,0 +1,24 @@
+# Evolution-loop hyper-parameters.
+optimizer: ga            # ga | cmaes (cmaes has no discrete parents; see README)
+population: 16
+generations: 40
+seed: 42
+
+ga:
+  tournament_k: 3
+  elitism: 2                   # top-N carried over unchanged ("elite" operator)
+  crossover_prob: 0.9          # else the child is a pure mutant of one parent
+  sbx_eta: 8.0                 # SBX distribution index (higher = children closer to parents)
+  mutation_prob_per_gene: 0.35
+  mutation_sigma0: 0.18        # gaussian sigma, fraction of each gene's range
+  mutation_sigma_decay: 0.97   # per generation
+  mutation_sigma_min: 0.03
+  immigrant_prob: 0.10         # chance a non-elite slot is a fresh random genome
+
+cmaes:
+  sigma0: 0.25                 # fraction of normalized [0,1] genome space
+
+execution:
+  workers: auto                # auto = os.cpu_count()
+  task_timeout_s: 180          # per subprocess (build or scenario task)
+  results_dir: results

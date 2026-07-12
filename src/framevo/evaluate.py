@@ -1,0 +1,116 @@
+"""Candidate evaluation pipeline: the functions executed inside worker
+subprocesses, plus fitness aggregation.
+
+Stage 1 (`build_task`): genome -> frame mesh, validity, STL + PNG artifacts,
+drag table. Heavier imports (trimesh, matplotlib) happen only here.
+
+Stage 2 (`scenario_task`): one (candidate, scenario) flight simulation.
+Scenarios are embarrassingly parallel and are distributed as individual tasks.
+
+Aggregation (`aggregate_fitness`): mean + lambda * worst across the scenario
+portfolio (or pure minimax), infinity if any scenario failed.
+"""
+from __future__ import annotations
+
+import dataclasses
+import math
+from pathlib import Path
+from typing import Any
+
+from .aero import DragTable
+from .config import Config, load_config
+from .genome import Genome
+from .rotor_model import RotorModel
+from .simulator import ScenarioResult, simulate_scenario
+
+_CACHE: dict[str, tuple[Config, RotorModel]] = {}
+
+
+def _context(root: str) -> tuple[Config, RotorModel]:
+    """Per-process config + rotor tables (loaded once, reused across tasks)."""
+    if root not in _CACHE:
+        cfg = load_config(root)
+        _CACHE[root] = (cfg, RotorModel.from_platform(cfg.platform.propulsion))
+    return _CACHE[root]
+
+
+def build_task(root: str, genome_values: tuple[float, ...], generation: int,
+               results_dir: str) -> dict[str, Any]:
+    """Build one candidate's geometry and artifacts. Returns a compact,
+    picklable summary; the mesh itself stays in the STL file."""
+    from .frame_gen import build_frame
+    from .aero import build_drag_table
+    from .render import render_placeholder, render_thumbnail
+
+    cfg, rotor = _context(root)
+    genome = Genome(genome_values)
+    frame = build_frame(genome, cfg.platform)
+
+    gen_dir = Path(results_dir) / "frames" / f"gen_{generation:04d}"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    suffix = "" if frame.valid else "_INVALID"
+    stl_path = gen_dir / f"{genome.hash}{suffix}.stl"
+    png_path = gen_dir / f"{genome.hash}.png"
+
+    if frame.mesh is not None:
+        frame.mesh.export(stl_path)
+        render_thumbnail(frame.mesh, png_path, valid=frame.valid)
+    else:
+        render_placeholder(png_path, frame.failure_reason or "no mesh")
+
+    out: dict[str, Any] = {
+        "hash": genome.hash,
+        "valid": frame.valid,
+        "failure_reason": frame.failure_reason,
+        "frame_mass": frame.frame_mass,
+        "total_mass": frame.total_mass,
+        "cg": [float(x) for x in frame.cg],
+        "stl_path": str(stl_path),
+        "png_path": str(png_path),
+        "drag": None,
+        "arm": None,
+    }
+    if frame.valid:
+        drag = build_drag_table(frame, cfg.platform)
+        out["drag"] = {f.name: getattr(drag, f.name) for f in dataclasses.fields(DragTable)}
+        out["arm"] = dataclasses.asdict(frame.arm)
+    return out
+
+
+def scenario_task(root: str, total_mass: float, drag_fields: dict[str, Any],
+                  scenario_name: str) -> dict[str, Any]:
+    """Fly one scenario. Fixed per-scenario seeds make gust histories
+    identical across candidates."""
+    cfg, rotor = _context(root)
+    drag = DragTable(**drag_fields)
+    result = simulate_scenario(total_mass, drag, rotor, cfg.scenario(scenario_name),
+                               cfg.mission, cfg.rain)
+    return dataclasses.asdict(result)
+
+
+def structural_check(root: str, arm_fields: dict[str, Any], total_mass: float,
+                     peak_rotor_thrust: float) -> tuple[bool, str | None, float]:
+    """Worst-case-across-scenarios structural constraint (runs in-parent:
+    it is a closed-form beam calculation)."""
+    from .frame_gen import ArmProperties
+    from .structures import check_structure
+
+    cfg, rotor = _context(root)
+    # hover rotor frequency (1P) for the resonance band, ISA sea level
+    hover_n, _ = rotor.hover(total_mass, 1.225)
+    res = check_structure(ArmProperties(**arm_fields), peak_rotor_thrust,
+                          hover_n, cfg.platform)
+    return res.ok, res.reason, res.f1_hz
+
+
+def aggregate_fitness(results: list[ScenarioResult | None], mode: str,
+                      lambda_worst: float) -> tuple[float, float, float]:
+    """(fitness, mean_whkm, worst_whkm). Any failed/missing scenario -> inf."""
+    if any(r is None or not r.valid for r in results) or not results:
+        return math.inf, math.inf, math.inf
+    values = [r.wh_per_km for r in results]  # type: ignore[union-attr]
+    mean = sum(values) / len(values)
+    worst = max(values)
+    if mode == "minimax":
+        return worst, mean, worst
+    return mean + lambda_worst * worst, mean, worst

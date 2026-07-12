@@ -1,0 +1,53 @@
+digraph lineage {
+  rankdir=TB; node [shape=circle, style=filled, fontsize=8];
+  "1656909eb120" [label="165690\n8.82", fillcolor="#bbcada", style="filled", fontcolor=black];
+  "2c2caf129043" [label="2c2caf\n8.54", fillcolor="#adbdcf", style="filled", fontcolor=black];
+  "3e76ba7af4b9" [label="3e76ba\n6.95", fillcolor="#5f778e", style="filled", fontcolor=white];
+  "465130b73e42" [label="465130\n7.87", fillcolor="#8c9fb3", style="filled", fontcolor=black];
+  "674e1c33dd4b" [label="674e1c\n5.89", fillcolor="#2b4762", style="filled", fontcolor=white];
+  "9bb90baba9cb" [label="9bb90b\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "a148614fb2cf" [label="a14861\n8.96", fillcolor="#c2d0e0", style="filled", fontcolor=black];
+  "e80f9cfd2688" [label="e80f9c\n7.74", fillcolor="#869aae", style="filled", fontcolor=black];
+  "4c3859fd829a" [label="4c3859\n6.01", fillcolor="#314d67", style="filled", fontcolor=white];
+  "674e1c33dd4b" -> "4c3859fd829a" [label="crossover", color="#4a6fa5", fontsize=7];
+  "3e76ba7af4b9" -> "4c3859fd829a" [label="crossover", color="#4a6fa5", fontsize=7];
+  "51a25179d9e3" [label="51a251\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "465130b73e42" -> "51a25179d9e3" [label="crossover", color="#4a6fa5", fontsize=7];
+  "674e1c33dd4b" -> "51a25179d9e3" [label="crossover", color="#4a6fa5", fontsize=7];
+  "57a6871bb44d" [label="57a687\n5.55", fillcolor="#1b3855", style="filled", fontcolor=white];
+  "674e1c33dd4b" -> "57a6871bb44d" [label="crossover", color="#4a6fa5", fontsize=7];
+  "465130b73e42" -> "57a6871bb44d" [label="crossover", color="#4a6fa5", fontsize=7];
+  "bc7d3a77e2ce" [label="bc7d3a\n6.08", fillcolor="#35506a", style="filled", fontcolor=white];
+  "674e1c33dd4b" -> "bc7d3a77e2ce" [label="crossover", color="#4a6fa5", fontsize=7];
+  "465130b73e42" -> "bc7d3a77e2ce" [label="crossover", color="#4a6fa5", fontsize=7];
+  "cd2a0cb149a6" [label="cd2a0c\n9.23", fillcolor="#cfdceb", style="filled", fontcolor=black];
+  "1656909eb120" -> "cd2a0cb149a6" [label="crossover", color="#4a6fa5", fontsize=7];
+  "674e1c33dd4b" -> "cd2a0cb149a6" [label="crossover", color="#4a6fa5", fontsize=7];
+  "f2f32e0b3917" [label="f2f32e\n8.04", fillcolor="#94a7ba", style="filled", fontcolor=black];
+  "465130b73e42" -> "f2f32e0b3917" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e80f9cfd2688" -> "f2f32e0b3917" [label="crossover", color="#4a6fa5", fontsize=7];
+  "4e5823e8e691" [label="4e5823\n5.75", fillcolor="#25415d", style="filled", fontcolor=white];
+  "674e1c33dd4b" -> "4e5823e8e691" [label="crossover", color="#4a6fa5", fontsize=7];
+  "57a6871bb44d" -> "4e5823e8e691" [label="crossover", color="#4a6fa5", fontsize=7];
+  "54c6f324e24d" [label="54c6f3\n5.93", fillcolor="#2d4964", style="filled", fontcolor=white];
+  "4c3859fd829a" -> "54c6f324e24d" [label="mutation", color="#b3574a", fontsize=7];
+  "9c745cca2ec9" [label="9c745c\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "57a6871bb44d" -> "9c745cca2ec9" [label="crossover", color="#4a6fa5", fontsize=7];
+  "bc7d3a77e2ce" -> "9c745cca2ec9" [label="crossover", color="#4a6fa5", fontsize=7];
+  "c122d93067bf" [label="c122d9\n6.05", fillcolor="#334f69", style="filled", fontcolor=white];
+  "4c3859fd829a" -> "c122d93067bf" [label="crossover", color="#4a6fa5", fontsize=7];
+  "57a6871bb44d" -> "c122d93067bf" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e1f0bb5b92d9" [label="e1f0bb\n5.41", fillcolor="#14324f", style="filled", fontcolor=white];
+  "57a6871bb44d" -> "e1f0bb5b92d9" [label="crossover", color="#4a6fa5", fontsize=7];
+  "57a6871bb44d" -> "e1f0bb5b92d9" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e278582a1aec" [label="e27858\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "674e1c33dd4b" -> "e278582a1aec" [label="crossover", color="#4a6fa5", fontsize=7];
+  "674e1c33dd4b" -> "e278582a1aec" [label="crossover", color="#4a6fa5", fontsize=7];
+  { rank=same; "1656909eb120"; "2c2caf129043"; "3e76ba7af4b9"; "465130b73e42"; "674e1c33dd4b"; "9bb90baba9cb"; "a148614fb2cf"; "e80f9cfd2688" }
+  { rank=same; "4c3859fd829a"; "51a25179d9e3"; "57a6871bb44d"; "bc7d3a77e2ce"; "cd2a0cb149a6"; "f2f32e0b3917" }
+  { rank=same; "4e5823e8e691"; "54c6f324e24d"; "9c745cca2ec9"; "c122d93067bf"; "e1f0bb5b92d9"; "e278582a1aec" }
+  "674e1c33dd4b" -> "674e1c33dd4b" [style=dotted, color="#999188", label="elite"];
+  "3e76ba7af4b9" -> "3e76ba7af4b9" [style=dotted, color="#999188", label="elite"];
+  "57a6871bb44d" -> "57a6871bb44d" [style=dotted, color="#999188", label="elite"];
+  "674e1c33dd4b" -> "674e1c33dd4b" [style=dotted, color="#999188", label="elite"];
+}

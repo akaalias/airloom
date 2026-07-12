@@ -1,0 +1,87 @@
+# Environment scenario portfolio. Every candidate flies ALL scenarios.
+# Each scenario has a FIXED turbulence seed: every candidate sees identical
+# gust histories, so fitness differences are frame differences, never gust luck.
+#
+# wind_from_deg is meteorological: 0 = wind FROM the north, 90 = FROM the east.
+# turbulence intensity names follow MIL-F-8785C low-altitude convention
+# (sigma_w = 0.1 * W20 with W20 = 15/30/45 kt for light/moderate/severe).
+
+mission:
+  # identical in all scenarios: 2 km north, then 2 km south, 12 m/s ground
+  # speed, 30 m AGL. Total 4 km.
+  legs_m: [2000.0, -2000.0]     # +north / -north (south) along a N-S line
+  cruise_speed_ms: 12.0
+  altitude_m: 30.0
+  accel_limit_ms2: 4.0
+  sim_rate_hz: 100
+  time_factor_limit: 1.6        # > 1.6x nominal leg time -> "did not complete"
+
+aggregation:
+  mode: mean_plus_worst          # or: minimax
+  lambda_worst: 0.5
+
+early_reject:
+  # optional cheap screen: fly calm_warm first; candidates worse than the
+  # current generation median by `margin` skip remaining scenarios and get a
+  # finite penalized fitness (median-relative), keeping gradient information.
+  enabled: false
+  margin: 0.30
+  penalty_factor: 2.0
+
+rain_model:
+  # Empirical heavy-rain penalties; see NASA TP-2671 (Dunham et al.) and
+  # Thompson et al. heavy-rain aero-penalty studies. All knobs, not physics.
+  drop_terminal_velocity_ms: 9.0
+  thrust_efficiency_penalty: 0.15   # CT multiplied by (1 - this) in rain
+  film_mass_kg_m2: 0.20             # water film added mass per top-projected area
+
+scenarios:
+  calm_warm:
+    description: "25 C, no wind, no rain (baseline / sanity case)"
+    temperature_c: 25.0
+    wind_speed_ms: 0.0
+    wind_from_deg: 0.0
+    turbulence: none
+    rain_mm_h: 0.0
+    seed: 101
+  cold_headwind:
+    description: "5 C, 8 m/s from north, moderate Dryden turbulence"
+    temperature_c: 5.0
+    wind_speed_ms: 8.0
+    wind_from_deg: 0.0
+    turbulence: moderate
+    rain_mm_h: 0.0
+    seed: 102
+  storm:
+    description: "5 C, 8 m/s north, severe turbulence, 25 mm/h rain"
+    temperature_c: 5.0
+    wind_speed_ms: 8.0
+    wind_from_deg: 0.0
+    turbulence: severe
+    rain_mm_h: 25.0
+    seed: 103
+  crosswind:
+    description: "15 C, 10 m/s pure crosswind from east, moderate turbulence"
+    temperature_c: 15.0
+    wind_speed_ms: 10.0
+    wind_from_deg: 90.0
+    turbulence: moderate
+    rain_mm_h: 0.0
+    seed: 104
+  gusty_light:
+    description: "10 C, 4 m/s from northwest, severe gusts (control effort & loads)"
+    temperature_c: 10.0
+    wind_speed_ms: 4.0
+    wind_from_deg: 315.0
+    turbulence: severe
+    rain_mm_h: 0.0
+    seed: 105
+  hot_thin:
+    description: "35 C, density altitude 1500 m (thin air), light wind"
+    temperature_c: 35.0
+    density_altitude_m: 1500.0
+    wind_speed_ms: 2.0
+    wind_from_deg: 0.0
+    turbulence: light
+    rain_mm_h: 0.0
+    seed: 106
