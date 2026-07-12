@@ -29,6 +29,48 @@ GENOME_SPEC: tuple[tuple[str, float, float], ...] = (
     ("material", 0.0, 0.999),
 )
 
+# human-readable labels + formatting for galleries/tooltips
+GENE_FORMAT: tuple[tuple[str, str, str], ...] = (
+    # (gene, label, unit) -- unit "mm" scales x1000, "deg"/"x"/"" are direct
+    ("arm_length", "arm length", "mm"),
+    ("arm_width", "arm width", "mm"),
+    ("arm_height", "arm thickness", "mm"),
+    ("arm_sweep_deg", "arm sweep", "deg"),
+    ("arm_dihedral_deg", "arm dihedral", "deg"),
+    ("section_blend", "section blend", ""),
+    ("arm_taper", "arm taper", ""),
+    ("body_length", "deck length", "mm"),
+    ("body_width", "deck width", "mm"),
+    ("body_height", "deck gap", "mm"),
+    ("body_fillet", "corner fillet", "mm"),
+    ("body_pitch_deg", "battery wedge", "deg"),
+    ("thickness_scale", "plate thickness", "x"),
+    ("material", "material", ""),
+)
+
+
+def describe_genome(genes: dict[str, float],
+                    material_name: str | None = None) -> list[tuple[str, str]]:
+    """(label, formatted value) pairs for display, e.g. ('arm length',
+    '135.0 mm'). The material gene shows its resolved library name."""
+    out = []
+    for gene, label, unit in GENE_FORMAT:
+        v = genes.get(gene)
+        if v is None:
+            continue
+        if gene == "material":
+            out.append((label, material_name or f"{v:.2f}"))
+        elif unit == "mm":
+            out.append((label, f"{v * 1000:.1f} mm"))
+        elif unit == "deg":
+            out.append((label, f"{v:.1f}°"))
+        elif unit == "x":
+            out.append((label, f"×{v:.2f}"))
+        else:
+            out.append((label, f"{v:.2f}"))
+    return out
+
+
 N_GENES = len(GENOME_SPEC)
 GENE_NAMES = tuple(name for name, _, _ in GENOME_SPEC)
 LOWER = np.array([lo for _, lo, _ in GENOME_SPEC])

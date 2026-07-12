@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from .dbstore import Store
+from .genome import describe_genome
 
 OPERATOR_COLORS = {
     "crossover": "#4a6fa5",
@@ -402,11 +403,15 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
             else:
                 fill = "none"  # hollow = invalid
                 stroke = "#b9b6a6"
-            title = html.escape(
-                f"{h} gen{cand['generation_born'] if cand else g} "
-                f"{cand['operator'] if cand else ''} "
-                + (f"{fit:.3f}" if math.isfinite(fit)
-                   else (cand["failure_reason"] or "invalid") if cand else ""))
+            head = (f"{h} gen{cand['generation_born'] if cand else g} "
+                    f"{cand['operator'] if cand else ''} "
+                    + (f"{fit:.3f}" if math.isfinite(fit)
+                       else (cand["failure_reason"] or "invalid") if cand else ""))
+            if cand is not None:  # full genome breakdown in the tooltip
+                genes = describe_genome(json.loads(cand["genome_json"]),
+                                        cand["material"])
+                head += "\n" + "\n".join(f"{lab}: {val}" for lab, val in genes)
+            title = html.escape(head)
             svg.append(f'<circle class="nd" data-h="{h}"'
                        f' cx="{x:.0f}" cy="{y:.0f}" r="{rr:.1f}"'
                        f' fill="{fill}" stroke="{stroke}" stroke-width="1.2">'

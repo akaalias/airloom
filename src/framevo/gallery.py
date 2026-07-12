@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 
 from .dbstore import Store
+from .genome import describe_genome
 
 TUFTE_TOKENS = """
 :root{
@@ -84,6 +85,7 @@ table.sc td:last-child{text-align:right;color:var(--ink)}
 .dmeta .hash{font:14px var(--mono);color:var(--muted)}
 .dmeta .headline{font-size:17px;margin:4px 0 10px}
 .dmeta .headline b{font-size:21px}
+.dmeta .tables{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
 table.dt{border-collapse:collapse;font-size:14px;margin-top:2px}
 table.dt td,table.dt th{text-align:left;padding:3px 18px 3px 0;border-bottom:1px solid var(--rule-soft)}
 table.dt th{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
@@ -540,6 +542,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             for s in scen_cache.get(h, []))
         mass = f"{c['frame_mass'] * 1e3:.1f}" if c["frame_mass"] else "&mdash;"
         mat = f" &middot; {c['material']}" if c["material"] else ""
+        genes = describe_genome(json.loads(c["genome_json"]), c["material"])
+        gene_rows = "".join(
+            f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td></tr>"
+            for lab, val in genes)
         parts.append(
             f'<div class="detail" id="d-{h}">'
             f"{viewer}"
@@ -548,8 +554,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             f"mean {_fmt(c['mean_whkm'])} &middot; worst {_fmt(c['worst_whkm'])} Wh/km"
             f" &middot; frame {mass}&thinsp;g{mat}"
             f" &middot; born g{c['generation_born']} via {c['operator']}</div>"
+            f'<div class="tables">'
             f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
             f"<th>avg power, w</th><th>max tilt</th><th></th></tr>{sc_rows}</table>"
+            f'<table class="dt"><tr><th>gene</th><th>value</th></tr>{gene_rows}</table>'
+            f"</div>"
             f'</div><div class="parents">{parents_html}</div></div>')
 
     parts.extend(blobs)
