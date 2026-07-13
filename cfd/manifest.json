@@ -1,0 +1,91 @@
+{
+  "rho": 1.225,
+  "u_ms": 12.0,
+  "docker_image": "opencfd/openfoam-default",
+  "cases": [
+    {
+      "name": "arms_baseline_t00",
+      "geometry": "arms_baseline",
+      "tilt_deg": 0.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.0023256
+    },
+    {
+      "name": "arms_baseline_t20",
+      "geometry": "arms_baseline",
+      "tilt_deg": 20.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.0109412
+    },
+    {
+      "name": "arms_baseline_t40",
+      "geometry": "arms_baseline",
+      "tilt_deg": 40.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.0161364
+    },
+    {
+      "name": "body_baseline_t00",
+      "geometry": "body_baseline",
+      "tilt_deg": 0.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.005220600000000001
+    },
+    {
+      "name": "body_baseline_t20",
+      "geometry": "body_baseline",
+      "tilt_deg": 20.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.009781800000000002
+    },
+    {
+      "name": "body_baseline_t40",
+      "geometry": "body_baseline",
+      "tilt_deg": 40.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.011050200000000001
+    },
+    {
+      "name": "full_baseline_t00",
+      "geometry": "full_baseline",
+      "tilt_deg": 0.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.007546200000000001
+    },
+    {
+      "name": "full_baseline_t20",
+      "geometry": "full_baseline",
+      "tilt_deg": 20.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.020723000000000002
+    },
+    {
+      "name": "full_baseline_t40",
+      "geometry": "full_baseline",
+      "tilt_deg": 40.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.0271866
+    },
+    {
+      "name": "full_contrast_t00",
+      "geometry": "full_contrast",
+      "tilt_deg": 0.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.00879
+    },
+    {
+      "name": "full_contrast_t20",
+      "geometry": "full_contrast",
+      "tilt_deg": 20.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.0230156
+    },
+    {
+      "name": "full_contrast_t40",
+      "geometry": "full_contrast",
+      "tilt_deg": 40.0,
+      "u_ms": 12.0,
+      "predicted_cda_m2": 0.0292674
+    }
+  ]
+}
