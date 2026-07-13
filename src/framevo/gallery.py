@@ -85,17 +85,75 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 .knobs td.num{text-align:right;font-feature-settings:"tnum" 1}
 .kline{font-size:12.5px;font-style:italic;line-height:1.65;
   color:var(--faint);margin:0 0 12px}
-.dround{margin:0;font-size:13px;color:var(--muted)}
-.dround summary{cursor:pointer;font:600 11px var(--serif);
-  font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.07em;color:#6a4a8a}
-.dround ul{margin:10px 0 6px;padding-left:18px;line-height:1.5}
-.dround li{margin-bottom:6px}
-.dround li.rej{color:#8c2f1f;opacity:.8}
-.dround .plab{font-style:italic;margin:8px 0 4px}
-.dround pre{white-space:pre-wrap;font:11px/1.5 var(--mono);
-  border-left:2px solid #b9a6cf;padding:4px 0 4px 12px;margin:0;
-  max-height:340px;overflow-y:auto}
+.dround-open{display:block;text-align:left;cursor:pointer;background:none;
+  border:none;border-top:1px solid var(--rule);padding:10px 0 0;margin:2px 0 0;
+  font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:#6a4a8a;width:100%}
+.dround-open::before{content:"▸ "}
+.dround-open:hover{color:#3b2a52}
+/* designer-round overlay: prompt (left) | proposals (right) */
+.dovl{position:fixed;inset:0;background:rgba(24,18,32,.45);z-index:70;
+  display:none;align-items:center;justify-content:center;padding:28px}
+.dovl.open{display:flex}
+.dbox{background:var(--paper);width:min(1180px,94vw);height:min(780px,90vh);
+  display:flex;flex-direction:column;border:1px solid #6a4a8a;
+  box-shadow:0 14px 44px rgba(24,18,32,.35)}
+.dbar{display:flex;align-items:center;gap:16px;padding:12px 22px;
+  border-bottom:1px solid var(--rule);background:rgba(106,74,138,.08);
+  flex-shrink:0}
+.dbar .t{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:#6a4a8a}
+.dclose{margin-left:auto;font:24px/1 var(--serif);background:none;
+  border:none;color:var(--muted);cursor:pointer;padding:0 4px}
+.dclose:hover{color:var(--ink)}
+.dcols2{flex:1;display:flex;min-height:0}
+.dcols2 section{flex:1;min-width:0;display:flex;flex-direction:column;
+  padding:16px 22px 20px}
+.dcols2 section+section{border-left:1px solid var(--rule)}
+.dcols2 h3{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:#6a4a8a;
+  margin:0 0 12px}
+.dprompt pre{flex:1;overflow-y:auto;white-space:pre-wrap;
+  font:12px/1.6 var(--mono);margin:0;border-left:2px solid #b9a6cf;
+  padding:2px 0 2px 14px;color:var(--muted)}
+.dprops ul{flex:1;overflow-y:auto;margin:0;padding-left:20px;
+  font-size:14.5px;line-height:1.55;color:var(--muted)}
+.dprops li{margin-bottom:14px}
+.dprops li.rej{color:#8c2f1f;opacity:.85}
+.dprops .fate{display:block;font-size:12.5px;font-style:italic;
+  color:var(--faint);margin-top:2px}
+.dprops .fate.bad{color:#8c2f1f}
+@media(max-width:900px){.dcols2{flex-direction:column;overflow-y:auto}
+  .dcols2 section{flex:none}.dcols2 section+section{border-left:none;
+  border-top:1px solid var(--rule)}.dprompt pre{max-height:300px}}
+/* claude-infused generations & candidates: the purple language */
+.genrow.claude{background:rgba(106,74,138,.05);border:1px solid
+  rgba(106,74,138,.18);padding:16px 18px;margin:0 -19px}
+.card.claude{border:1.5px solid #6a4a8a}
+.card.setter.claude{background:#3b2a52;border-color:#3b2a52}
+.card.setter.claude .hash,.card.setter.claude .agg .unit,
+.card.setter.claude table.sc td{color:#c9b9de}
+.card.setter.claude table.sc td:last-child{color:var(--paper)}
+.detail.claude:not(.setter){border-top:2px solid #6a4a8a}
+.detail.setter.claude{background:#3b2a52;border-top-color:#3b2a52}
+.detail.setter.claude table.dt td{border-bottom-color:#54406e}
+.detail.setter.claude .dmeta .tlab{border-top-color:#54406e}
+.detail.setter.claude .dhead .hash,.detail.setter.claude .parents .lab,
+.detail.setter.claude .parents figcaption,.detail.setter.claude table.dt th,
+.detail.setter.claude .note .nlab,.detail.setter.claude .viewer .hint,
+.detail.setter.claude .nmodel,.detail.setter.claude .lgd{color:#c9b9de}
+.detail .chip.claude{background:#6a4a8a;color:var(--paper)}
+.detail.setter.claude .chip{background:var(--paper);color:#3b2a52}
+.detail.setter.claude .chip.claude{background:#c9b9de;color:#3b2a52}
+/* 3d overlay bar inherits the claude tint */
+#ovl.claude .ovl-bar,#ovl.claude .ovl-lgd{background:rgba(106,74,138,.08)}
+#ovl.claude.inv .ovl-bar,#ovl.claude.inv .ovl-lgd{background:#3b2a52;
+  border-bottom-color:#54406e}
+#ovl.claude.inv .ovl-bar .hash .h,#ovl.claude.inv .ovl-tabs button,
+#ovl.claude.inv #ovl-close,#ovl.claude.inv .ovl-lgd .lgd{color:#c9b9de}
+#ovl.claude.inv .ovl-tabs button{border-color:#54406e}
+#ovl.claude.inv .ovl-tabs button.on{color:var(--paper);
+  border-color:var(--paper)}
 h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
@@ -270,6 +328,19 @@ table.dt.hd b{font-size:17px}
 .ovl-body canvas{flex:1;width:100%;min-height:0;cursor:grab;touch-action:none}
 .ovl-hint{position:absolute;right:26px;bottom:12px;font:italic 12px var(--serif);
   color:var(--faint);pointer-events:none}
+"""
+
+DOVL_JS = r"""
+function dovlOpen(id){var d=document.getElementById(id);
+  if(d){d.classList.add("open");document.body.style.overflow="hidden"}}
+function dovlClose(el){
+  var d=el.classList&&el.classList.contains("dovl")?el:el.closest(".dovl");
+  if(d){d.classList.remove("open");document.body.style.overflow=""}}
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape")return;
+  document.querySelectorAll(".dovl.open").forEach(function(d){
+    d.classList.remove("open");document.body.style.overflow=""});
+});
 """
 
 VIEWER_JS = r"""
@@ -554,6 +625,7 @@ function openOverlay(d){
   if(!soloV)return; // no webgl
   ovl.classList.add("open");
   ovl.classList.toggle("inv",d.setter==="1");
+  ovl.classList.toggle("claude",d.claude==="1");
   document.body.style.overflow="hidden";
   // hash and fit are trusted generator output (hex + number)
   ovl.querySelector(".ovl-bar .hash").innerHTML=
@@ -616,7 +688,8 @@ document.querySelectorAll("img.peek").forEach(function(img){
   img.addEventListener("click",function(){
     openOverlay({mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
                  title:img.dataset.title,anctitle:img.dataset.anctitle,
-                 fit:img.dataset.fit,setter:img.dataset.setter});
+                 fit:img.dataset.fit,setter:img.dataset.setter,
+                 claude:img.dataset.claude});
   });
 });
 // quick view presets act on whichever tab is showing
@@ -817,12 +890,19 @@ def progress_chart_svg(store: Store, run_id: str,
     n_in_gen: dict[int, int] = {}
     for c in cands:
         n_in_gen[c["generation_born"]] = n_in_gen.get(c["generation_born"], 0) + 1
+    claude_gens = {r["generation"] for r in store.designer_rounds_for(run_id)}
     for g, x0, x1 in spans:
+        if g in claude_gens:  # claude had input here: light purple band
+            fill, op = "#6a4a8a", "0.13" if g % 2 else "0.09"
+            note = " &#183; claude designer round"
+        else:
+            fill, op = "#8f8c78", "0.08" if g % 2 else "0"
+            note = ""
         s.append(f'<rect x="{x0:.1f}" y="{band_top}" width="{x1 - x0:.1f}" '
-                 f'height="{mt + ph - band_top:.1f}" fill="#8f8c78" '
-                 f'opacity="{"0.08" if g % 2 else "0"}">'
+                 f'height="{mt + ph - band_top:.1f}" fill="{fill}" '
+                 f'opacity="{op}">'
                  f'<title>generation {g} &#183; {n_in_gen[g]} '
-                 f'candidate(s)</title></rect>')
+                 f'candidate(s){note}</title></rect>')
     # y gridlines at nice round steps, plus the zero baseline
     raw = y_max / 5.0
     mag = 10.0 ** math.floor(math.log10(raw))
@@ -883,10 +963,15 @@ def progress_chart_svg(store: Store, run_id: str,
                           + (f" · {f:.3f}" if math.isfinite(f)
                              else f" · {c['failure_reason'] or 'invalid'}"))
         hattr = f' data-h="{c["hash"]}"'  # every marker clicks to its card
+        ring = c["operator"] == "designer"  # claude-designed: purple halo
         if math.isfinite(f):
             clipped = f > hi
             fill = "#b9b6a6" if not clipped else "none"
             stroke = ' stroke="#b9b6a6" stroke-width="1.2"' if clipped else ""
+            if ring:
+                s.append(f'<circle cx="{x:.1f}" cy="{yat(f):.1f}" '
+                         f'r="{r_dot + 2.2:.1f}" fill="none" stroke="#6a4a8a" '
+                         f'stroke-width="1.4"/>')
             s.append(f'<circle{hattr} cx="{x:.1f}" cy="{yat(f):.1f}" '
                      f'r="{r_dot:.1f}" '
                      f'fill="{fill}"{stroke}><title>{tip}</title></circle>')
@@ -916,6 +1001,9 @@ def progress_chart_svg(store: Store, run_id: str,
         else:
             path.append(f"H{x:.1f}")
             path.append(f"V{y:.1f}")
+        if c["operator"] == "designer":  # claude-designed improvement
+            labels.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6.8" '
+                          f'fill="none" stroke="#6a4a8a" stroke-width="1.6"/>')
         labels.append(f'<circle data-h="{c["hash"]}" cx="{x:.1f}" cy="{y:.1f}" '
                       f'r="4.4" fill="#111111">'
                       f'<title>{html.escape(c["hash"])} &#8594; {f:.3f}</title></circle>')
@@ -1019,6 +1107,12 @@ def _chart_legend_html() -> str:
              "Alternating shaded bands group the candidates of each "
              "generation (labeled g0, g1, &hellip; below the axis); hover a "
              "band for its candidate count."),
+        item('<svg width="14" height="14"><circle cx="7" cy="7" r="3" '
+             'fill="#b9b6a6"/><circle cx="7" cy="7" r="5.6" fill="none" '
+             'stroke="#6a4a8a" stroke-width="1.4"/></svg>', "claude-designed",
+             "A purple halo marks candidates proposed by the Claude "
+             "designer; a light purple generation band means Claude had "
+             "input that generation (designer round)."),
         item('<span style="color:#2e6e63;font-weight:700">g&#8202;&#10227;'
              "</span>", "pivot generation",
              "Patience ran out on a plateau: this generation was bred from "
@@ -1342,10 +1436,12 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                                 f'"{root} · g{cands[root]["generation_born"]}'
                                 f' · {_fmt(rfit)}"')
             setter_attr = ' data-setter="1"' if is_setter else ""
+            claude_attr = ' data-claude="1"' \
+                if c["operator"] == "designer" else ""
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
                       f'<img class="peek" src="{bottom}" '
                       f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
-                      f'data-fit="{_fmt(fit)}"{setter_attr}'
+                      f'data-fit="{_fmt(fit)}"{setter_attr}{claude_attr}'
                       f'{anc_attr}>{xc}'
                       f'<div class="hint">click to open the 3D model</div></div>'
                       f"{_parts_legend_html()}</div>")
@@ -1387,6 +1483,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             badge = '<span class="chip champ">run champion</span>'
         elif h in setter_hashes:
             badge = '<span class="chip">new best when evaluated</span>'
+        if c["operator"] == "designer":
+            badge += '<span class="chip claude">&#10022; claude-designed</span>'
         born = f"generation {c['generation_born']} via {c['operator']}"
         if invalid:
             metric_rows = [
@@ -1430,7 +1528,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             notes += (f'<div class="nmodel">notes by '
                       f"{html.escape(notes_model)}</div>")
         dcls = "detail" + (" setter" if is_setter else "") + \
-            (" champion" if h == best_hash else "")
+            (" champion" if h == best_hash else "") + \
+            (" claude" if c["operator"] == "designer" else "")
         gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'
                       f"{gene_rows}</table>")
         if invalid:  # never flew: a scenario table would be a dead header
@@ -1505,6 +1604,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<button data-view="default" title="default view (double-click)">'
         "default</button></div>")
     parts.extend(blobs)
+    parts.append(f"<script>{DOVL_JS}</script>")
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
 
