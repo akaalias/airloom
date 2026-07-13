@@ -155,7 +155,7 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     cfg = load_config(args.root, results_dir=args.results)
     results = cfg.evolution.results_dir
     store = Store(results / "run.db")
-    run_id = args.run_id or store.latest_run_id()
+    run_id = args.run_id or store.latest_run_id(with_data=True)
     if run_id is None:
         print("no runs found", file=sys.stderr)
         return 1

@@ -184,9 +184,15 @@ class Store:
             return True
         return set(json.loads(row["genome_json"]).keys()) == set(GENE_NAMES)
 
-    def latest_run_id(self) -> str | None:
+    def latest_run_id(self, with_data: bool = False) -> str | None:
+        """Newest run; with_data=True skips runs that never completed a
+        generation (empty galleries help no one)."""
+        cond = "WHERE generations_done > 0 " if with_data else ""
         row = self.conn.execute(
-            "SELECT run_id FROM runs ORDER BY created_utc DESC LIMIT 1").fetchone()
+            f"SELECT run_id FROM runs {cond}"
+            "ORDER BY created_utc DESC LIMIT 1").fetchone()
+        if row is None and with_data:
+            return self.latest_run_id(with_data=False)
         return row["run_id"] if row else None
 
     def update_generations_target(self, run_id: str, generations: int) -> None:
