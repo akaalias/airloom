@@ -50,6 +50,17 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 .sub{font-size:15px;color:var(--muted);margin:0 auto 4px;text-align:center}
 .sub .updated{color:var(--faint);font-style:italic}
 .sub.intro{max-width:820px;margin:12px auto 16px;line-height:1.55}
+.inspiration{max-width:820px;margin:14px auto 4px;font-size:14.5px;
+  color:var(--muted)}
+.inspiration summary{cursor:pointer;text-align:center;list-style:none}
+.inspiration summary::-webkit-details-marker{display:none}
+.inspiration summary b{font:600 12px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.08em}
+.inspiration summary code{font:12.5px var(--mono);color:var(--faint)}
+.inspiration pre{white-space:pre-wrap;font:13.5px/1.55 var(--serif);
+  border-left:2px solid var(--rule);padding:2px 0 2px 16px;
+  margin:10px 0 0;text-align:left}
 h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
@@ -88,18 +99,23 @@ h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
 table.sc{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
 table.sc td{padding:1px 0;color:var(--muted);border:none}
 table.sc td:last-child{text-align:right;color:var(--ink)}
-.detail{display:flex;gap:26px;border-top:1px solid var(--rule);
-  padding:22px 0 26px;margin:0}
+.detail{border-top:1px solid var(--rule);padding:22px 0 26px;margin:16px 0 0}
+.detail .dhead{font:400 21px var(--serif);margin:0 0 14px}
+.detail .dhead .hash{font:17px var(--mono);color:var(--muted)}
+.detail .dcols{display:flex;gap:26px}
 .viewer{width:50%;min-width:320px;position:relative}
 .viewer canvas,.viewer img{width:100%;aspect-ratio:4/3;display:block;
   cursor:grab;touch-action:none}
 /* static fallback renders are 360px wide: never upscale them past
    natural size or they pixelate */
 .viewer img{object-fit:contain;width:auto;max-width:100%;cursor:default}
+.viewer .vr{position:relative}
 .viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
   color:var(--faint);pointer-events:none}
+.viewer .lgd{margin-top:10px;font-size:12.5px;gap:4px 14px}
+.detail.setter .lgd{color:var(--disc)}
+.detail.setter .lg:hover,.detail.setter .lg.gl{color:var(--paper)}
 .dmeta{flex:1;min-width:280px}
-.dmeta .hash{font:14px var(--mono);color:var(--muted)}
 .dmeta .headline{font-size:17px;margin:4px 0 10px}
 .dmeta .headline b{font-size:21px}
 .dmeta .tables{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
@@ -140,18 +156,30 @@ table.dt.hd b{font-size:17px}
 .note{max-width:660px;font-size:14.5px;line-height:1.55;margin:12px 0}
 .note .nlab{display:block;margin-bottom:2px}
 .note.res .nlab{color:var(--accent)}
-.dmeta .tlab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
-  margin:22px 0 2px;padding-top:14px;border-top:1px solid var(--rule-soft)}
+.dmeta .tlab{font:600 14px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--ink);
+  margin:24px 0 8px;padding-top:16px;border-top:1px solid var(--rule-soft)}
+/* invalid candidates: red diagonal cross over the render */
+.card.invalid>a{position:relative;display:block}
+.xed{position:relative;display:inline-block;max-width:100%}
+.card.invalid>a::after,.xed::after{content:"";position:absolute;inset:0;
+  pointer-events:none;background:
+  linear-gradient(to top right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px)),
+  linear-gradient(to bottom right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px))}
 /* improvement-setter / champion detail rows: inverted, like the grid cards */
 .detail.setter{background:var(--ink);color:var(--paper);border-top-color:var(--ink);
-  margin:0 -26px;padding-left:26px;padding-right:26px}
+  margin:16px -26px 0;padding-left:26px;padding-right:26px}
 .detail.champion{outline:2px solid var(--accent);outline-offset:-1px}
 .detail.setter .viewer img,.detail.setter .parents img{mix-blend-mode:normal}
-.detail.setter .dmeta .hash,.detail.setter .parents .lab,
+.detail.setter .dhead .hash,.detail.setter .parents .lab,
 .detail.setter .parents figcaption,.detail.setter table.dt th,
-.detail.setter .note .nlab,.detail.setter .dmeta .tlab,
+.detail.setter .note .nlab,
 .detail.setter .viewer .hint{color:var(--disc)}
+.detail.setter .dmeta .tlab{color:var(--paper)}
 .detail.setter table.dt td{border-bottom-color:#3a382f}
 .detail.setter table.dt th{border-bottom-color:var(--paper)}
 .detail.setter .dmeta .tlab{border-top-color:#3a382f}
@@ -174,6 +202,7 @@ table.dt.hd b{font-size:17px}
 #ovl-close{margin-left:auto;font:26px/1 var(--serif);background:none;
   border:none;color:var(--muted);cursor:pointer;padding:0 6px}
 #ovl-close:hover{color:var(--ink)}
+.ovl-lgd{border-bottom:1px solid var(--rule);padding:7px 16px;flex-shrink:0}
 .ovl-body{flex:1;display:none;min-height:0}
 .ovl-body.on{display:flex}
 .ovl-body .pane{flex:1;display:flex;flex-direction:column;min-width:0}
@@ -672,16 +701,24 @@ def progress_chart_svg(store: Store, run_id: str,
     last_lx = -1e9
     for g, x in bounds:
         is_pivot = g in pivot_gens
-        if is_pivot:  # every pivot leaves a teal axis tick, labeled or not
+        if is_pivot:
+            # a pivot is a structural event: full-height teal marker plus
+            # axis tick, drawn no matter how tight the label spacing gets
+            s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" '
+                     f'y2="{mt + ph}" stroke="#2e6e63" stroke-width="1.1" '
+                     f'stroke-dasharray="5,4" opacity="0.65">'
+                     f'<title>g{g}: pivot generation (plateau broken up with '
+                     f'far-parent crossovers)</title></line>')
             s.append(f'<line x1="{x:.1f}" y1="{mt + ph}" x2="{x:.1f}" '
                      f'y2="{mt + ph + 5}" stroke="#2e6e63" stroke-width="1.6">'
                      f'<title>g{g}: pivot generation (plateau broken up with '
                      f'far-parent crossovers)</title></line>')
-        if x - last_lx < 36.0:
+        if x - last_lx < (14.0 if is_pivot else 36.0):
             continue
         last_lx = x
-        s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
-                 f'stroke="#ece9da" stroke-width="1" stroke-dasharray="1,4"/>')
+        if not is_pivot:
+            s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
+                     f'stroke="#ece9da" stroke-width="1" stroke-dasharray="1,4"/>')
         if is_pivot:
             s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
                      f'font-weight="700" fill="#2e6e63">g{g} &#10227;'
@@ -709,18 +746,20 @@ def progress_chart_svg(store: Store, run_id: str,
         tip = html.escape(f"{c['hash']} g{c['generation_born']} {c['operator']}"
                           + (f" · {f:.3f}" if math.isfinite(f)
                              else f" · {c['failure_reason'] or 'invalid'}"))
+        hattr = f' data-h="{c["hash"]}"'  # every marker clicks to its card
         if math.isfinite(f):
             clipped = f > hi
             fill = "#b9b6a6" if not clipped else "none"
             stroke = ' stroke="#b9b6a6" stroke-width="1.2"' if clipped else ""
-            s.append(f'<circle cx="{x:.1f}" cy="{yat(f):.1f}" r="{r_dot:.1f}" '
+            s.append(f'<circle{hattr} cx="{x:.1f}" cy="{yat(f):.1f}" '
+                     f'r="{r_dot:.1f}" '
                      f'fill="{fill}"{stroke}><title>{tip}</title></circle>')
         elif dense:
-            s.append(f'<line x1="{x:.1f}" y1="{y_inv - 5}" x2="{x:.1f}" '
+            s.append(f'<line{hattr} x1="{x:.1f}" y1="{y_inv - 5}" x2="{x:.1f}" '
                      f'y2="{y_inv + 1}" stroke="#8c2f1f" stroke-width="0.8" '
                      f'opacity="0.7"><title>{tip}</title></line>')
         else:
-            s.append(f'<text x="{x:.1f}" y="{y_inv}" text-anchor="middle" '
+            s.append(f'<text{hattr} x="{x:.1f}" y="{y_inv}" text-anchor="middle" '
                      f'font-size="12" font-weight="700" fill="#8c2f1f">'
                      f'&#215;<title>{tip}</title></text>')
 
@@ -779,19 +818,46 @@ def progress_chart_svg(store: Store, run_id: str,
     return "".join(s)
 
 
+def _lgd_item(sw: str, label: str, tip: str | None = None,
+              cls: str = "lg") -> str:
+    t = (f'<span class="tip"><b>{html.escape(label)}</b><br>'
+         f"{tip}</span>") if tip else ""
+    sw_html = f'<span class="sw">{sw}</span>' if sw else ""
+    return f'<span class="{cls}">{sw_html}{label}{t}</span>'
+
+
+def _lgd_dot(col: str) -> str:
+    return f'<span class="dot" style="background:{col}"></span>'
+
+
+def _parts_legend_html() -> str:
+    """Part-color legend (evolved vs fixed kit), shown under each detail
+    render and in the 3D overlay bar."""
+    item, dot = _lgd_item, _lgd_dot
+    fixed_tip = ("Fixed kit, identical on every candidate &mdash; drawn in "
+                 "the 3D model for context only; evolution never changes it.")
+    row = [
+        item("", "evolved:", cls="lg gl"),
+        item(dot("#8c2f1f"), "arms",
+             "Evolved part: the four arms &mdash; length, width, waist, "
+             "thickness and sweep genes reshape them."),
+        item(dot("#34322e"), "deck plates + standoffs",
+             "Evolved part: the stacked deck plates and standoffs &mdash; "
+             "plate size, thickness and deck gap genes reshape them."),
+        item("", "fixed kit:", cls="lg gl"),
+        item(dot("#4a6fa5"), "battery", fixed_tip),
+        item(dot("#5a7a52"), "FC/ESC stack", fixed_tip),
+        item(dot("#8a6a1e"), "wiring/XT60", fixed_tip),
+        item(dot("#55534c"), "motors", fixed_tip),
+        item(dot("#d8d5c8"), "prop disks", fixed_tip),
+    ]
+    return '<div class="lgd parts">' + "".join(row) + "</div>"
+
+
 def _chart_legend_html() -> str:
-    """Two centered legend rows with hover explanations, matching the
+    """Centered chart legend with hover explanations, matching the
     lineage page's legend language."""
-    def item(sw: str, label: str, tip: str | None = None,
-             cls: str = "lg") -> str:
-        t = (f'<span class="tip"><b>{html.escape(label)}</b><br>'
-             f"{tip}</span>") if tip else ""
-        sw_html = f'<span class="sw">{sw}</span>' if sw else ""
-        return f'<span class="{cls}">{sw_html}{label}{t}</span>'
-
-    def dot(col: str) -> str:
-        return f'<span class="dot" style="background:{col}"></span>'
-
+    item, dot = _lgd_item, _lgd_dot
     row1 = [
         item(dot("#b9b6a6"), "candidate",
              "One evaluated design, drawn at its aggregate energy score "
@@ -817,28 +883,22 @@ def _chart_legend_html() -> str:
              "Patience ran out on a plateau: this generation was bred from "
              "far-apart parents to re-diversify the pool."),
     ]
-    fixed_tip = ("Fixed kit, identical on every candidate &mdash; drawn in "
-                 "the 3D model for context only; evolution never changes it.")
-    row2 = [
-        item("", "evolved:", cls="lg gl"),
-        item(dot("#8c2f1f"), "arms",
-             "Evolved part: the four arms &mdash; length, width, waist, "
-             "thickness and sweep genes reshape them."),
-        item(dot("#34322e"), "deck plates + standoffs",
-             "Evolved part: the stacked deck plates and standoffs &mdash; "
-             "plate size, thickness and deck gap genes reshape them."),
-        item("", "fixed kit:", cls="lg gl"),
-        item(dot("#4a6fa5"), "battery", fixed_tip),
-        item(dot("#5a7a52"), "FC/ESC stack", fixed_tip),
-        item(dot("#8a6a1e"), "wiring/XT60", fixed_tip),
-        item(dot("#55534c"), "motors", fixed_tip),
-        item(dot("#d8d5c8"), "prop disks", fixed_tip),
-    ]
-    return ('<div class="lgd">' + "".join(row1) + "</div>"
-            '<div class="lgd">' + "".join(row2) + "</div>")
+    return '<div class="lgd">' + "".join(row1) + "</div>"
 
 
 # -------------------------------------------------------------- the gallery --
+def _inspiration_html(store: Store, run_id: str) -> str:
+    """Collapsible block showing the user-supplied designer inspiration."""
+    run = store.get_run(run_id)
+    text = (run["inspiration_text"] or "").strip() if run else ""
+    if not text:
+        return ""
+    return ('<details class="inspiration"><summary><b>designer inspiration'
+            '</b> &middot; <code>'
+            f'{html.escape(run["inspiration_path"] or "")}</code>'
+            f'</summary><pre>{html.escape(text)}</pre></details>')
+
+
 def write_gallery(store: Store, run_id: str, results_dir: Path,
                   target_whkm: float | None = None,
                   record_whkm: float | None = None) -> Path:
@@ -880,6 +940,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              "&#215;&rsquo;s on the &#8734; row are invalid designs that "
              "failed a check and never flew. Click any black improvement "
              "dot to jump to that candidate&rsquo;s detail card below.</p>",
+             _inspiration_html(store, run_id),
              _chart_legend_html(),
              f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>']
 
@@ -908,12 +969,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 for s in scen_cache[h])
             fail = (f'<div class="fail">{html.escape(c["failure_reason"] or "")}'
                     "</div>") if invalid and c["failure_reason"] else ""
-            mat = f" &middot; {c['material']}" if c["material"] else ""
             parts.append(
                 f'<div class="{cls}">'
                 f'<a href="#d-{h}" style="border:none"><img src="{img}" alt="{h}"></a>'
-                f'<div class="hash">{h}<br>g{c["generation_born"]} '
-                f'{c["operator"]}{mat}</div>'
+                f'<div class="hash">{h}</div>'
                 f'<div class="agg num">{_fmt(fit)} <span class="unit">wh/km agg</span></div>'
                 f"{fail}"
                 f'<table class="sc">{sc_rows}</table>'
@@ -955,6 +1014,9 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     for h in detail_ids:
         c = cands[h]
         fit = store.fitness_of(c)
+        invalid = not math.isfinite(fit)
+        # invalid renders get a red diagonal cross drawn over them
+        xo, xc = ('<span class="xed">', "</span>") if invalid else ("", "")
         img = _rel(results_dir, c["png_path"])
         blob = _mesh_blob_for(results_dir, c["png_path"]) \
             if h in viewer_hashes else None
@@ -976,12 +1038,16 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                     anc_attr = (f' data-ancestor="m-{root}" data-anctitle='
                                 f'"{root} · g{cands[root]["generation_born"]}'
                                 f' · {_fmt(rfit)}"')
-            viewer = (f'<div class="viewer"><img class="peek" src="{bottom}" '
+            viewer = (f'<div class="viewer"><div class="vr">{xo}'
+                      f'<img class="peek" src="{bottom}" '
                       f'alt="{h}" data-mesh="m-{h}" data-title="{h} · {_fmt(fit)}"'
-                      f'{anc_attr}>'
-                      f'<div class="hint">click to open the 3D model</div></div>')
+                      f'{anc_attr}>{xc}'
+                      f'<div class="hint">click to open the 3D model</div></div>'
+                      f"{_parts_legend_html()}</div>")
         else:
-            viewer = f'<div class="viewer"><img src="{bottom}" alt="{h}"></div>'
+            viewer = (f'<div class="viewer"><div class="vr">{xo}'
+                      f'<img src="{bottom}" alt="{h}">{xc}</div>'
+                      f"{_parts_legend_html()}</div>")
 
         parent_imgs = []
         for pkey in ("parent_a", "parent_b"):
@@ -1007,7 +1073,6 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             f"{html.escape(s['failure_reason'] or '')}</td></tr>"
             for s in scen_cache.get(h, []))
         mass = f"{c['frame_mass'] * 1e3:.1f}" if c["frame_mass"] else "&mdash;"
-        mat = f" &middot; {c['material']}" if c["material"] else ""
         genes = describe_genome(json.loads(c["genome_json"]), c["material"])
         gene_rows = "".join(
             f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td></tr>"
@@ -1017,7 +1082,6 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             badge = '<span class="chip champ">run champion</span>'
         elif h in setter_hashes:
             badge = '<span class="chip">new best when evaluated</span>'
-        invalid = not math.isfinite(fit)
         born = f"generation {c['generation_born']} via {c['operator']}"
         if invalid:
             metric_rows = [
@@ -1056,18 +1120,27 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         dcls = "detail" + \
             (" setter" if (h in setter_hashes or h == best_hash) else "") + \
             (" champion" if h == best_hash else "")
+        gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'
+                      f"{gene_rows}</table>")
+        if invalid:  # never flew: a scenario table would be a dead header
+            tlab, tables = "genome", gene_table
+        else:
+            tlab = "scenario results &amp; genome"
+            tables = (f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
+                      f"<th>avg power, w</th><th>max tilt</th><th></th></tr>"
+                      f"{sc_rows}</table>" + gene_table)
         parts.append(
             f'<div class="{dcls}" id="d-{h}">'
+            f'<div class="dhead">candidate <span class="hash">{h}</span>'
+            f"{badge}</div>"
+            f'<div class="dcols">'
             f"{viewer}"
-            f'<div class="dmeta"><div class="hash">{h}{badge}</div>'
+            f'<div class="dmeta">'
             f"{headline}{notes}"
-            f'<div class="tlab">scenario results &amp; genome</div>'
-            f'<div class="tables">'
-            f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
-            f"<th>avg power, w</th><th>max tilt</th><th></th></tr>{sc_rows}</table>"
-            f'<table class="dt"><tr><th>gene</th><th>value</th></tr>{gene_rows}</table>'
-            f"</div>"
-            f'</div><div class="parents">{parents_html}</div></div>')
+            f'<div class="tlab">{tlab}</div>'
+            f'<div class="tables">{tables}</div>'
+            f'</div><div class="parents">{parents_html}</div>'
+            f"</div></div>")
 
     parts.append(
         '<div id="ovl">'
@@ -1080,6 +1153,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="hash"></span>'
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
         "</div>"
+        f'<div class="ovl-lgd">{_parts_legend_html()}</div>'
         '<div class="ovl-body on" data-tab="solo" style="position:relative">'
         '<div class="pane"><canvas id="ovl-solo"></canvas></div>'
         '<div class="ovl-hint">drag to rotate &middot; scroll to zoom &middot; '
