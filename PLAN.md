@@ -227,7 +227,17 @@ Pre-Phase-B verification layer (built 2026-07-13):
   → `results/champion_check.md`. Deliberately not FEM; a CalculiX pass
   would consume the same per-station geometry.
 
-## Phase B — milestone 1: CFD calibration (in progress)
+## Phase B — milestone 1: CFD calibration (COMPLETE 2026-07-14)
+
+Outcome: 12 cases solved overnight (`cfd/calibration.md`). Buildup
+overestimated drag ~2× at cruise tilt; interference −6/−27/−37 % at
+0/20/40°; contrast-genome ratios matched baseline within ~2 points ⇒
+systematic error, corrected globally in `aero.py` (`CAL_*` tables).
+Post-calibration robustness verdict: **STABLE** (min ρ 0.958, no champion
+flips) ⇒ per-candidate CFD pipeline not needed. Gallery benchmark lines
+(5.0/4.0 Wh/km) predate calibration — re-derive before the next big run.
+
+Original milestone plan follows:
 
 The robustness sweep reframed Phase B: only the ARM drag coefficient
 changes decisions, so before any per-candidate pipeline we calibrate the

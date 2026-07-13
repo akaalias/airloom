@@ -208,7 +208,7 @@ candidates a finite penalized fitness without flying the other five.
 | piece | model | source / check |
 |---|---|---|
 | rotor | CT(J), CP(J) interpolated from measured tables; `T = ρn²D⁴CT`, `P = ρn³D⁵CP / 0.85` (motor+ESC) | UIUC Propeller DB, Master Airscrew GF 7×4 (static + 4 RPM sweeps), cached in `data/uiuc/`; unit-tested against tabulated points |
-| frame drag | component buildup: projected areas from rasterizing the STL along the flow at 0–60° tilt; Cd per class (arm 1.9→1.1→0.6 by section blend, body 1.05); rotor-wash download on arm planform under the disks | classic flat-plate/cylinder/fairing Cd values |
+| frame drag | component buildup: projected areas from rasterizing the STL along the flow at 0–60° tilt; handbook per-class Cds **corrected by CFD-fitted tilt-dependent ratios and an assembly interference factor** (wake shielding + silhouette double-count, −6 %/−27 %/−37 % at 0°/20°/40°); rotor-wash download on arm planform under the disks | calibrated against 12 OpenFOAM v2512 k-ω SST cases (`cfd/calibration.md`); round-trip unit-tested to ±3 % of the measured CdAs |
 | turbulence | Dryden, MIL-F-8785C low-altitude forms, spectral synthesis, fixed seeds | variance unit-tested against σ² spec |
 | rain | (a) water-film added mass ∝ top area, (b) momentum drag via equivalent suspended-water density + vertical impact force, (c) 15 % thrust-coefficient penalty | empirical knobs, see NASA TP-2671 (Dunham et al.) heavy-rain research; all in config |
 | flight | 100 Hz point-mass 3-DOF sim; quasi-static attitude (the quad tilts into the relative wind), P velocity loop with accel limits; rotor speeds solved each step from the CT tables; electrical energy integrated | zero-wind mission unit-tested against a quasi-static analytic power balance (±6 %) |
@@ -263,16 +263,26 @@ the MA GF 7×4 data.
   an adapted Gaussian — so the family tree is skipped and distribution-level
   provenance (mean, σ per generation) is stored in `cma_state` instead.
 
-## Phase B (CFD) — not built yet, seam prepared
+## Phase B (CFD) — milestone 1 complete: calibrated, verdict STABLE
 
-The drag interface is a per-candidate `DragTable` (CdA vs tilt/azimuth),
-now built from a raw `AreaTable` (rasterized projected areas per component
-class) so drag can be re-priced under different Cd assumptions without
-re-measuring geometry. A Phase-B OpenFOAM pipeline (snappyHexMesh + k-ω
-SST RANS at 3 angles × 2 speeds, top-N candidates per generation, cached
-by genome hash) would replace that table and nothing else. Run
-`framevo robustness` first: it names the knob (so far: the arm drag
-coefficient) where CFD fidelity would actually change decisions.
+`framevo cfd-calibrate` generated 12 OpenFOAM cases (arms alone, deck/kit
+alone, full assembly, and a contrasting genome's full assembly — each at
+0°/20°/40° tilt, freestream BCs, one snappyHexMesh per geometry) and the
+overnight solve produced `cfd/calibration.md`. Findings: the handbook
+buildup overestimated drag ~2× at cruise tilt; assembly interference
+(wake shielding + silhouette double-count) is −27 % at 20°; and the
+contrast genome's ratios matched the baseline's within ~2 points at every
+angle — the error is **systematic, not gene-dependent**. The corrections
+now live in `aero.py` (`CAL_*` tables, applied in
+`drag_table_from_areas`), and the post-calibration `framevo robustness`
+verdict is **STABLE** (min Spearman 0.958, no champion flips): the
+ranking is a frame property, not a model artifact. Consequence: the
+originally-planned per-candidate CFD pipeline (top-N per generation,
+cached by genome hash) is **not needed**; the seam (`DragTable` from
+`AreaTable`) remains if a future genome expansion moves outside the
+calibrated shape envelope. Note: absolute Wh/km dropped with the
+calibration, so the gallery's 5.0/4.0 benchmark lines predate it and need
+re-derivation.
 
 ## Layout
 
