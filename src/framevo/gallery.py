@@ -357,6 +357,24 @@ table.dt.hd b{font-size:17px}
 #ovl.inv #ovl-close:hover{color:var(--paper)}
 #ovl.inv .ovl-lgd .lgd{color:var(--disc)}
 #ovl.inv .ovl-lgd .lg:hover,#ovl.inv .ovl-lgd .lg.gl{color:var(--paper)}
+/* failed/rejected designs: the bar goes rust so a dead branch can never be
+   mistaken for a flyer (declared after the claude tint so it wins) */
+#ovl.failed .ovl-bar,#ovl.failed .ovl-lgd,
+#ovl.claude.failed .ovl-bar,#ovl.claude.failed .ovl-lgd{
+  background:var(--accent);border-bottom-color:#6d2418}
+#ovl.failed .ovl-bar .hash,#ovl.claude.failed .ovl-bar .hash{color:var(--paper)}
+#ovl.failed .ovl-bar .hash .h,#ovl.failed .ovl-tabs button,
+#ovl.failed #ovl-close,#ovl.failed .ovl-lgd .lgd,
+#ovl.claude.failed .ovl-bar .hash .h,#ovl.claude.failed .ovl-tabs button,
+#ovl.claude.failed #ovl-close,#ovl.claude.failed .ovl-lgd .lgd{color:#e8c3b8}
+#ovl.failed .ovl-tabs button:hover:not(:disabled),
+#ovl.failed .ovl-tabs button.on,#ovl.failed #ovl-close:hover,
+#ovl.claude.failed .ovl-tabs button:hover:not(:disabled),
+#ovl.claude.failed .ovl-tabs button.on,#ovl.claude.failed #ovl-close:hover{
+  color:var(--paper)}
+#ovl.failed .ovl-tabs button.on,#ovl.claude.failed .ovl-tabs button.on{
+  border-bottom-color:var(--paper)}
+#ovl.failed .ovl-lgd .lg:hover,#ovl.failed .ovl-lgd .lg.gl{color:var(--paper)}
 .ovl-views{position:absolute;left:26px;bottom:12px;display:flex;gap:2px;z-index:5}
 .ovl-views button{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
@@ -864,11 +882,13 @@ function openOverlay(d){
   ovl.classList.add("open");
   ovl.classList.toggle("inv",d.setter==="1");
   ovl.classList.toggle("claude",d.claude==="1");
+  ovl.classList.toggle("failed",d.failed==="1");
   document.body.style.overflow="hidden";
   // hash and fit are trusted generator output (hex + number)
   ovl.querySelector(".ovl-bar .hash").innerHTML=
     'candidate <span class="h">'+(d.title||"")+"</span>"+
-    (d.fit?' &middot; <span class="num">'+d.fit+"</span>&thinsp;Wh/km":"");
+    (d.failed==="1"?' &middot; <span class="num">failed design</span>':
+     (d.fit?' &middot; <span class="num">'+d.fit+"</span>&thinsp;Wh/km":""));
   soloV.loadBlob(d.mesh);
   soloState.reset();
   var evoBtn=ovl.querySelector('button[data-tab="evolved"]');
@@ -993,7 +1013,7 @@ document.querySelectorAll("img.peek").forEach(function(img){
     openOverlay({mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
                  title:img.dataset.title,anctitle:img.dataset.anctitle,
                  fit:img.dataset.fit,setter:img.dataset.setter,
-                 claude:img.dataset.claude});
+                 claude:img.dataset.claude,failed:img.dataset.failed});
   });
 });
 // quick view presets act on whichever tab is showing
@@ -1892,11 +1912,12 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             setter_attr = ' data-setter="1"' if is_setter else ""
             claude_attr = ' data-claude="1"' \
                 if c["operator"] == "designer" else ""
+            failed_attr = "" if c["valid"] else ' data-failed="1"'
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
                       f'<img class="peek" src="{bottom}" '
                       f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
                       f'data-fit="{_fmt(fit)}"{setter_attr}{claude_attr}'
-                      f'{anc_attr}>{xc}'
+                      f'{failed_attr}{anc_attr}>{xc}'
                       f'<div class="hint">click to open the 3D model</div></div>'
                       f"{_parts_legend_html()}</div>")
         else:
