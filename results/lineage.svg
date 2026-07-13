@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="911" height="372" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="911" height="792" font-family="Helvetica,Arial,sans-serif">
 <rect width="100%" height="100%" fill="#fffff8"/>
 <path class="ed" data-c="7ff007f350ce" data-p="f07b9a58dc09" d="M359,69 C359,102 83,102 83,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
 <path class="ed" data-c="7ff007f350ce" data-p="baac55fb3837" d="M83,69 C83,102 83,102 83,135" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
@@ -23,7 +23,64 @@
 <path class="ed" data-c="0825408aaf2c" data-p="baac55fb3837" d="M129,153 C129,186 359,186 359,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
 <path class="ed" data-c="9a953b3d00cc" data-p="baac55fb3837" d="M129,153 C129,186 405,186 405,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
 <path class="ed" data-c="9a953b3d00cc" data-p="7ff007f350ce" d="M83,153 C83,186 405,186 405,219" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
-<circle class="nd" data-h="baac55fb3837" cx="83" cy="60" r="9.0" fill="#6f6d64" stroke="#6b6a60" stroke-width="1.2"><title>baac55fb3837 gen0 seed 8.486
+<line class="el" data-h="828c02524eb1" x1="83" y1="237" x2="83" y2="303" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<line class="el" data-h="7ff007f350ce" x1="129" y1="237" x2="129" y2="303" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path class="ed" data-c="d0cb9030fd42" data-p="7ff007f350ce" d="M129,237 C129,270 175,270 175,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="d0cb9030fd42" data-p="828c02524eb1" d="M83,237 C83,270 175,270 175,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="91c031dff2fd" data-p="7ff007f350ce" d="M129,237 C129,270 221,270 221,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="91c031dff2fd" data-p="828c02524eb1" d="M83,237 C83,270 221,270 221,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="4e9685208ffd" data-p="828c02524eb1" d="M83,237 C83,270 267,270 267,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="4e9685208ffd" data-p="0825408aaf2c" d="M359,237 C359,270 267,270 267,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="3ab498bc6b27" data-p="baac55fb3837" d="M175,237 C175,270 313,270 313,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="3ab498bc6b27" data-p="828c02524eb1" d="M83,237 C83,270 313,270 313,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="1359eeb9d001" data-p="7ff007f350ce" d="M129,237 C129,270 359,270 359,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="1359eeb9d001" data-p="71ecd847dd02" d="M221,237 C221,270 359,270 359,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="a947ed4884d4" data-p="828c02524eb1" d="M83,237 C83,270 405,270 405,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="a947ed4884d4" data-p="7ff007f350ce" d="M129,237 C129,270 405,270 405,303" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line class="el" data-h="828c02524eb1" x1="83" y1="321" x2="83" y2="387" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path class="ed" data-c="1b80ab377486" data-p="91c031dff2fd" d="M221,321 C221,354 129,354 129,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="1b80ab377486" data-p="7ff007f350ce" d="M129,321 C129,354 129,354 129,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line class="el" data-h="7ff007f350ce" x1="129" y1="321" x2="175" y2="387" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path class="ed" data-c="31cae443aca7" data-p="7ff007f350ce" d="M129,321 C129,354 221,354 221,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="31cae443aca7" data-p="7ff007f350ce" d="M129,321 C129,354 221,354 221,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="1cc3a28b7956" data-p="91c031dff2fd" d="M221,321 C221,354 267,354 267,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="1cc3a28b7956" data-p="a947ed4884d4" d="M405,321 C405,354 267,354 267,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="c9d1560aee6a" data-p="7ff007f350ce" d="M129,321 C129,354 359,354 359,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="c9d1560aee6a" data-p="d0cb9030fd42" d="M175,321 C175,354 359,354 359,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="4ca584dd915a" data-p="3ab498bc6b27" d="M313,321 C313,354 405,354 405,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="4ca584dd915a" data-p="7ff007f350ce" d="M129,321 C129,354 405,354 405,387" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line class="el" data-h="828c02524eb1" x1="83" y1="405" x2="83" y2="471" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<line class="el" data-h="1b80ab377486" x1="129" y1="405" x2="129" y2="471" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path class="ed" data-c="30202426bc05" data-p="31cae443aca7" d="M221,405 C221,438 175,438 175,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="30202426bc05" data-p="1b80ab377486" d="M129,405 C129,438 175,438 175,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="b5ab9fb636a2" data-p="1b80ab377486" d="M129,405 C129,438 221,438 221,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="b5ab9fb636a2" data-p="828c02524eb1" d="M83,405 C83,438 221,438 221,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="e4d28ae361dc" data-p="828c02524eb1" d="M83,405 C83,438 267,438 267,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="e4d28ae361dc" data-p="c9d1560aee6a" d="M359,405 C359,438 267,438 267,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="5f4e86d80d6a" data-p="31cae443aca7" d="M221,405 C221,438 313,438 313,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="5f4e86d80d6a" data-p="1b80ab377486" d="M129,405 C129,438 313,438 313,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="27f54c0485f9" data-p="31cae443aca7" d="M221,405 C221,438 359,438 359,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="27f54c0485f9" data-p="1b80ab377486" d="M129,405 C129,438 359,438 359,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="b593cc83ab09" data-p="31cae443aca7" d="M221,405 C221,438 405,438 405,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="b593cc83ab09" data-p="1b80ab377486" d="M129,405 C129,438 405,438 405,471" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line class="el" data-h="828c02524eb1" x1="83" y1="489" x2="83" y2="555" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<line class="el" data-h="1b80ab377486" x1="129" y1="489" x2="129" y2="555" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path class="ed" data-c="0580b8278066" data-p="828c02524eb1" d="M83,489 C83,522 175,522 175,555" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="0580b8278066" data-p="828c02524eb1" d="M83,489 C83,522 175,522 175,555" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<line class="el" data-h="828c02524eb1" x1="83" y1="573" x2="83" y2="639" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<line class="el" data-h="1b80ab377486" x1="129" y1="573" x2="129" y2="639" stroke="#999188" stroke-dasharray="3,3" stroke-width="1.2"/>
+<path class="ed" data-c="b774a9dbeee5" data-p="1b80ab377486" d="M129,573 C129,606 175,606 175,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="b774a9dbeee5" data-p="85607c76f3ef" d="M221,573 C221,606 175,606 175,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="6763f7229a99" data-p="334774de6e6a" d="M359,573 C359,606 221,606 221,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="6763f7229a99" data-p="1b80ab377486" d="M129,573 C129,606 221,606 221,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="66956f5b8bf0" data-p="828c02524eb1" d="M83,573 C83,606 267,606 267,639" stroke="#8c2f1f" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="c4a43a086aaf" data-p="828c02524eb1" d="M83,573 C83,606 313,606 313,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="c4a43a086aaf" data-p="828c02524eb1" d="M83,573 C83,606 313,606 313,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="c53abe0aaad5" data-p="a5fb30f300c1" d="M313,573 C313,606 359,606 359,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="c53abe0aaad5" data-p="828c02524eb1" d="M83,573 C83,606 359,606 359,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="3958ba7c85c8" data-p="0580b8278066" d="M175,573 C175,606 405,606 405,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<path class="ed" data-c="3958ba7c85c8" data-p="1b80ab377486" d="M129,573 C129,606 405,606 405,639" stroke="#4a6fa5" fill="none" stroke-width="1.1" opacity="0.75"/>
+<circle class="nd" data-h="baac55fb3837" cx="83" cy="60" r="9.0" fill="#3b3b37" stroke="#6b6a60" stroke-width="1.2"><title>baac55fb3837 gen0 seed 8.486
 arm length: ×1.00
 arm width: ×1.00
 arm waist: ×1.00
@@ -38,7 +95,7 @@ plate thickness: ×1.00
 material: cf_plate</title></circle>
 <circle class="bs" data-h="baac55fb3837" cx="83" cy="60" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="baac55fb3837" cx="83" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="db261bddf5bf" cx="129" cy="60" r="9.0" fill="#d1cdbc" stroke="#6b6a60" stroke-width="1.2"><title>db261bddf5bf gen0 seed 8.911
+<circle class="nd" data-h="db261bddf5bf" cx="129" cy="60" r="9.0" fill="#68665e" stroke="#6b6a60" stroke-width="1.2"><title>db261bddf5bf gen0 seed 8.911
 arm length: ×1.15
 arm width: ×0.88
 arm waist: ×1.23
@@ -136,7 +193,7 @@ battery wedge: 14.7°
 plate thickness: ×1.55
 material: pet_cf</title></circle>
 <circle class="hit" data-h="a649a73b7931" cx="405" cy="60" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7ff007f350ce" cx="83" cy="144" r="9.0" fill="#4c4b46" stroke="#6b6a60" stroke-width="1.2"><title>7ff007f350ce gen1 crossover 8.336
+<circle class="nd" data-h="7ff007f350ce" cx="83" cy="144" r="9.0" fill="#2c2b29" stroke="#6b6a60" stroke-width="1.2"><title>7ff007f350ce gen1 crossover 8.336
 arm length: ×0.94
 arm width: ×1.29
 arm waist: ×0.90
@@ -151,7 +208,7 @@ plate thickness: ×1.48
 material: pa12_cf</title></circle>
 <circle class="bs" data-h="7ff007f350ce" cx="83" cy="144" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="7ff007f350ce" cx="83" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="baac55fb3837" cx="129" cy="144" r="5.0" fill="#6f6d64" stroke="#6b6a60" stroke-width="1.2"><title>baac55fb3837 gen0 seed 8.486
+<circle class="nd" data-h="baac55fb3837" cx="129" cy="144" r="5.0" fill="#3b3b37" stroke="#6b6a60" stroke-width="1.2"><title>baac55fb3837 gen0 seed 8.486
 arm length: ×1.00
 arm width: ×1.00
 arm waist: ×1.00
@@ -165,7 +222,7 @@ battery wedge: 2.0°
 plate thickness: ×1.00
 material: cf_plate</title></circle>
 <circle class="hit" data-h="baac55fb3837" cx="129" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="db261bddf5bf" cx="175" cy="144" r="5.0" fill="#d1cdbc" stroke="#6b6a60" stroke-width="1.2"><title>db261bddf5bf gen0 seed 8.911
+<circle class="nd" data-h="db261bddf5bf" cx="175" cy="144" r="5.0" fill="#68665e" stroke="#6b6a60" stroke-width="1.2"><title>db261bddf5bf gen0 seed 8.911
 arm length: ×1.15
 arm width: ×0.88
 arm waist: ×1.23
@@ -179,7 +236,7 @@ battery wedge: 10.5°
 plate thickness: ×1.01
 material: cf_plate</title></circle>
 <circle class="hit" data-h="db261bddf5bf" cx="175" cy="144" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="4c7cfc376983" cx="221" cy="144" r="9.0" fill="#d7d3c1" stroke="#6b6a60" stroke-width="1.2"><title>4c7cfc376983 gen1 mutation 8.936
+<circle class="nd" data-h="4c7cfc376983" cx="221" cy="144" r="9.0" fill="#6a6961" stroke="#6b6a60" stroke-width="1.2"><title>4c7cfc376983 gen1 mutation 8.936
 arm length: ×1.13
 arm width: ×0.96
 arm waist: ×1.23
@@ -264,7 +321,7 @@ plate thickness: ×1.52
 material: pa12_cf</title></circle>
 <circle class="bs" data-h="828c02524eb1" cx="83" cy="228" r="12.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <circle class="hit" data-h="828c02524eb1" cx="83" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="7ff007f350ce" cx="129" cy="228" r="5.0" fill="#4c4b46" stroke="#6b6a60" stroke-width="1.2"><title>7ff007f350ce gen1 crossover 8.336
+<circle class="nd" data-h="7ff007f350ce" cx="129" cy="228" r="5.0" fill="#2c2b29" stroke="#6b6a60" stroke-width="1.2"><title>7ff007f350ce gen1 crossover 8.336
 arm length: ×0.94
 arm width: ×1.29
 arm waist: ×0.90
@@ -278,7 +335,7 @@ battery wedge: 3.7°
 plate thickness: ×1.48
 material: pa12_cf</title></circle>
 <circle class="hit" data-h="7ff007f350ce" cx="129" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="baac55fb3837" cx="175" cy="228" r="5.0" fill="#6f6d64" stroke="#6b6a60" stroke-width="1.2"><title>baac55fb3837 gen0 seed 8.486
+<circle class="nd" data-h="baac55fb3837" cx="175" cy="228" r="5.0" fill="#3b3b37" stroke="#6b6a60" stroke-width="1.2"><title>baac55fb3837 gen0 seed 8.486
 arm length: ×1.00
 arm width: ×1.00
 arm waist: ×1.00
@@ -292,7 +349,7 @@ battery wedge: 2.0°
 plate thickness: ×1.00
 material: cf_plate</title></circle>
 <circle class="hit" data-h="baac55fb3837" cx="175" cy="228" r="14.0" fill="transparent" stroke="none"/>
-<circle class="nd" data-h="71ecd847dd02" cx="221" cy="228" r="9.0" fill="#d9d5c3" stroke="#6b6a60" stroke-width="1.2"><title>71ecd847dd02 gen2 crossover 8.946
+<circle class="nd" data-h="71ecd847dd02" cx="221" cy="228" r="9.0" fill="#6c6a62" stroke="#6b6a60" stroke-width="1.2"><title>71ecd847dd02 gen2 crossover 8.946
 arm length: ×1.15
 arm width: ×0.88
 arm waist: ×1.23
@@ -362,9 +419,574 @@ battery wedge: 1.9°
 plate thickness: ×1.02
 material: cf_plate</title></circle>
 <circle class="hit" data-h="9a953b3d00cc" cx="405" cy="228" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="828c02524eb1" cx="83" cy="312" r="5.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>828c02524eb1 gen2 crossover 8.079
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 39.5 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="828c02524eb1" cx="83" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="7ff007f350ce" cx="129" cy="312" r="5.0" fill="#2c2b29" stroke="#6b6a60" stroke-width="1.2"><title>7ff007f350ce gen1 crossover 8.336
+arm length: ×0.94
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.6 mm
+front sweep: 47.4°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 42.6 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="7ff007f350ce" cx="129" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="d0cb9030fd42" cx="175" cy="312" r="9.0" fill="#2d2d2a" stroke="#6b6a60" stroke-width="1.2"><title>d0cb9030fd42 gen3 crossover 8.352
+arm length: ×0.94
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.6 mm
+front sweep: 48.4°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 45.0 mm
+battery wedge: 3.7°
+plate thickness: ×1.47
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="d0cb9030fd42" cx="175" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="91c031dff2fd" cx="221" cy="312" r="9.0" fill="#3b3a36" stroke="#6b6a60" stroke-width="1.2"><title>91c031dff2fd gen3 crossover 8.482
+arm length: ×0.95
+arm width: ×1.29
+arm waist: ×0.86
+arm thickness: 4.6 mm
+front sweep: 47.6°
+rear sweep: 39.2°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 36.8 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="91c031dff2fd" cx="221" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="4e9685208ffd" cx="267" cy="312" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>4e9685208ffd gen3 crossover rotor disks overlap (tip clearance)
+arm length: ×0.87
+arm width: ×1.27
+arm waist: ×0.94
+arm thickness: 4.0 mm
+front sweep: 47.4°
+rear sweep: 34.0°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 45.0 mm
+battery wedge: 0.0°
+plate thickness: ×1.60
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="4e9685208ffd" cx="267" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="3ab498bc6b27" cx="313" cy="312" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>3ab498bc6b27 gen3 crossover arm root tongues collide on the main plate
+arm length: ×1.02
+arm width: ×1.00
+arm waist: ×0.75
+arm thickness: 6.0 mm
+front sweep: 33.0°
+rear sweep: 35.7°
+plate length: ×1.08
+plate width: ×0.92
+deck gap: 30.1 mm
+battery wedge: 4.2°
+plate thickness: ×0.94
+material: cf_plate</title></circle>
+<circle class="hit" data-h="3ab498bc6b27" cx="313" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="1359eeb9d001" cx="359" cy="312" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>1359eeb9d001 gen3 crossover arm tip deflection (pa12_cf)
+arm length: ×0.94
+arm width: ×1.31
+arm waist: ×0.76
+arm thickness: 4.0 mm
+front sweep: 47.2°
+rear sweep: 39.0°
+plate length: ×0.91
+plate width: ×1.09
+deck gap: 42.6 mm
+battery wedge: 4.4°
+plate thickness: ×1.51
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="1359eeb9d001" cx="359" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="a947ed4884d4" cx="405" cy="312" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>a947ed4884d4 gen3 crossover rotor disks overlap (tip clearance)
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.90
+arm thickness: 4.4 mm
+front sweep: 47.9°
+rear sweep: 39.1°
+plate length: ×0.98
+plate width: ×1.00
+deck gap: 39.4 mm
+battery wedge: 2.4°
+plate thickness: ×1.60
+material: pla_plus</title></circle>
+<circle class="hit" data-h="a947ed4884d4" cx="405" cy="312" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="828c02524eb1" cx="83" cy="396" r="5.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>828c02524eb1 gen2 crossover 8.079
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 39.5 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="828c02524eb1" cx="83" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="1b80ab377486" cx="129" cy="396" r="9.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>1b80ab377486 gen4 crossover 8.252
+arm length: ×0.95
+arm width: ×1.30
+arm waist: ×0.86
+arm thickness: 4.1 mm
+front sweep: 45.2°
+rear sweep: 40.4°
+plate length: ×0.85
+plate width: ×1.09
+deck gap: 35.8 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="1b80ab377486" cx="129" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="7ff007f350ce" cx="175" cy="396" r="5.0" fill="#2c2b29" stroke="#6b6a60" stroke-width="1.2"><title>7ff007f350ce gen1 crossover 8.336
+arm length: ×0.94
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.6 mm
+front sweep: 47.4°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 42.6 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="7ff007f350ce" cx="175" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="31cae443aca7" cx="221" cy="396" r="9.0" fill="#2e2e2b" stroke="#6b6a60" stroke-width="1.2"><title>31cae443aca7 gen4 crossover 8.360
+arm length: ×0.89
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.4 mm
+front sweep: 47.4°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 42.6 mm
+battery wedge: 2.3°
+plate thickness: ×1.45
+material: cf_plate</title></circle>
+<circle class="hit" data-h="31cae443aca7" cx="221" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="1cc3a28b7956" cx="267" cy="396" r="9.0" fill="#393834" stroke="#6b6a60" stroke-width="1.2"><title>1cc3a28b7956 gen4 crossover 8.460
+arm length: ×0.96
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.2°
+plate length: ×0.89
+plate width: ×1.09
+deck gap: 37.2 mm
+battery wedge: 3.8°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="1cc3a28b7956" cx="267" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="58280438d526" cx="313" cy="396" r="9.0" fill="#d9d5c3" stroke="#6b6a60" stroke-width="1.2"><title>58280438d526 gen4 immigrant 9.994
+arm length: ×1.26
+arm width: ×1.07
+arm waist: ×1.05
+arm thickness: 7.6 mm
+front sweep: 35.3°
+rear sweep: 41.8°
+plate length: ×1.26
+plate width: ×1.09
+deck gap: 30.1 mm
+battery wedge: 12.2°
+plate thickness: ×1.58
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="58280438d526" cx="313" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="c9d1560aee6a" cx="359" cy="396" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c9d1560aee6a gen4 crossover arm tip deflection (pa12_cf)
+arm length: ×0.94
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.0 mm
+front sweep: 47.3°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 42.9 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="c9d1560aee6a" cx="359" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="4ca584dd915a" cx="405" cy="396" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>4ca584dd915a gen4 crossover arm root tongues collide on the main plate
+arm length: ×1.01
+arm width: ×0.96
+arm waist: ×0.75
+arm thickness: 5.4 mm
+front sweep: 32.8°
+rear sweep: 34.0°
+plate length: ×0.96
+plate width: ×0.89
+deck gap: 28.5 mm
+battery wedge: 1.3°
+plate thickness: ×0.91
+material: cf_plate</title></circle>
+<circle class="hit" data-h="4ca584dd915a" cx="405" cy="396" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="828c02524eb1" cx="83" cy="480" r="5.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>828c02524eb1 gen2 crossover 8.079
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 39.5 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="828c02524eb1" cx="83" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="1b80ab377486" cx="129" cy="480" r="5.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>1b80ab377486 gen4 crossover 8.252
+arm length: ×0.95
+arm width: ×1.30
+arm waist: ×0.86
+arm thickness: 4.1 mm
+front sweep: 45.2°
+rear sweep: 40.4°
+plate length: ×0.85
+plate width: ×1.09
+deck gap: 35.8 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="1b80ab377486" cx="129" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="30202426bc05" cx="175" cy="480" r="9.0" fill="#2c2c29" stroke="#6b6a60" stroke-width="1.2"><title>30202426bc05 gen5 crossover 8.341
+arm length: ×0.89
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.3 mm
+front sweep: 46.0°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.07
+deck gap: 43.0 mm
+battery wedge: 1.9°
+plate thickness: ×1.45
+material: cf_plate</title></circle>
+<circle class="hit" data-h="30202426bc05" cx="175" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="b5ab9fb636a2" cx="221" cy="480" r="9.0" fill="#383734" stroke="#6b6a60" stroke-width="1.2"><title>b5ab9fb636a2 gen5 crossover 8.452
+arm length: ×1.08
+arm width: ×1.18
+arm waist: ×0.86
+arm thickness: 4.1 mm
+front sweep: 44.8°
+rear sweep: 34.0°
+plate length: ×0.85
+plate width: ×1.03
+deck gap: 36.1 mm
+battery wedge: 3.8°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="b5ab9fb636a2" cx="221" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="e4d28ae361dc" cx="267" cy="480" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>e4d28ae361dc gen5 crossover rotor disks overlap (tip clearance)
+arm length: ×0.86
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.90
+plate width: ×1.16
+deck gap: 39.7 mm
+battery wedge: 2.3°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="e4d28ae361dc" cx="267" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="5f4e86d80d6a" cx="313" cy="480" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>5f4e86d80d6a gen5 crossover arm tip deflection (pa12_cf)
+arm length: ×0.89
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.0 mm
+front sweep: 47.5°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 44.6 mm
+battery wedge: 2.2°
+plate thickness: ×1.45
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="5f4e86d80d6a" cx="313" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="27f54c0485f9" cx="359" cy="480" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>27f54c0485f9 gen5 crossover rotor disks overlap (tip clearance)
+arm length: ×0.89
+arm width: ×1.26
+arm waist: ×0.90
+arm thickness: 4.4 mm
+front sweep: 47.4°
+rear sweep: 36.7°
+plate length: ×0.96
+plate width: ×1.09
+deck gap: 43.4 mm
+battery wedge: 1.4°
+plate thickness: ×1.42
+material: cf_plate</title></circle>
+<circle class="hit" data-h="27f54c0485f9" cx="359" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="b593cc83ab09" cx="405" cy="480" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>b593cc83ab09 gen5 crossover rotor disks overlap (tip clearance)
+arm length: ×0.82
+arm width: ×1.29
+arm waist: ×0.90
+arm thickness: 4.4 mm
+front sweep: 52.0°
+rear sweep: 39.3°
+plate length: ×0.90
+plate width: ×1.09
+deck gap: 43.9 mm
+battery wedge: 2.2°
+plate thickness: ×1.45
+material: cf_plate</title></circle>
+<circle class="hit" data-h="b593cc83ab09" cx="405" cy="480" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="828c02524eb1" cx="83" cy="564" r="5.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>828c02524eb1 gen2 crossover 8.079
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 39.5 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="828c02524eb1" cx="83" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="1b80ab377486" cx="129" cy="564" r="5.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>1b80ab377486 gen4 crossover 8.252
+arm length: ×0.95
+arm width: ×1.30
+arm waist: ×0.86
+arm thickness: 4.1 mm
+front sweep: 45.2°
+rear sweep: 40.4°
+plate length: ×0.85
+plate width: ×1.09
+deck gap: 35.8 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="1b80ab377486" cx="129" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="0580b8278066" cx="175" cy="564" r="9.0" fill="#2c2b29" stroke="#6b6a60" stroke-width="1.2"><title>0580b8278066 gen6 crossover 8.336
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 5.4 mm
+front sweep: 51.2°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 39.5 mm
+battery wedge: 4.7°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="0580b8278066" cx="175" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="85607c76f3ef" cx="221" cy="564" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>85607c76f3ef gen6 immigrant arm tongue bolts miss the main plate
+arm length: ×1.03
+arm width: ×0.84
+arm waist: ×0.74
+arm thickness: 4.6 mm
+front sweep: 32.3°
+rear sweep: 61.9°
+plate length: ×0.91
+plate width: ×1.09
+deck gap: 39.3 mm
+battery wedge: 0.2°
+plate thickness: ×1.18
+material: asa</title></circle>
+<circle class="hit" data-h="85607c76f3ef" cx="221" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="669b0269ed98" cx="267" cy="564" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>669b0269ed98 gen6 immigrant arm tip deflection (pla_plus)
+arm length: ×1.08
+arm width: ×0.88
+arm waist: ×1.20
+arm thickness: 4.8 mm
+front sweep: 49.3°
+rear sweep: 45.5°
+plate length: ×1.24
+plate width: ×1.22
+deck gap: 29.5 mm
+battery wedge: 0.1°
+plate thickness: ×1.37
+material: pla_plus</title></circle>
+<circle class="hit" data-h="669b0269ed98" cx="267" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="a5fb30f300c1" cx="313" cy="564" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>a5fb30f300c1 gen6 designer arm tongue bolts miss the main plate
+arm length: ×1.28
+arm width: ×0.95
+arm waist: ×0.72
+arm thickness: 8.5 mm
+front sweep: 44.0°
+rear sweep: 48.0°
+plate length: ×0.88
+plate width: ×0.95
+deck gap: 29.0 mm
+battery wedge: 7.5°
+plate thickness: ×1.10
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="a5fb30f300c1" cx="313" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="334774de6e6a" cx="359" cy="564" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>334774de6e6a gen6 designer arm tongue bolts miss the main plate
+arm length: ×0.82
+arm width: ×0.85
+arm waist: ×0.60
+arm thickness: 6.0 mm
+front sweep: 51.5°
+rear sweep: 58.0°
+plate length: ×1.18
+plate width: ×0.87
+deck gap: 26.0 mm
+battery wedge: 13.5°
+plate thickness: ×1.00
+material: pet_cf</title></circle>
+<circle class="hit" data-h="334774de6e6a" cx="359" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="cb5e1b4c994b" cx="405" cy="564" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>cb5e1b4c994b gen6 designer arm tongue bolts miss the main plate
+arm length: ×1.05
+arm width: ×0.82
+arm waist: ×0.78
+arm thickness: 6.8 mm
+front sweep: 38.0°
+rear sweep: 52.0°
+plate length: ×0.86
+plate width: ×0.90
+deck gap: 24.5 mm
+battery wedge: 5.0°
+plate thickness: ×0.78
+material: cf_plate</title></circle>
+<circle class="hit" data-h="cb5e1b4c994b" cx="405" cy="564" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="828c02524eb1" cx="83" cy="648" r="5.0" fill="#111111" stroke="#6b6a60" stroke-width="1.2"><title>828c02524eb1 gen2 crossover 8.079
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 39.5 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="828c02524eb1" cx="83" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="1b80ab377486" cx="129" cy="648" r="5.0" fill="#232321" stroke="#6b6a60" stroke-width="1.2"><title>1b80ab377486 gen4 crossover 8.252
+arm length: ×0.95
+arm width: ×1.30
+arm waist: ×0.86
+arm thickness: 4.1 mm
+front sweep: 45.2°
+rear sweep: 40.4°
+plate length: ×0.85
+plate width: ×1.09
+deck gap: 35.8 mm
+battery wedge: 3.7°
+plate thickness: ×1.48
+material: cf_plate</title></circle>
+<circle class="hit" data-h="1b80ab377486" cx="129" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="b774a9dbeee5" cx="175" cy="648" r="9.0" fill="#3c3b37" stroke="#6b6a60" stroke-width="1.2"><title>b774a9dbeee5 gen7 crossover 8.492
+arm length: ×0.87
+arm width: ×1.32
+arm waist: ×0.85
+arm thickness: 5.7 mm
+front sweep: 45.4°
+rear sweep: 45.4°
+plate length: ×0.85
+plate width: ×1.09
+deck gap: 35.6 mm
+battery wedge: 0.0°
+plate thickness: ×1.40
+material: cf_plate</title></circle>
+<circle class="hit" data-h="b774a9dbeee5" cx="175" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="6763f7229a99" cx="221" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>6763f7229a99 gen7 crossover arm tongue bolts miss the main plate
+arm length: ×0.91
+arm width: ×0.79
+arm waist: ×0.62
+arm thickness: 6.0 mm
+front sweep: 52.0°
+rear sweep: 62.0°
+plate length: ×1.14
+plate width: ×0.87
+deck gap: 25.8 mm
+battery wedge: 12.8°
+plate thickness: ×1.00
+material: pet_cf</title></circle>
+<circle class="hit" data-h="6763f7229a99" cx="221" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="66956f5b8bf0" cx="267" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>66956f5b8bf0 gen7 mutation arm tip deflection (pa12_cf)
+arm length: ×0.87
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.0 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.91
+plate width: ×1.10
+deck gap: 32.8 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="66956f5b8bf0" cx="267" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="c4a43a086aaf" cx="313" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c4a43a086aaf gen7 crossover rotor disks overlap (tip clearance)
+arm length: ×0.88
+arm width: ×1.28
+arm waist: ×0.89
+arm thickness: 4.4 mm
+front sweep: 47.6°
+rear sweep: 39.1°
+plate length: ×0.86
+plate width: ×0.95
+deck gap: 37.7 mm
+battery wedge: 2.4°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="c4a43a086aaf" cx="313" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="c53abe0aaad5" cx="359" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>c53abe0aaad5 gen7 crossover arm tongue bolts miss the main plate
+arm length: ×1.25
+arm width: ×0.94
+arm waist: ×0.72
+arm thickness: 8.3 mm
+front sweep: 43.9°
+rear sweep: 47.4°
+plate length: ×0.88
+plate width: ×0.91
+deck gap: 26.0 mm
+battery wedge: 6.0°
+plate thickness: ×1.10
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="c53abe0aaad5" cx="359" cy="648" r="14.0" fill="transparent" stroke="none"/>
+<circle class="nd" data-h="3958ba7c85c8" cx="405" cy="648" r="9.0" fill="none" stroke="#b9b6a6" stroke-width="1.2"><title>3958ba7c85c8 gen7 crossover rotor disks overlap (tip clearance)
+arm length: ×0.86
+arm width: ×1.35
+arm waist: ×0.89
+arm thickness: 5.5 mm
+front sweep: 52.0°
+rear sweep: 39.1°
+plate length: ×0.90
+plate width: ×1.08
+deck gap: 39.5 mm
+battery wedge: 4.7°
+plate thickness: ×1.52
+material: pa12_cf</title></circle>
+<circle class="hit" data-h="3958ba7c85c8" cx="405" cy="648" r="14.0" fill="transparent" stroke="none"/>
 <text x="16" y="64" font-size="11" fill="#9b998c">g0</text>
 <text x="16" y="148" font-size="11" fill="#9b998c">g1</text>
 <text x="16" y="232" font-size="11" fill="#9b998c">g2</text>
+<text x="16" y="316" font-size="11" fill="#9b998c">g3</text>
+<text x="16" y="400" font-size="11" fill="#9b998c">g4</text>
+<text x="16" y="484" font-size="11" fill="#9b998c">g5</text>
+<text x="16" y="568" font-size="11" fill="#9b998c">g6</text>
+<text x="16" y="652" font-size="11" fill="#9b998c">g7</text>
 <line x1="60" y1="24" x2="76" y2="24" stroke="#4a6fa5" stroke-width="2"/>
 <text x="80" y="28" font-size="10" fill="#6b6a60">crossover</text>
 <line x1="153" y1="24" x2="169" y2="24" stroke="#2e6e63" stroke-width="2"/>

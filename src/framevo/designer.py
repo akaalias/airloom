@@ -46,9 +46,13 @@ crosswind rewards a small side profile.
 
 Propose exactly {n} NEW genome vectors that are meaningfully DIFFERENT from \
 the elites and from each other — design hypotheses, not small perturbations. \
-Respect the hard constraints implied by the failure histogram (e.g. arm \
-tongues collide when both sweep genes are at their minimums with wide arms; \
-the deck gap must exceed 23 mm for the FC stack).
+Respect the hard constraints implied by the failure histogram. Known \
+couplings: the deck gap must exceed 0.023 m for the FC stack; arm tongues \
+collide when both sweeps sit at their minimums with wide arms; and the \
+tongue BOLTS must stay on the main plate -- sweeps far from stock \
+(front 31.4, rear 36.0) need plate_length_scale/plate_width_scale to grow \
+with them (rule of thumb: keep sweeps within ~6 deg of stock unless you \
+also raise the plate scales by ~0.1 per extra 5 deg).
 
 Respond with ONLY a JSON array, no prose, in this exact shape:
 [{{"rationale": "<one sentence>", "genes": {{{gene_names}}}}}, ...]

@@ -38,6 +38,16 @@ def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
 
     from .render import DRAW_ORDER, PART_COLORS
 
+    # per-part decimation budget: keeps interactive blobs ~150 KB while the
+    # physics/STL meshes stay full resolution
+    budget = {"deck": 3200, "arms": 2200, "wiring": 1400, "motors": 1400,
+              "props": 1600, "battery": 900, "stack": 900, "antennas": 700,
+              "camera": 300}
+    try:
+        import fast_simplification
+    except ImportError:
+        fast_simplification = None
+
     verts_list, faces_list, fc_list, palette = [], [], [], []
     offset = 0
     for name in DRAW_ORDER:
@@ -49,7 +59,15 @@ def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
         palette.append([int(color[1:3], 16), int(color[3:5], 16),
                         int(color[5:7], 16), round(alpha, 2)])
         v = np.asarray(mesh.vertices, dtype=np.float32)
-        f = np.asarray(mesh.faces, dtype=np.int64) + offset
+        f = np.asarray(mesh.faces, dtype=np.int64)
+        cap = budget.get(name, 1500)
+        if fast_simplification is not None and len(f) > cap:
+            v2, f2 = fast_simplification.simplify(
+                np.asarray(mesh.vertices, dtype=np.float64), f,
+                target_reduction=1.0 - cap / len(f))
+            v = np.asarray(v2, dtype=np.float32)
+            f = np.asarray(f2, dtype=np.int64)
+        f = f + offset
         verts_list.append(v)
         faces_list.append(f)
         fc_list.append(np.full(len(f), pi, dtype=np.uint8))
