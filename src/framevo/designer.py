@@ -20,7 +20,6 @@ from __future__ import annotations
 import json
 import math
 import re
-import subprocess
 from pathlib import Path
 
 from .config import Config
@@ -55,9 +54,38 @@ crosswind rewards a small side profile.
 
 {ask}
 
-Respond with ONLY a JSON array, no prose, in this exact shape:
-[{{"rationale": "<one sentence>", "genes": {{{gene_names}}}}}, ...]
+Respond with a JSON object of the shape:
+{{"proposals": [{{"rationale": "<one sentence>", "genes": {{{gene_names}}}}}, ...]}}
 """
+
+
+def _proposals_schema() -> dict:
+    """Schema for the CLI's --json-schema structured-output mode."""
+    gene_props = {name: {"type": "number"} for name, _, _ in GENOME_SPEC}
+    return {
+        "type": "object",
+        "properties": {
+            "proposals": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "rationale": {"type": "string"},
+                        "genes": {
+                            "type": "object",
+                            "properties": gene_props,
+                            "required": list(gene_props),
+                            "additionalProperties": False,
+                        },
+                    },
+                    "required": ["rationale", "genes"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["proposals"],
+        "additionalProperties": False,
+    }
 
 COUPLINGS = """Respect the hard constraints implied by the failure \
 histogram. Known couplings: the deck gap must exceed 0.023 m for the FC \
@@ -196,12 +224,8 @@ def _build_brief(store: Store, run_id: str, n: int,
         inspiration=_inspiration_block(store, run_id))
 
 
-def _parse_proposals(text: str, n: int) -> list[tuple[dict, str]]:
-    """Extract [(genes, rationale), ...] from the model's reply."""
-    match = re.search(r"\[.*\]", text, re.DOTALL)
-    if not match:
-        return []
-    items = json.loads(match.group(0))
+def _clean_items(items: list, n: int) -> list[tuple[dict, str]]:
+    """Validate/clip raw proposal items onto the gene bounds."""
     out = []
     for item in items[:n]:
         genes = item.get("genes") if isinstance(item, dict) else None
@@ -218,16 +242,24 @@ def _parse_proposals(text: str, n: int) -> list[tuple[dict, str]]:
     return out
 
 
+def _parse_proposals(text: str, n: int) -> list[tuple[dict, str]]:
+    """Legacy text fallback: extract the JSON array from a prose reply."""
+    match = re.search(r"\[.*\]", text, re.DOTALL)
+    if not match:
+        return []
+    return _clean_items(json.loads(match.group(0)), n)
+
+
 def _ask_claude(prompt: str, n: int, model: str,
-                timeout_s: float) -> list[tuple[dict, str]]:
-    cmd = ["claude", "-p", prompt, "--output-format", "json"]
-    if model:
-        cmd += ["--model", model]
-    run = subprocess.run(cmd, capture_output=True, text=True,
-                         timeout=timeout_s)
-    envelope = json.loads(run.stdout)
-    text = envelope.get("result", "") if isinstance(envelope, dict) else ""
-    return _parse_proposals(text, n)
+                timeout_s: float) -> tuple[list[tuple[dict, str]], str | None]:
+    """Returns (proposals, exact_model_that_served_the_call)."""
+    from .claude_cli import ask_structured
+
+    data, exact_model, text = ask_structured(prompt, _proposals_schema(),
+                                             model, timeout_s)
+    if isinstance(data, dict) and isinstance(data.get("proposals"), list):
+        return _clean_items(data["proposals"], n), exact_model
+    return _parse_proposals(text, n), exact_model
 
 
 def _prescreen(proposals: list[tuple[dict, str]], cfg: Config
@@ -270,7 +302,7 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
                  kind: str = "periodic") -> list[Proposal]:
     brief = _build_brief(store, run_id, n, kind=kind)
     try:
-        proposals = _ask_claude(brief, n, model, timeout_s)
+        proposals, exact_model = _ask_claude(brief, n, model, timeout_s)
     except Exception as exc:  # fail-soft: skip the round
         print(f"[framevo] designer round skipped: {type(exc).__name__}: {exc}",
               flush=True)
@@ -278,8 +310,12 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
     ok, rejected = _prescreen(proposals, cfg)
     if rejected and len(ok) < n:  # one repair round with the failure reasons
         try:
-            more = _ask_claude(_repair_brief(brief, rejected, n - len(ok)),
-                               n - len(ok), model, timeout_s)
+            more, repair_model = _ask_claude(
+                _repair_brief(brief, rejected, n - len(ok)),
+                n - len(ok), model, timeout_s)
+            if repair_model and repair_model != exact_model:
+                exact_model = ", ".join(filter(None, {exact_model,
+                                                      repair_model}))
             ok2, rejected2 = _prescreen(more, cfg)
             ok += ok2
             rejected += rejected2
@@ -292,6 +328,9 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
     out = []
     accepted_meta = []
     log_lines = [f"\n## generation {generation} ({kind})\n"]
+    if exact_model:
+        print(f"[framevo] designer round served by {exact_model}", flush=True)
+        log_lines.append(f"*model: {exact_model}*\n")
     for genes, rationale in ok[:n]:
         genome = Genome.from_dict(genes)
         out.append(Proposal(genome, None, None, "designer", None))
@@ -303,7 +342,8 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
         log_lines.append(f"- ~~rejected pre-flight ({r['reason']})~~ — "
                          f"{r['rationale']}\n")
     store.record_designer_round(run_id, generation, kind, brief,
-                                accepted_meta, rejected_meta)
+                                accepted_meta, rejected_meta,
+                                model=exact_model)
     if out or rejected:
         log = log_dir / "designer_log.md"
         if not log.exists():

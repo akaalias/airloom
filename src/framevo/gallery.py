@@ -191,6 +191,8 @@ table.dt.hd b{font-size:17px}
 .note{max-width:660px;font-size:14.5px;line-height:1.55;margin:12px 0}
 .note .nlab{display:block;margin-bottom:2px}
 .note.res .nlab{color:var(--accent)}
+.nmodel{font:italic 12px var(--serif);color:var(--faint);margin-top:8px}
+.detail.setter .nmodel{color:var(--disc)}
 .dmeta .tlab{font:600 14px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.09em;color:var(--ink);
   margin:24px 0 8px;padding-top:16px;border-top:1px solid var(--rule-soft)}
@@ -1390,6 +1392,13 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             if text:
                 notes += (f'<div class="note{cls2}"><span class="nlab">'
                           f"{label}</span>{html.escape(text)}</div>")
+        try:  # exact model that wrote the notes (from the claude CLI call)
+            notes_model = c["notes_model"]
+        except (KeyError, IndexError):
+            notes_model = None
+        if notes and notes_model:
+            notes += (f'<div class="nmodel">notes by '
+                      f"{html.escape(notes_model)}</div>")
         dcls = "detail" + (" setter" if is_setter else "") + \
             (" champion" if h == best_hash else "")
         gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'

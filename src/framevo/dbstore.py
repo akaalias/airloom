@@ -167,13 +167,17 @@ class Store:
     def _migrate_columns(self) -> None:
         """Additive migrations (new nullable columns) never reset the db."""
         have = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
-        for col in ("hypothesis", "method", "result_note"):
+        for col in ("hypothesis", "method", "result_note", "notes_model"):
             if col not in have:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
         have = {r[1] for r in self.conn.execute("PRAGMA table_info(runs)")}
         for col in ("inspiration_path", "inspiration_text"):
             if col not in have:
                 self.conn.execute(f"ALTER TABLE runs ADD COLUMN {col} TEXT")
+        have = {r[1] for r in
+                self.conn.execute("PRAGMA table_info(designer_rounds)")}
+        if "model" not in have:
+            self.conn.execute("ALTER TABLE designer_rounds ADD COLUMN model TEXT")
 
     # -- runs ---------------------------------------------------------------
     def create_run(self, run_id: str, seed: int, optimizer: str, population: int,
@@ -266,11 +270,12 @@ class Store:
         self.conn.commit()
 
     def set_narrative(self, run_id: str, h: str, hypothesis: str,
-                      method: str, result_note: str) -> None:
+                      method: str, result_note: str,
+                      model: str | None = None) -> None:
         self.conn.execute(
-            "UPDATE candidates SET hypothesis=?, method=?, result_note=?"
-            " WHERE run_id=? AND hash=?",
-            (hypothesis, method, result_note, run_id, h))
+            "UPDATE candidates SET hypothesis=?, method=?, result_note=?,"
+            " notes_model=? WHERE run_id=? AND hash=?",
+            (hypothesis, method, result_note, model, run_id, h))
         self.conn.commit()
 
     def get_candidate(self, run_id: str, h: str) -> sqlite3.Row | None:
@@ -356,13 +361,14 @@ class Store:
     # -- designer rounds ----------------------------------------------------------
     def record_designer_round(self, run_id: str, generation: int, kind: str,
                               prompt: str, accepted: list[dict],
-                              rejected: list[dict]) -> None:
+                              rejected: list[dict],
+                              model: str | None = None) -> None:
         self.conn.execute(
             "INSERT OR REPLACE INTO designer_rounds (run_id, generation, kind,"
-            " prompt, accepted_json, rejected_json, created_utc)"
-            " VALUES (?,?,?,?,?,?,?)",
+            " prompt, accepted_json, rejected_json, created_utc, model)"
+            " VALUES (?,?,?,?,?,?,?,?)",
             (run_id, generation, kind, prompt, json.dumps(accepted),
-             json.dumps(rejected), time.time()))
+             json.dumps(rejected), time.time(), model))
         self.conn.commit()
 
     def designer_round_for(self, run_id: str,

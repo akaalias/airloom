@@ -57,13 +57,15 @@ def test_design_round_records_to_db(tmp_path, cfg, monkeypatch):
     good = Genome.baseline().as_dict()
     doomed = dict(good, deck_gap=0.020)
     monkeypatch.setattr(dz, "_ask_claude", lambda prompt, n, model, t: (
-        [(good, "solid"), (doomed, "corner probe")]
-        if "PRE-SCREEN FEEDBACK" not in prompt else []))
+        ([(good, "solid"), (doomed, "corner probe")]
+         if "PRE-SCREEN FEEDBACK" not in prompt else []),
+        "claude-test-model"))
     out = dz.design_round(store, "r1", cfg, generation=3, n=2, model="",
                           timeout_s=5, log_dir=tmp_path, kind="pivot")
     assert len(out) == 1
     rnd = store.designer_round_for("r1", 3)
     assert rnd["kind"] == "pivot" and "PLATEAU" in rnd["prompt"]
+    assert rnd["model"] == "claude-test-model"
     acc = json.loads(rnd["accepted_json"])
     rej = json.loads(rnd["rejected_json"])
     assert acc[0]["rationale"] == "solid"

@@ -21,7 +21,6 @@ from __future__ import annotations
 import json
 import re
 import math
-import subprocess
 
 from .dbstore import Store
 from .genome import GENE_FORMAT, GENOME_SPEC, describe_genome
@@ -123,10 +122,35 @@ end with one concrete idea worth testing next.
 CANDIDATES (one JSON per line):
 {chr(10).join(lines)}
 
-Respond with ONLY a STRICT JSON object mapping each hash to its sections
-(double-quoted, quotes inside text escaped, no trailing commas):
-{{"<hash>": {{"hypothesis": "...", "method": "...", "result": "..."}}, ...}}
+Respond with a JSON object of the shape
+{{"notes": [{{"hash": "<hash>", "hypothesis": "...", "method": "...",
+"result": "..."}}, ...]}} covering EVERY candidate hash above exactly once.
 """
+
+
+# schema for the CLI's --json-schema structured-output mode: a fixed array
+# shape (structured outputs reject dynamic object keys)
+NOTES_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "notes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "hash": {"type": "string"},
+                    "hypothesis": {"type": "string"},
+                    "method": {"type": "string"},
+                    "result": {"type": "string"},
+                },
+                "required": ["hash", "hypothesis", "method", "result"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["notes"],
+    "additionalProperties": False,
+}
 
 
 def _parse_notes(text: str, hashes: list[str]) -> dict[str, dict]:
@@ -237,16 +261,18 @@ def enrich_notes(db_path: str, run_id: str, gen: int, cands: list[dict],
     if not cands:
         return
     notes: dict[str, dict] = {}
+    exact_model: str | None = None
     try:
+        from .claude_cli import ask_structured
+
         brief = _build_brief(cands, gen, best_before)
-        cmd = ["claude", "-p", brief, "--output-format", "json"]
-        if model:
-            cmd += ["--model", model]
-        run = subprocess.run(cmd, capture_output=True, text=True,
-                             timeout=timeout_s)
-        envelope = json.loads(run.stdout)
-        text = envelope.get("result", "") if isinstance(envelope, dict) else ""
-        got = _parse_notes(text, [c["hash"] for c in cands])
+        data, exact_model, text = ask_structured(brief, NOTES_SCHEMA, model,
+                                                 timeout_s)
+        if isinstance(data, dict) and isinstance(data.get("notes"), list):
+            got = {n.get("hash"): n for n in data["notes"]
+                   if isinstance(n, dict)}
+        else:  # old CLI / no structured output: legacy text salvage
+            got = _parse_notes(text, [c["hash"] for c in cands])
         wanted = {c["hash"]: _fallback(c) for c in cands}
         for h, sec in got.items():
             if h in wanted and isinstance(sec, dict):
@@ -255,6 +281,9 @@ def enrich_notes(db_path: str, run_id: str, gen: int, cands: list[dict],
                     if isinstance(sec.get(k), str) and sec[k].strip():
                         merged[k] = sec[k].strip()[:1200]
                 notes[h] = merged
+        if len(notes) < len(cands):
+            print(f"[framevo] narrator enriched {len(notes)}/{len(cands)} "
+                  f"notes (rule-based fallback for the rest)", flush=True)
     except Exception as exc:
         print(f"[framevo] narrator kept rule-based notes: "
               f"{type(exc).__name__}: {exc}", flush=True)
@@ -267,6 +296,6 @@ def enrich_notes(db_path: str, run_id: str, gen: int, cands: list[dict],
     try:
         for h, sec in notes.items():
             own.set_narrative(run_id, h, sec["hypothesis"], sec["method"],
-                              sec["result"])
+                              sec["result"], model=exact_model)
     finally:
         own.close()
