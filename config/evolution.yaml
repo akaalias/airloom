@@ -51,7 +51,7 @@ designer:
   candidates: 3
   gen0_candidates: 5           # Claude-designed slots in the initial
                                # population (replace random seeds; 0 = off)
-  model: ""                    # empty = the claude CLI's default model
+  model: "claude-sonnet-5"     # fast; empty = the claude CLI's default model
   timeout_s: 300
 
 narrator:
@@ -60,7 +60,7 @@ narrator:
   # candidate (rule-based fallback if the CLI is unavailable). Shown in the
   # gallery detail blocks and the family-tree hover cards.
   enabled: true
-  model: ""                    # empty = the claude CLI's default model
+  model: "claude-sonnet-5"     # fast; empty = the claude CLI's default model
   timeout_s: 300
 
 execution:

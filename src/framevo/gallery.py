@@ -378,8 +378,10 @@ table.dt.hd b{font-size:17px}
   background:var(--paper);border:1px solid var(--rule);color:var(--muted);
   cursor:pointer}
 .wtl .wplay:hover{color:var(--ink);border-color:var(--ink)}
-.wthumb{background:none;border:1px solid var(--rule);padding:2px;
-  cursor:pointer;flex:0 0 auto;width:66px}
+.wthumb{display:block;background:none;border:1px solid var(--rule);
+  padding:2px;cursor:pointer;flex:0 0 auto;width:66px}
+.wthumb.off{opacity:.4;cursor:default}
+.wthumb.off:hover{border-color:var(--rule)}
 .wthumb img{width:100%;display:block;mix-blend-mode:multiply}
 .wthumb span{display:block;font:10.5px var(--mono);color:var(--faint);
   text-align:center;margin-top:1px}
@@ -700,9 +702,9 @@ function redrawAll(){soloState.redraw();evoState.redraw();
   cmpState.redraw();diffState.redraw();walkState.redraw();
   fullState.redraw()}
 
-// ---- lineage walkthrough: step from the oldest ancestor down the
-// primary-parent chain to this candidate; the current step is solid,
-// its next descendant a gray ghost, and each step cross-fades
+// ---- lineage replay: step through the candidate's full ancestry from
+// the oldest ancestor to the candidate; the current step is solid, the
+// next in line a gray ghost, and each step cross-fades
 var wmetaEl=document.getElementById("walk-meta");
 var WMETA=wmetaEl?JSON.parse(wmetaEl.textContent):{};
 var walkChain=[],walkIdx=0,walkAnim=null,walkFrame=null;
@@ -731,16 +733,35 @@ function chainFrame(){
   });
   return {c:C,r:ents[0].r,mx:mx,my:my,mz:mz};
 }
-function walkChainFor(h){ // oldest first; only steps with an evolved blob
-  var chain=[],cur=h,seen={};
-  while(cur&&!seen[cur]){
+function hasEvBlob(x){ // an embedded mesh blob with the evolved subset
+  var el=document.getElementById("m-"+x);
+  return !!el&&el.textContent.indexOf('"pn"')>=0;
+}
+var walkAll=[]; // full ancestry incl. members without a 3D blob
+function walkChainFor(h){
+  // FULL ancestry via both parents (a primary-line walk dead-ends when
+  // parent_a is a parentless designer/immigrant while the deep lineage
+  // runs through parent_b), ordered oldest generation first, the
+  // candidate itself last. Returns the 3D-steppable subset; walkAll
+  // keeps everyone for the timeline display.
+  var seen={},stack=[h];
+  while(stack.length){
+    var cur=stack.pop();
+    if(seen[cur])continue;
     seen[cur]=1;
-    var el=document.getElementById("m-"+cur);
-    if(el&&el.textContent.indexOf('"pn"')>=0)chain.push(cur);
-    var m=WMETA[cur];cur=m?m.p:null;
+    var m=WMETA[cur];
+    if(!m)continue;
+    if(m.p)stack.push(m.p);
+    if(m.q)stack.push(m.q);
   }
-  chain.reverse();
-  return chain;
+  delete seen[h];
+  var anc=Object.keys(seen);
+  anc.sort(function(a,b){
+    var ga=(WMETA[a]||{}).g||0,gb=(WMETA[b]||{}).g||0;
+    return ga-gb||(a<b?-1:1);
+  });
+  walkAll=anc.concat([h]);
+  return walkAll.filter(hasEvBlob);
 }
 function walkSpecs(k){
   var s=[{id:"m-"+walkChain[k],evolved:true}];
@@ -893,15 +914,24 @@ function openOverlay(d){
     // replay timeline: play button + one thumbnail per lineage step
     // (meta values are trusted generator output: paths, hex, numbers)
     playStop();
+    var stepIdx={};
+    walkChain.forEach(function(sh,si){stepIdx[sh]=si});
     var tl=document.getElementById("walk-tl");
     var tp=['<button class="wplay" id="walk-play" title="play">'
             +"&#9654;</button>"];
-    walkChain.forEach(function(th,ti){
-      var tm=WMETA[th]||{};
-      tp.push('<button class="wthumb" data-k="'+ti+'" title="'+th+
-        (tm.f?" · "+tm.f+" Wh/km":" · invalid")+'">'+
-        (tm.i?'<img src="'+tm.i+'" alt="'+th+'">':"")+
-        "<span>g"+tm.g+"</span></button>");
+    walkAll.forEach(function(th){
+      var tm=WMETA[th]||{},ti=stepIdx[th];
+      var inner=(tm.i?'<img src="'+tm.i+'" alt="'+th+'">':"")+
+        "<span>g"+tm.g+"</span>";
+      if(ti===undefined){ // ancestor without an embedded 3D model
+        tp.push('<span class="wthumb off" title="'+th+
+          (tm.f?" · "+tm.f+" Wh/km":" · invalid")+
+          ' · 3D model not embedded">'+inner+"</span>");
+      }else{
+        tp.push('<button class="wthumb" data-k="'+ti+'" title="'+th+
+          (tm.f?" · "+tm.f+" Wh/km":" · invalid")+'">'+inner+
+          "</button>");
+      }
     });
     tl.innerHTML=tp.join("");
     tl.querySelectorAll(".wthumb").forEach(function(b){
@@ -924,8 +954,10 @@ function openOverlay(d){
                    fade:n>2?0.35+0.65*fi/(n-2):1});
     fspecs.push({id:"m-"+walkChain[n-1],evolved:true});
     fullV.load(fspecs,walkFrame);
+    var nAll=walkAll.length-1;
     document.getElementById("full-hash").textContent=(d.title||"")+
-      (d.fit?" · "+d.fit:"")+"  vs  "+(n-1)+" ancestor"+(n>2?"s":"");
+      (d.fit?" · "+d.fit:"")+"  vs  "+nAll+" ancestor"+(nAll>1?"s":"")+
+      (nAll>n-1?" ("+(n-1)+" with 3D)":"");
     fullState.reset();
   }else{
     walkBtn.disabled=true;
@@ -1079,17 +1111,26 @@ def _render_bottom_from_blob(blob_path: Path, out_path: Path) -> None:
 
 
 def _oldest_ancestor(cands: dict, h: str) -> str | None:
-    """Walk the primary parent chain to the lineage's root."""
-    cur, seen = h, set()
-    while True:
-        c = cands.get(cur)
-        if c is None or cur in seen:
-            return cur if cur != h else None
+    """Earliest-born ancestor across the FULL ancestry (both parents) --
+    a primary-line walk dead-ends early when parent_a is a parentless
+    designer/immigrant while the deep lineage runs through parent_b."""
+    seen: set[str] = set()
+    stack = [h]
+    while stack:
+        cur = stack.pop()
+        if cur in seen:
+            continue
         seen.add(cur)
-        nxt = c["parent_a"] or c["parent_b"]
-        if not nxt or nxt not in cands:
-            return cur if cur != h else None
-        cur = nxt
+        c = cands.get(cur)
+        if c is None:
+            continue
+        for p in (c["parent_a"], c["parent_b"]):
+            if p and p in cands:
+                stack.append(p)
+    seen.discard(h)
+    if not seen:
+        return None
+    return min(seen, key=lambda x: (cands[x]["generation_born"] or 0, x))
 
 
 def _mesh_blob_for(results_dir: Path, png_path: str | None) -> str | None:
@@ -1927,12 +1968,12 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<button data-view="right">right</button>'
         '<button data-view="default" title="default view (double-click)">'
         "default</button></div>")
-    # primary-parent map for the overlay's lineage walkthrough: the JS
-    # walks hash -> parent to build each candidate's ancestor chain
+    # parent map for the overlay's replay/trail: the JS walks BOTH
+    # parents to collect each candidate's full ancestry
     walk_meta = {}
     for h, c in cands.items():
         fit = store.fitness_of(c)
-        walk_meta[h] = {"p": c["parent_a"] or c["parent_b"],
+        walk_meta[h] = {"p": c["parent_a"], "q": c["parent_b"],
                         "g": c["generation_born"],
                         "f": f"{fit:.3f}" if math.isfinite(fit) else None,
                         "i": _rel(results_dir, c["png_path"])}
