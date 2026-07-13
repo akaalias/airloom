@@ -47,7 +47,33 @@ def cmd_run(args: argparse.Namespace) -> int:
     store.close()
     run_id = run_id or time.strftime("run_%Y%m%d_%H%M%S")
     loop = EvolutionLoop(cfg, run_id, resume=resume)
-    loop.run()
+
+    # graceful stop: type quit/exit/q + enter, or ctrl-c
+    import threading
+
+    stop_event = threading.Event()
+
+    def _watch_stdin() -> None:
+        try:
+            for line in sys.stdin:
+                if line.strip().lower() in ("q", "quit", "exit", "stop"):
+                    print("[framevo] stopping gracefully -- finishing the "
+                          "tasks in flight...", flush=True)
+                    stop_event.set()
+                    return
+        except Exception:
+            pass
+
+    threading.Thread(target=_watch_stdin, daemon=True).start()
+    print("[framevo] type 'quit' + enter (or ctrl-c) to stop gracefully; "
+          "the run stays resumable", flush=True)
+    try:
+        loop.run(stop_event=stop_event)
+    except KeyboardInterrupt:
+        stop_event.set()
+        print("\n[framevo] interrupted -- run saved through the last "
+              "completed generation; continue with `framevo run`", flush=True)
+        return 130
     lb = cfg.evolution.results_dir / "leaderboard.md"
     if lb.exists():
         print()

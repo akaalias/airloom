@@ -33,15 +33,46 @@ def _runner(fn_name: str, args: tuple, queue: Any) -> None:
         queue.join_thread()
 
 
+class RunAborted(Exception):
+    """The user asked to stop (quit command or ctrl-c)."""
+
+
+def _terminate_all(running: dict) -> None:
+    for proc, _q, _d in running.values():
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+
+
 def run_tasks(fn_name: str, args_list: list[tuple], workers: int,
-              timeout_s: float, label: str = "") -> list[TaskOutcome]:
-    """Run evaluate.<fn_name>(*args) for each args tuple; ordered results."""
+              timeout_s: float, label: str = "",
+              stop_event: Any = None) -> list[TaskOutcome]:
+    """Run evaluate.<fn_name>(*args) for each args tuple; ordered results.
+
+    A set `stop_event` (or ctrl-c) terminates the worker subprocesses and
+    raises RunAborted so the caller can wind down without persisting a
+    half-evaluated generation."""
     results: list[TaskOutcome] = [TaskOutcome(False, error="not run")
                                   for _ in args_list]
     pending = list(enumerate(args_list))
     running: dict[int, tuple[Any, Any, float]] = {}  # idx -> (proc, queue, deadline)
 
+    try:
+        _run_task_loop(fn_name, results, pending, running, workers, timeout_s,
+                       stop_event)
+    except KeyboardInterrupt:
+        _terminate_all(running)
+        raise RunAborted("interrupted") from None
+    return results
+
+
+def _run_task_loop(fn_name, results, pending, running, workers, timeout_s,
+                   stop_event) -> None:
     while pending or running:
+        if stop_event is not None and stop_event.is_set():
+            _terminate_all(running)
+            raise RunAborted("stop requested")
         while pending and len(running) < workers:
             idx, args = pending.pop(0)
             queue = _CTX.Queue()
@@ -82,4 +113,3 @@ def run_tasks(fn_name: str, args_list: list[tuple], workers: int,
                 proc.join(timeout=5.0)
                 results[idx] = TaskOutcome(False, error=f"timeout after {timeout_s:.0f}s")
                 del running[idx]
-    return results

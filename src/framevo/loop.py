@@ -25,7 +25,7 @@ from .evolution import (CmaEs, Proposal, generation_rng,
                         gens_since_significant_improvement, pivot_rank,
                         propose_gen0, propose_next, select_far_parents)
 from .genome import Genome
-from .parallel import run_tasks
+from .parallel import RunAborted, run_tasks
 
 SCENARIO_ORDER_KEY = "calm_warm"  # flown first when early-reject is enabled
 
@@ -35,6 +35,8 @@ def _log(msg: str) -> None:
 
 
 class EvolutionLoop:
+    _stop = None
+
     def __init__(self, cfg: Config, run_id: str, resume: bool = False):
         self.cfg = cfg
         self.run_id = run_id
@@ -69,10 +71,27 @@ class EvolutionLoop:
                 " use --resume to continue it or pick another --run-id")
 
     # ------------------------------------------------------------------ run --
-    def run(self) -> None:
+    def run(self, stop_event=None) -> None:
+        self._stop = stop_event
         ev = self.cfg.evolution
         cmaes = self._restore_cmaes() if ev.optimizer == "cmaes" else None
 
+        try:
+            self._run_generations(ev, cmaes)
+        except RunAborted:
+            self._join_narrators(timeout=5.0)
+            self.store.finish_run(self.run_id, status="stopped")
+            _log("run stopped -- everything up to the last completed "
+                 "generation is saved; continue any time with "
+                 "`framevo run --generations N`")
+            return
+        self._join_narrators()  # let pending note-enrichments land
+        self._write_artifacts(ev.generations - 1)
+        self.store.finish_run(self.run_id)
+        gallery_path = self.results / "gallery.html"
+        _log(f"done. gallery: file://{gallery_path}")
+
+    def _run_generations(self, ev, cmaes) -> None:
         for gen in range(self.start_gen, ev.generations):
             t0 = time.time()
             rng = generation_rng(ev.seed, gen)
@@ -113,12 +132,8 @@ class EvolutionLoop:
             _log(f"gen {gen:3d}  best {best:7.3f}  "
                  f"valid {len(finite)}/{len(entries)}  "
                  f"({time.time() - t0:5.1f}s)")
-
-        self._join_narrators()  # let pending note-enrichments land
-        self._write_artifacts(ev.generations - 1)
-        self.store.finish_run(self.run_id)
-        gallery_path = self.results / "gallery.html"
-        _log(f"done. gallery: file://{gallery_path}")
+            if self._stop is not None and self._stop.is_set():
+                raise RunAborted("stop requested")
 
     # ----------------------------------------------------------- evaluation --
     def _evaluate_generation(self, gen: int,
@@ -136,7 +151,8 @@ class EvolutionLoop:
         # -- stage 1: geometry, artifacts, drag tables (parallel subprocesses)
         build_args = [(self.root, p.genome.values, gen, str(self.results))
                       for _, p in todo]
-        builds = run_tasks("build_task", build_args, ev.workers, ev.task_timeout_s)
+        builds = run_tasks("build_task", build_args, ev.workers,
+                           ev.task_timeout_s, stop_event=self._stop)
 
         # -- stage 2: flight scenarios per candidate (parallel subprocesses)
         scenario_names = [s.name for s in self.cfg.scenarios]
@@ -153,7 +169,8 @@ class EvolutionLoop:
                 for name in names:
                     args.append((self.root, bv["total_mass"], bv["drag"], name))
                     keys.append((p.genome.hash, name))
-            outs = run_tasks("scenario_task", args, ev.workers, ev.task_timeout_s)
+            outs = run_tasks("scenario_task", args, ev.workers,
+                             ev.task_timeout_s, stop_event=self._stop)
             for (h, name), out in zip(keys, outs):
                 sim_results.setdefault(h, {})[name] = (
                     out.value if out.ok else
