@@ -1116,21 +1116,49 @@ def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
     if rnd is not None:
         items = []
         for a in json.loads(rnd["accepted_json"]):
+            c = cands.get(a["hash"])
+            if c is None:
+                fate = ""
+            elif c["fitness"] is not None:
+                fate = (f'<span class="fate num">flew at '
+                        f'{c["fitness"]:.3f}&thinsp;Wh/km</span>')
+            else:
+                fate = (f'<span class="fate bad">invalid &mdash; '
+                        f'{html.escape(c["failure_reason"] or "?")}</span>')
             items.append(
-                f'<li><a href="#d-{html.escape(a["hash"])}"><code>'
+                f'<li><a href="#d-{html.escape(a["hash"])}" '
+                f'onclick="dovlClose(this)"><code>'
                 f'{html.escape(a["hash"][:8])}</code></a> &mdash; '
-                f'{html.escape(a.get("rationale") or "(no rationale)")}</li>')
+                f'{html.escape(a.get("rationale") or "(no rationale)")}'
+                f"{fate}</li>")
         for r in json.loads(rnd["rejected_json"]):
             items.append(
                 f'<li class="rej">rejected pre-flight '
                 f'({html.escape(r.get("reason") or "?")}) &mdash; '
                 f'{html.escape(r.get("rationale") or "")}</li>')
+        try:
+            model = rnd["model"]
+        except (KeyError, IndexError):
+            model = None
+        title = (f'&#10022; claude designer &middot; generation {g} &middot; '
+                 f'{_ROUND_KIND_LABEL.get(rnd["kind"], rnd["kind"])}'
+                 + (f' &middot; {html.escape(model)}' if model else ""))
         out.append(
-            '<details class="dround"><summary>what claude was asked, and '
-            "what it proposed</summary>"
-            f'<ul>{"".join(items)}</ul>'
-            '<div class="plab">the full prompt sent to claude:</div>'
-            f'<pre>{html.escape(rnd["prompt"])}</pre></details>')
+            f'<button class="dround-open" onclick="dovlOpen(\'dovl-g{g}\')">'
+            "what claude was asked, and what it proposed</button>")
+        out.append(
+            f'<div class="dovl" id="dovl-g{g}" '
+            'onclick="if(event.target===this)dovlClose(this)">'
+            '<div class="dbox">'
+            f'<div class="dbar"><span class="t">{title}</span>'
+            '<button class="dclose" onclick="dovlClose(this)">&#215;</button>'
+            "</div>"
+            '<div class="dcols2">'
+            '<section class="dprompt"><h3>what claude was asked</h3>'
+            f'<pre>{html.escape(rnd["prompt"])}</pre></section>'
+            '<section class="dprops"><h3>what it proposed</h3>'
+            f'<ul>{"".join(items)}</ul></section>'
+            "</div></div></div>")
     out.append("</aside>")
     return "".join(out)
 
@@ -1181,12 +1209,13 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              _chart_legend_html(),
              f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>']
 
+    claude_gens = {r["generation"] for r in store.designer_rounds_for(run_id)}
     detail_ids: list[str] = []
     for g in reversed(gens):
         rows = sorted(store.population(run_id, g),
                       key=lambda r: (r["fitness"] is None, r["fitness"] or 0.0))
         parts.append(f"<h2>generation {g}</h2>")
-        parts.append('<div class="genrow">')
+        parts.append(f'<div class="genrow{" claude" if g in claude_gens else ""}">')
         parts.append(_generation_input_html(store, run_id, g, cands, rows,
                                             evolution))
         parts.append('<div class="row">')
@@ -1199,7 +1228,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             invalid = not math.isfinite(fit)
             cls = "card" + (" setter" if h in setter_hashes else "") + \
                 (" champion" if h == best_hash else "") + \
-                (" invalid" if invalid else "")
+                (" invalid" if invalid else "") + \
+                (" claude" if c["operator"] == "designer" else "")
             img = _rel(results_dir, c["png_path"])
             if h not in scen_cache:
                 scen_cache[h] = store.scenario_results_for(run_id, h)
