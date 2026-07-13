@@ -369,6 +369,23 @@ table.dt.hd b{font-size:17px}
 .ovl-body .cap .wbtn:hover:not(:disabled){color:var(--ink);
   border-color:var(--ink)}
 .ovl-body .cap .wbtn:disabled{opacity:.35;cursor:default}
+/* replay timeline: one thumbnail per lineage step, docked above the
+   view controls; click to morph there, the play button auto-steps */
+.wtl{display:flex;gap:8px;align-items:stretch;flex-shrink:0;
+  padding:8px 26px 6px;margin-bottom:44px;border-top:1px solid var(--rule);
+  overflow-x:auto}
+.wtl .wplay{font:15px/1 var(--serif);width:36px;flex:0 0 auto;
+  background:var(--paper);border:1px solid var(--rule);color:var(--muted);
+  cursor:pointer}
+.wtl .wplay:hover{color:var(--ink);border-color:var(--ink)}
+.wthumb{background:none;border:1px solid var(--rule);padding:2px;
+  cursor:pointer;flex:0 0 auto;width:66px}
+.wthumb img{width:100%;display:block;mix-blend-mode:multiply}
+.wthumb span{display:block;font:10.5px var(--mono);color:var(--faint);
+  text-align:center;margin-top:1px}
+.wthumb:hover{border-color:var(--muted)}
+.wthumb.on{border:2px solid var(--ink);padding:1px}
+.wthumb.on span{color:var(--ink);font-weight:700}
 .ovl-body canvas{flex:1;width:100%;min-height:0;cursor:grab;touch-action:none}
 .ovl-hint{position:absolute;right:26px;bottom:12px;font:italic 12px var(--serif);
   color:var(--faint);pointer-events:none}
@@ -743,6 +760,29 @@ function walkLabel(){
   document.getElementById("walk-prev").disabled=walkIdx===0;
   document.getElementById("walk-next").disabled=
     walkIdx>=walkChain.length-1;
+  document.querySelectorAll("#walk-tl .wthumb").forEach(function(b){
+    var on=+b.dataset.k===walkIdx;
+    b.classList.toggle("on",on);
+    if(on)b.scrollIntoView({block:"nearest",inline:"nearest"});
+  });
+}
+// autoplay: one step per beat, stops at the end or on any manual input
+var walkPlay=null;
+function playStop(){
+  if(!walkPlay)return;
+  clearInterval(walkPlay);walkPlay=null;
+  var b=document.getElementById("walk-play");
+  if(b){b.innerHTML="&#9654;";b.title="play"}
+}
+function playStart(){
+  var b=document.getElementById("walk-play");
+  if(!b||walkChain.length<2)return;
+  if(walkIdx>=walkChain.length-1)walkGo(0); // at the end: rewind first
+  b.innerHTML="&#10074;&#10074;";b.title="pause";
+  walkPlay=setInterval(function(){
+    if(walkIdx>=walkChain.length-1){playStop();return}
+    walkGo(walkIdx+1);
+  },1600);
 }
 function walkGo(k){
   if(k<0||k>=walkChain.length||k===walkIdx||!walkV)return;
@@ -763,7 +803,7 @@ function walkGo(k){
     return {id:s.id,evolved:true,ghost:s.ghost,fade:fades[i][0]}}),
     walkFrame);
   walkLabel();
-  var t0=null,DUR=520;
+  var t0=null,DUR=950;
   function tick(ts){
     if(t0===null)t0=ts;
     var t=Math.min(1,(ts-t0)/DUR),e=t*(2-t); // ease-out
@@ -776,6 +816,7 @@ function walkGo(k){
   walkAnim=requestAnimationFrame(tick);
 }
 function setTab(name){
+  if(name!=="walk")playStop();
   ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
   ovl.querySelectorAll(".ovl-body").forEach(function(b){
@@ -849,6 +890,26 @@ function openOverlay(d){
     walkFrame=chainFrame();
     walkV.load(walkSpecs(0),walkFrame);
     walkState.reset();
+    // replay timeline: play button + one thumbnail per lineage step
+    // (meta values are trusted generator output: paths, hex, numbers)
+    playStop();
+    var tl=document.getElementById("walk-tl");
+    var tp=['<button class="wplay" id="walk-play" title="play">'
+            +"&#9654;</button>"];
+    walkChain.forEach(function(th,ti){
+      var tm=WMETA[th]||{};
+      tp.push('<button class="wthumb" data-k="'+ti+'" title="'+th+
+        (tm.f?" · "+tm.f+" Wh/km":" · invalid")+'">'+
+        (tm.i?'<img src="'+tm.i+'" alt="'+th+'">':"")+
+        "<span>g"+tm.g+"</span></button>");
+    });
+    tl.innerHTML=tp.join("");
+    tl.querySelectorAll(".wthumb").forEach(function(b){
+      b.addEventListener("click",function(){
+        playStop();walkGo(+b.dataset.k)});
+    });
+    document.getElementById("walk-play").addEventListener("click",
+      function(){walkPlay?playStop():playStart()});
     walkLabel();
     // full difference: the candidate solid, EVERY ancestor a ghost --
     // depth-graded so the nearest parent is strongest, the oldest
@@ -875,6 +936,7 @@ function openOverlay(d){
   setTab("solo");
 }
 function closeOverlay(){
+  playStop();
   ovl.classList.remove("open");
   document.body.style.overflow="";
 }
@@ -905,15 +967,15 @@ function activeState(){
          t==="evolved"?evoState:soloState;
 }
 document.getElementById("walk-prev").addEventListener("click",
-  function(){walkGo(walkIdx-1)});
+  function(){playStop();walkGo(walkIdx-1)});
 document.getElementById("walk-next").addEventListener("click",
-  function(){walkGo(walkIdx+1)});
+  function(){playStop();walkGo(walkIdx+1)});
 document.addEventListener("keydown",function(e){
   if(!ovl.classList.contains("open")||!walkChain.length)return;
   var b=ovl.querySelector(".ovl-tabs button.on");
   if(!b||b.dataset.tab!=="walk")return;
-  if(e.key==="ArrowRight"){e.preventDefault();walkGo(walkIdx+1)}
-  if(e.key==="ArrowLeft"){e.preventDefault();walkGo(walkIdx-1)}
+  if(e.key==="ArrowRight"){e.preventDefault();playStop();walkGo(walkIdx+1)}
+  if(e.key==="ArrowLeft"){e.preventDefault();playStop();walkGo(walkIdx-1)}
 });
 ovl.querySelectorAll(".ovl-views button").forEach(function(b){
   b.addEventListener("click",function(){
@@ -1851,10 +1913,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<button class="wbtn" id="walk-prev">&#8249; older</button>'
         '<button class="wbtn" id="walk-next">newer &#8250;</button>'
         '<span class="hash" id="walk-lab"></span></div>'
-        '<canvas id="ovl-walk"></canvas></div>'
+        '<canvas id="ovl-walk"></canvas>'
+        '<div class="wtl" id="walk-tl"></div></div>'
         '<div class="ovl-hint">solid = current step &middot; gray ghost = '
-        "next in line &middot; &#8592;/&#8594; step &middot; evolved parts "
-        "only</div></div>"
+        "next in line &middot; click a thumbnail to morph there &middot; "
+        "&#8592;/&#8594; step &middot; evolved parts only</div></div>"
         '<div class="ovl-views">'
         '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
         '<button data-view="front">front</button>'

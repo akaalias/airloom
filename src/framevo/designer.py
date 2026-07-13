@@ -364,7 +364,8 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
         accepted_meta.append({"hash": genome.hash, "rationale": rationale})
         log_lines.append(f"- `{genome.hash}` — {rationale}\n")
     rejected_meta = [{"hash": Genome.from_dict(genes).hash,
-                      "rationale": rationale, "reason": reason,
+                      "genes": genes,  # self-contained: never persisted as
+                      "rationale": rationale, "reason": reason,  # candidates
                       "png": _render_rejected(genes, cfg, log_dir)}
                      for genes, rationale, reason in rejected]
     for r in rejected_meta:
