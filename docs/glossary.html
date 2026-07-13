@@ -36,9 +36,9 @@ a:hover { border-bottom: 1px solid var(--accent); }
 </head>
 <body>
 <h1>framevo &mdash; glossary</h1>
-<p class="meta">Terms of the evolutionary algorithm and of the quadcopter-frame
-domain it optimizes. Companion to <code>results/gallery.html</code> and the
-README.</p>
+<p class="meta">Terms of the evolutionary algorithm, of the quadcopter-frame
+domain it optimizes, and of the result pages themselves. Companion to
+<code>results/gallery.html</code>, the family tree page and the README.</p>
 
 <h2>the evolutionary algorithm</h2>
 <dl>
@@ -333,6 +333,52 @@ thrust coefficient is derated 15&thinsp;%.</dd>
 <dd>Phase-A method: total drag &asymp; sum of per-component projected areas &times;
 handbook drag coefficients. Fast and honest about being approximate; Phase B
 would replace it with OpenFOAM CFD on the top candidates.</dd>
+</dl>
+
+<h2>reading the results</h2>
+<dl>
+<dt>Progress chart</dt>
+<dd>Top of the gallery: every candidate in evaluation order. Gray dots are
+evaluated designs, drawn at their aggregate Wh/km (lower is better); hollow
+dots are valid but so poor they are clipped at the 95th-percentile cap and
+pinned to the top edge. The black step line tracks the best-so-far; its
+black dots are the improvements and click through to the detail cards. Red
+&times;&rsquo;s on the <b>&infin; row</b> above the scale are invalid designs
+(fitness = &infin;, see <em>constraints</em>) that never flew. Teal &#10227;
+axis ticks mark pivot generations; the dashed horizontal rules are the
+target &amp; record lines. Every legend entry explains itself on hover.</dd>
+
+<dt>Improvement setter / run champion</dt>
+<dd>A candidate that lowered the best-so-far score when it was evaluated
+(the black dots of the step line). Setters render <em>inverted</em> &mdash;
+ink background, bright text &mdash; in both the generation grids and the
+detail list; the <em>run champion</em>, the best design of the entire run,
+additionally carries a rust outline and chip.</dd>
+
+<dt>Detail card</dt>
+<dd>One per candidate, below the grids: the metric table (energy score =
+fitness, scenario mean and worst, frame mass, material, birth), the lab
+notebook&rsquo;s <em>hypothesis / method / result</em> notes (see
+<em>Lab notebook</em>), and the <em>scenario results &amp; genome</em>
+tables &mdash; per-scenario Wh/km, average power and max tilt, plus every
+gene value. The side column shows the parents&rsquo; renders.</dd>
+
+<dt>3D overlay</dt>
+<dd>Click any render to open the interactive viewer; it starts zoomed to
+fit the whole frame at a tilted-down view (drag to rotate, scroll to zoom,
+double-click resets, esc closes). Three tabs: <em>3d model</em>, the
+candidate alone; <em>compare with oldest ancestor</em>, the candidate next
+to its lineage&rsquo;s root, both rotating and zooming in sync; and
+<em>changed parts</em>, superimposing only the evolved parts (deck + arms)
+&mdash; solid color = this candidate, gray ghost = oldest ancestor, fixed
+kit hidden &mdash; starting near top-down, where plan-shape changes read
+best.</dd>
+
+<dt>Family tree</dt>
+<dd><code>lineage.html</code>: one row per generation, candidates ordered
+best&rarr;worst, edge colors naming the operator (see <em>Operator</em>,
+<em>Elitism</em>, <em>Lineage</em>). Hover any node for the candidate&rsquo;s
+card and its full ancestry; click to pin the highlight while scrolling.</dd>
 </dl>
 
 <p class="meta">See the README for physics assumptions, sources, and known
