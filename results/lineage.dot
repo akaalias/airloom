@@ -3,10 +3,47 @@ digraph lineage {
   "3c22c8825023" [label="3c22c8\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
   "58a7e117863f" [label="58a7e1\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
   "a649a73b7931" [label="a649a7\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "baac55fb3837" [label="baac55\n8.49", fillcolor="#111111", style="filled", fontcolor=white];
+  "baac55fb3837" [label="baac55\n8.49", fillcolor="#6f6d64", style="filled", fontcolor=white];
   "c115835c6e82" [label="c11583\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "db261bddf5bf" [label="db261b\n8.91", fillcolor="#d9d5c3", style="filled", fontcolor=black];
+  "db261bddf5bf" [label="db261b\n8.91", fillcolor="#d1cdbc", style="filled", fontcolor=black];
   "f07b9a58dc09" [label="f07b9a\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
   "f2021def0301" [label="f2021d\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "15e61fa155bc" [label="15e61f\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "baac55fb3837" -> "15e61fa155bc" [label="crossover", color="#4a6fa5", fontsize=7];
+  "3c22c8825023" -> "15e61fa155bc" [label="crossover", color="#4a6fa5", fontsize=7];
+  "165592f13128" [label="165592\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "c115835c6e82" -> "165592f13128" [label="crossover", color="#4a6fa5", fontsize=7];
+  "baac55fb3837" -> "165592f13128" [label="crossover", color="#4a6fa5", fontsize=7];
+  "38a572108ce3" [label="38a572\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "baac55fb3837" -> "38a572108ce3" [label="crossover", color="#4a6fa5", fontsize=7];
+  "f2021def0301" -> "38a572108ce3" [label="crossover", color="#4a6fa5", fontsize=7];
+  "4c7cfc376983" [label="4c7cfc\n8.94", fillcolor="#d7d3c1", style="filled", fontcolor=black];
+  "db261bddf5bf" -> "4c7cfc376983" [label="mutation", color="#8c2f1f", fontsize=7];
+  "5f78f4b0610e" [label="5f78f4\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "7ff007f350ce" [label="7ff007\n8.34", fillcolor="#4c4b46", style="filled", fontcolor=white];
+  "f07b9a58dc09" -> "7ff007f350ce" [label="crossover", color="#4a6fa5", fontsize=7];
+  "baac55fb3837" -> "7ff007f350ce" [label="crossover", color="#4a6fa5", fontsize=7];
+  "0825408aaf2c" [label="082540\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "165592f13128" -> "0825408aaf2c" [label="crossover", color="#4a6fa5", fontsize=7];
+  "baac55fb3837" -> "0825408aaf2c" [label="crossover", color="#4a6fa5", fontsize=7];
+  "71ecd847dd02" [label="71ecd8\n8.95", fillcolor="#d9d5c3", style="filled", fontcolor=black];
+  "db261bddf5bf" -> "71ecd847dd02" [label="crossover", color="#4a6fa5", fontsize=7];
+  "db261bddf5bf" -> "71ecd847dd02" [label="crossover", color="#4a6fa5", fontsize=7];
+  "7b23207d056c" [label="7b2320\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "828c02524eb1" [label="828c02\n8.08", fillcolor="#111111", style="filled", fontcolor=white];
+  "7ff007f350ce" -> "828c02524eb1" [label="crossover", color="#4a6fa5", fontsize=7];
+  "baac55fb3837" -> "828c02524eb1" [label="crossover", color="#4a6fa5", fontsize=7];
+  "9a953b3d00cc" [label="9a953b\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "baac55fb3837" -> "9a953b3d00cc" [label="crossover", color="#4a6fa5", fontsize=7];
+  "7ff007f350ce" -> "9a953b3d00cc" [label="crossover", color="#4a6fa5", fontsize=7];
+  "c555ccaaf20d" [label="c555cc\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "38a572108ce3" -> "c555ccaaf20d" [label="crossover", color="#4a6fa5", fontsize=7];
+  "db261bddf5bf" -> "c555ccaaf20d" [label="crossover", color="#4a6fa5", fontsize=7];
   { rank=same; "3c22c8825023"; "58a7e117863f"; "a649a73b7931"; "baac55fb3837"; "c115835c6e82"; "db261bddf5bf"; "f07b9a58dc09"; "f2021def0301" }
+  { rank=same; "15e61fa155bc"; "165592f13128"; "38a572108ce3"; "4c7cfc376983"; "5f78f4b0610e"; "7ff007f350ce" }
+  { rank=same; "0825408aaf2c"; "71ecd847dd02"; "7b23207d056c"; "828c02524eb1"; "9a953b3d00cc"; "c555ccaaf20d" }
+  "baac55fb3837" -> "baac55fb3837" [style=dotted, color="#999188", label="elite"];
+  "db261bddf5bf" -> "db261bddf5bf" [style=dotted, color="#999188", label="elite"];
+  "7ff007f350ce" -> "7ff007f350ce" [style=dotted, color="#999188", label="elite"];
+  "baac55fb3837" -> "baac55fb3837" [style=dotted, color="#999188", label="elite"];
 }

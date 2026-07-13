@@ -156,55 +156,41 @@ completed generation, re-using every already-evaluated genome via its hash.</dd>
 
 <h3>the shape (what the genes mean)</h3>
 <dl>
-<dt>Arm length / width / height</dt>
-<dd>Each of the four cantilever arms carrying a motor: its reach from the body
-(sets the rotor footprint) and its structural cross-section. Longer arms clear
-the body easily and lower resonance frequency; fatter arms are stiff but heavy
-and draggy.</dd>
+<dt>Arm length / width / waist scale</dt>
+<dd>Stretch and reshape the REAL Source One V6 arm outlines: the shaft
+between the bolt tongue and the motor mount stretches (wheelbase, disk
+clearance), its width scales, and the waist gene adds extra mid-shaft
+narrowing (drag vs. stiffness). The tongue and the 16&thinsp;&times;&thinsp;19&thinsp;mm motor
+pattern never deform.</dd>
 
-<dt>Arm sweep</dt>
-<dd>Plan-view angle of the front arm pair from the forward axis (rear pair
-mirrored). 45&deg; is a pure X-frame; low sweep pushes rotors forward/backward,
-high sweep pushes them sideways.</dd>
+<dt>Arm thickness</dt>
+<dd>Plate thickness of the arms (real V6: 6&thinsp;mm carbon).</dd>
 
-<dt>Arm dihedral</dt>
-<dd>Upward (or downward) tilt of the arms out of the body plane.</dd>
+<dt>Front / rear sweep</dt>
+<dd>Rotate each arm pair about its plate anchor. The front anchors are exact
+bolt-pattern registrations from the official drawing (stock: 31.4&deg;); left
+and right arms keep their true mirrored chirality.</dd>
 
-<dt>Cross-section blend</dt>
-<dd>One gene morphing the arm cross-section from rectangle (drag coefficient
-&asymp; 1.9) through ellipse (&asymp; 1.1) to a faired, teardrop-like section (&asymp; 0.6).
-The main aerodynamic lever on the arms.</dd>
+<dt>Plate length / width / thickness scale</dt>
+<dd>Stretch the real main / mid / top deck plates with their cutouts and
+holes; the 30.5&thinsp;mm stack pattern stays pinned exactly.</dd>
 
-<dt>Arm taper</dt>
-<dd>Tip-to-root scale of the arm section (0.5&ndash;1.0). Saves mass and tip drag at
-the cost of tip stiffness.</dd>
+<dt>Deck gap</dt>
+<dd>Standoff length between mid and top plate (real: M3&times;30). Must fit the
+FC/ESC stack; also sets the vertical margin between the rear props and the
+top-plate corners.</dd>
 
-<dt>Deck length / width / gap (body genes)</dt>
-<dd>The central deck &mdash; two plates separated by standoffs, in the
-TBS-Source-One style. The plates must offer a 36&thinsp;mm flat for the flight
-controller, the gap must fit the 20&thinsp;mm FC/ESC stack, and the top plate must
-carry the battery pack, which is strapped on top, exposed to the airflow.</dd>
-
-<dt>Body fillet</dt>
-<dd>Plan-view corner radius of the deck plates &mdash; trims projected area and
-mass.</dd>
-
-<dt>Battery wedge (<code>body_pitch_deg</code>)</dt>
-<dd>Nose-down tilt of the battery pack on the deck. Quadcopters lean into the
-wind to fly forward; a wedged pack meets the oncoming flow more edge-on in
-cruise, trimming the biggest bluff body on the aircraft.</dd>
-
-<dt>Thickness scale</dt>
-<dd>Scales the 2&thinsp;mm deck plate thickness: lighter vs. stiffer/heavier.</dd>
+<dt>Battery wedge (<code>battery_wedge_deg</code>)</dt>
+<dd>Nose-down tilt of the cell pack on the top plate, trimming the biggest
+bluff body in forward flight.</dd>
 
 <dt>Material (gene)</dt>
 <dd>Selects the frame material &mdash; plates and arms &mdash; from the platform
 library: CNC-cut carbon plate, carbon-fiber nylon (PA12-CF), PET-CF, PLA+,
 PETG or ASA. Each brings its own density, tensile strength and stiffness, so
-the optimizer trades mass against the structural constraints: a slender arm
-that carbon plate carries easily is too floppy in PETG. Printed values are
-XY-direction datasheet numbers; layer-line weakness is only covered by the
-global 1.5 safety factor.</dd>
+the optimizer trades mass against the structural constraints. Printed values
+are XY-direction datasheet numbers; layer-line weakness is only covered by
+the global 1.5 safety factor.</dd>
 </dl>
 
 <h3>the target metric</h3>
