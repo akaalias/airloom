@@ -20,7 +20,7 @@ velocity vector -- far-field patches use freestream BCs so no re-meshing
 per angle. simpleFoam, k-omega SST, wall functions; a forces function
 object writes force.dat, and CdA = 2 F.d_hat / (rho U^2).
 
-Everything except the actual solve works without Docker: `framevo
+Everything except the actual solve works without Docker: `airloom
 cfd-calibrate` writes cases + manifest.json under cfd/, `--solve` runs
 them through opencfd/openfoam-default, `--report` parses the forces and
 writes cfd/calibration.md next to the analytical predictions. Local-first
@@ -481,7 +481,7 @@ def write_report(out_root: Path) -> Path:
     if missing:
         lines += [f"unsolved cases ({len(missing)}): "
                   + ", ".join(f"`{m}`" for m in missing),
-                  "run `framevo cfd-calibrate --solve` first.", ""]
+                  "run `airloom cfd-calibrate --solve` first.", ""]
     if rows:
         lines += ["| case | tilt | buildup CdA [m²] | CFD CdA [m²] | ratio |",
                   "|---|---|---|---|---|"]
@@ -504,7 +504,7 @@ def write_report(out_root: Path) -> Path:
         lines += ["",
                   "Update `CD_ARM`/`CD_BODY` in `aero.py` from the arms/body "
                   "ratios, add an interference term if the residual is "
-                  "material, then re-run `framevo robustness` — a STABLE "
+                  "material, then re-run `airloom robustness` — a STABLE "
                   "verdict closes Phase B milestone 1.", ""]
     out = out_root / "calibration.md"
     out.write_text("\n".join(lines))

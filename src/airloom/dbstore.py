@@ -153,7 +153,7 @@ class Store:
                 stamp = time.strftime("%Y%m%d_%H%M%S")
                 backup = path.with_name(f"{path.stem}_schema-v{version}_{stamp}.db.bak")
                 path.rename(backup)
-                print(f"[framevo] {path} has schema v{version}, expected "
+                print(f"[airloom] {path} has schema v{version}, expected "
                       f"v{SCHEMA_VERSION} -- archived it as {backup.name}",
                       flush=True)
         self.path = path

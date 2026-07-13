@@ -421,7 +421,7 @@ small&thinsp;=&thinsp;elite carried over.</p>
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
 (<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
-<code style="font-size:13px">framevo lineage &lt;hash&gt;</code>.</p>
+<code style="font-size:13px">airloom lineage &lt;hash&gt;</code>.</p>
 </div>
 <script type="application/json" id="cand-meta">{json.dumps(meta)}</script>
 <script>

@@ -1,9 +1,9 @@
 """Headless-Claude designer: brief building and reply parsing."""
 import json
 
-from framevo.dbstore import Store
-from framevo.designer import _build_brief, _parse_proposals
-from framevo.genome import GENOME_SPEC, Genome
+from airloom.dbstore import Store
+from airloom.designer import _build_brief, _parse_proposals
+from airloom.genome import GENOME_SPEC, Genome
 
 
 def _fresh_run_store(tmp_path):
@@ -30,7 +30,7 @@ def test_brief_gen0_and_inspiration(tmp_path):
 
 
 def test_pivot_brief_and_history(tmp_path):
-    from framevo.dbstore import CandidateRow
+    from airloom.dbstore import CandidateRow
     store = _fresh_run_store(tmp_path)
     base = Genome.baseline()
     store.insert_candidate("r1", CandidateRow(
@@ -52,7 +52,7 @@ def test_pivot_brief_and_history(tmp_path):
 
 
 def test_design_round_records_to_db(tmp_path, cfg, monkeypatch):
-    import framevo.designer as dz
+    import airloom.designer as dz
     store = _fresh_run_store(tmp_path)
     good = Genome.baseline().as_dict()
     doomed = dict(good, deck_gap=0.020)
@@ -99,7 +99,7 @@ def test_parse_clips_out_of_bounds():
 
 
 def test_prescreen_splits_valid_from_doomed(cfg):
-    from framevo.designer import _prescreen, _repair_brief
+    from airloom.designer import _prescreen, _repair_brief
     good = Genome.baseline().as_dict()
     doomed = dict(good, deck_gap=0.020)  # fails the FC-stack constraint
     ok, rejected = _prescreen([(good, "stock"), (doomed, "squat")], cfg)

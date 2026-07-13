@@ -10,10 +10,10 @@ import math
 import numpy as np
 import pytest
 
-from framevo.aero import CD_ARM, CD_BODY, measure_areas, projected_area
-from framevo.cfd import (CONTRAST_GENES, TILTS_DEG, generate, measured_cda,
+from airloom.aero import CD_ARM, CD_BODY, measure_areas, projected_area
+from airloom.cfd import (CONTRAST_GENES, TILTS_DEG, generate, measured_cda,
                          parse_forces, predicted_cda, _frame_for)
-from framevo.genome import BASELINE, Genome
+from airloom.genome import BASELINE, Genome
 
 
 @pytest.fixture(scope="module")

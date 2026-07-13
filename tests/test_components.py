@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import trimesh
 
-from framevo import components
+from airloom import components
 
 TOL = 1e-3
 

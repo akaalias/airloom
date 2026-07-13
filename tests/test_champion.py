@@ -6,10 +6,10 @@ import math
 import numpy as np
 import pytest
 
-from framevo.champion import analyze_arm, morphed_front_arm
-from framevo.config import Material
-from framevo.genome import Genome
-from framevo.realgeo import ArmOutline
+from airloom.champion import analyze_arm, morphed_front_arm
+from airloom.config import Material
+from airloom.genome import Genome
+from airloom.realgeo import ArmOutline
 
 CF = Material(name="cf_plate", density_kg_m3=1600.0,
               tensile_strength_pa=600.0e6, youngs_modulus_pa=70.0e9,

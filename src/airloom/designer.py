@@ -331,7 +331,7 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
     try:
         proposals, exact_model = _ask_claude(brief, n, model, timeout_s)
     except Exception as exc:  # fail-soft: skip the round
-        print(f"[framevo] designer round skipped: {type(exc).__name__}: {exc}",
+        print(f"[airloom] designer round skipped: {type(exc).__name__}: {exc}",
               flush=True)
         return []
     ok, rejected = _prescreen(proposals, cfg)
@@ -347,16 +347,16 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
             ok += ok2
             rejected += rejected2
         except Exception as exc:
-            print(f"[framevo] designer repair round skipped: "
+            print(f"[airloom] designer repair round skipped: "
                   f"{type(exc).__name__}: {exc}", flush=True)
     if rejected:
-        print(f"[framevo] designer pre-screen rejected "
+        print(f"[airloom] designer pre-screen rejected "
               f"{len(rejected)} candidate(s)", flush=True)
     out = []
     accepted_meta = []
     log_lines = [f"\n## generation {generation} ({kind})\n"]
     if exact_model:
-        print(f"[framevo] designer round served by {exact_model}", flush=True)
+        print(f"[airloom] designer round served by {exact_model}", flush=True)
         log_lines.append(f"*model: {exact_model}*\n")
     for genes, rationale in ok[:n]:
         genome = Genome.from_dict(genes)

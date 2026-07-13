@@ -175,7 +175,7 @@ def _parse_notes(text: str, hashes: list[str]) -> dict[str, dict]:
         except json.JSONDecodeError:
             continue
     if salvaged:
-        print(f"[framevo] narrator reply was malformed JSON -- salvaged "
+        print(f"[airloom] narrator reply was malformed JSON -- salvaged "
               f"{len(salvaged)}/{len(hashes)} notes", flush=True)
     return salvaged
 
@@ -282,10 +282,10 @@ def enrich_notes(db_path: str, run_id: str, gen: int, cands: list[dict],
                         merged[k] = sec[k].strip()[:1200]
                 notes[h] = merged
         if len(notes) < len(cands):
-            print(f"[framevo] narrator enriched {len(notes)}/{len(cands)} "
+            print(f"[airloom] narrator enriched {len(notes)}/{len(cands)} "
                   f"notes (rule-based fallback for the rest)", flush=True)
     except Exception as exc:
-        print(f"[framevo] narrator kept rule-based notes: "
+        print(f"[airloom] narrator kept rule-based notes: "
               f"{type(exc).__name__}: {exc}", flush=True)
         return
 

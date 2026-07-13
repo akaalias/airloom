@@ -13,7 +13,7 @@ adverse-weather scenarios. Everything except the frame is fixed. Local-first:
 ## Package layout
 
 ```
-pyproject.toml            # package `framevo`, console script `framevo`
+pyproject.toml            # package `airloom`, console script `airloom`
 Makefile                  # install / test / demo
 config/platform.yaml      # fixed platform (battery, motors, prop, FC, material library)
 config/scenarios.yaml     # mission + 6 scenarios (seeded turbulence, rain),
@@ -23,7 +23,7 @@ data/uiuc/                # cached UIUC Master Airscrew GF 7x4 prop data (static
 data/source_one/          # official SO V6 7in DC plate DXF, provenance README
 scripts/fetch_uiuc.py     # re-download the cached dataset
 docs/glossary.html        # EA + domain glossary, copied into results/
-src/framevo/
+src/airloom/
   config.py               # typed dataclasses + YAML loaders
   genome.py               # 12-gene real-morph genome, bounds, hashing, V6 baseline
   realgeo.py              # parses the official DXF outlines (arcs, cutouts, holes)
@@ -53,7 +53,7 @@ src/framevo/
   render.py               # headless matplotlib stills (incl. from-below view)
   gallery.py              # gallery.html (progress chart, 3D overlay, notes),
                           # leaderboard.md, convergence.png
-  cli.py                  # `framevo run|lineage|gallery` (run resumes by default)
+  cli.py                  # `airloom run|lineage|gallery` (run resumes by default)
 tests/                    # pytest suite (see below)
 results/                  # run outputs (db, frames/gen_XXXX/*.stl+png, gallery, ...)
 ```
@@ -166,7 +166,7 @@ resumable. Worker count = `os.cpu_count()` capped by config.
 SQLite `results/run.db` (schema-versioned; old-schema files are archived,
 never deleted): runs (config json, seed, git hash), candidates
 (self-referencing lineage + narrator notes), scenario_results, populations
-(resume anchor), cma_state. `framevo run` resumes the latest run by default
+(resume anchor), cma_state. `airloom run` resumes the latest run by default
 (`--fresh` for a new one; a genome-spec mismatch auto-starts fresh).
 
 Per generation: every STL (`_INVALID` suffix when applicable) + PNG still
@@ -214,13 +214,13 @@ Pre-Phase-B verification layer (built 2026-07-13):
   blamed on the dominant limiter. Finding: no frame — including the real
   V6 — can hold 12 m/s through `storm` on this pack without clamping;
   ~12 s of saturation and a higher Wh/km is the physical outcome.
-- **`framevo robustness`**: re-flies the top archived candidates under
+- **`airloom robustness`**: re-flies the top archived candidates under
   perturbed model knobs; rank correlation + champion identity vs baseline
   → STABLE/MODERATE/FRAGILE verdict in `results/robustness.md`. First
   sweep: FRAGILE — ordering among the near-tied top 12 hinges on the ARM
   drag coefficient (Spearman 0.59 at cd_arm+30 %); everything else ≥0.9.
   Phase B should therefore start with arm-drag fidelity.
-- **`framevo verify-champions`**: station-wise variable-section bending
+- **`airloom verify-champions`**: station-wise variable-section bending
   along the real morphed arm outline, Peterson net-section Kt at
   holes/cutouts, per-material as-built strength knockdowns
   (`as_built_strength_frac`), refined deflection, print-and-test protocol
@@ -241,7 +241,7 @@ Original milestone plan follows:
 
 The robustness sweep reframed Phase B: only the ARM drag coefficient
 changes decisions, so before any per-candidate pipeline we calibrate the
-buildup's global knobs with a handful of OpenFOAM cases (`framevo
+buildup's global knobs with a handful of OpenFOAM cases (`airloom
 cfd-calibrate`, cases + report under `cfd/`):
 
 1. **Four geometries**: baseline arms alone, baseline deck/body alone
@@ -258,7 +258,7 @@ cfd-calibrate`, cases + report under `cfd/`):
    interference varies with the genes (a ranking issue) or is a constant
    offset (absolute-only issue).
 4. **Acceptance**: update the calibrated knobs, re-run
-   `framevo robustness`. STABLE verdict ⇒ the full per-candidate CFD
+   `airloom robustness`. STABLE verdict ⇒ the full per-candidate CFD
    pipeline (original Phase B scope) is unnecessary; still-FRAGILE ⇒
    build it for the top-N per generation as originally planned.
 

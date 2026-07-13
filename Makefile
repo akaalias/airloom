@@ -1,7 +1,7 @@
 PYTHON ?= python3
 VENV := .venv
 PIP := $(VENV)/bin/pip
-FRAMEVO := $(VENV)/bin/framevo
+FRAMEVO := $(VENV)/bin/airloom
 
 .PHONY: install test demo clean
 
@@ -21,4 +21,4 @@ demo: install
 	$(FRAMEVO) run --generations 3 --population 8 --run-id demo
 
 clean:
-	rm -rf $(VENV) build *.egg-info src/framevo/__pycache__ tests/__pycache__
+	rm -rf $(VENV) build *.egg-info src/airloom/__pycache__ tests/__pycache__

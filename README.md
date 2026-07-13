@@ -1,8 +1,8 @@
 # Airloom — evolving quadcopter frames for Wh/km
 
 *(heirloom + air: every frame inherits from its ancestors, and the gallery
-is the family archive. The package/CLI is still `framevo` for now; the
-full rename is pending.)*
+is the family archive. Formerly `framevo`; the old CLI name still works
+as an alias.)*
 
 A fully automated, headless research loop that evolves quadcopter **frame
 geometry** to minimize **energy per distance (Wh/km)** flown through a
@@ -14,22 +14,22 @@ it ever evaluated.
 ```
 make demo        # 3 generations x population 8, ~2-4 min on 8 cores
 make test        # pytest suite
-.venv/bin/framevo run --generations 100            # starts, or RESUMES the
+.venv/bin/airloom run --generations 100            # starts, or RESUMES the
                                                    #  latest run by default
-.venv/bin/framevo run --generations 100 --fresh    # snapshot + CLEAR results,
+.venv/bin/airloom run --generations 100 --fresh    # snapshot + CLEAR results,
                                                    #  then a brand-new run
-.venv/bin/framevo lineage <genome_hash>            # ancestor chain w/ fitness
-.venv/bin/framevo gallery                          # rebuild artifacts from db
-.venv/bin/framevo robustness                       # is the RANKING an artifact
+.venv/bin/airloom lineage <genome_hash>            # ancestor chain w/ fitness
+.venv/bin/airloom gallery                          # rebuild artifacts from db
+.venv/bin/airloom robustness                       # is the RANKING an artifact
                                                    #  of the model knobs?
-.venv/bin/framevo verify-champions                 # refined structural check of
+.venv/bin/airloom verify-champions                 # refined structural check of
                                                    #  the top frames + print-
                                                    #  and-test protocol
 ```
 
 While a run is live, type `quit` + enter (or ctrl-c) to stop gracefully — the
 tasks in flight finish and the run stays resumable. If the latest run's
-genomes predate the current genome spec, `framevo run` starts a fresh run
+genomes predate the current genome spec, `airloom run` starts a fresh run
 automatically; a `run.db` written by an older schema is archived (never
 deleted) and recreated.
 
@@ -37,7 +37,7 @@ Local-first: plain `pip install -e .` on macOS (Apple Silicon) or Linux x86,
 CPU-only, no Docker/GPU/EGL. Thumbnails render through headless matplotlib.
 Worker count auto-scales to the core count.
 
-Every `framevo run` first **commits a snapshot of `results/` into its own
+Every `airloom run` first **commits a snapshot of `results/` into its own
 nested repo** (`results/.git` — separate from the project repo, so big run
 artifacts never bloat it). `--fresh` then actually clears the folder.
 Restore any past state with `git -C results log` +
@@ -77,13 +77,13 @@ Restore any past state with `git -C results log` +
   `gen_XXXX_best_parts/` — the same frame as separate flat, printable pieces.
 - `designer_log.md` — the designer rounds' proposals with their one-line
   rationales (see below).
-- `robustness.md` (on demand, `framevo robustness`) — the top candidates
+- `robustness.md` (on demand, `airloom robustness`) — the top candidates
   re-flown under perturbed model knobs (±30 % handbook Cds, ±10 % rotor
   tables, rain knobs, wash term): rank correlation, top-5 overlap and
   champion identity vs the baseline ordering, with a STABLE / MODERATE /
   FRAGILE verdict. Answers "is the leaderboard a frame property or a model
   artifact?" and names the knob where Phase B fidelity would matter first.
-- `champion_check.md` (on demand, `framevo verify-champions`) — the top
+- `champion_check.md` (on demand, `airloom verify-champions`) — the top
   frames re-analyzed with a station-by-station variable-section bending
   model along the real morphed arm outline: net-section stress
   concentration at holes/cutouts (Peterson Kt) and as-built strength
@@ -242,7 +242,7 @@ the MA GF 7×4 data.
 - **Print-material properties are XY/datasheet values.** FDM parts are
   weaker across layer lines (often 40–60 % in Z); in the LOOP the 1.5
   safety factor is the only allowance for anisotropy, print quality, or
-  temperature. `framevo verify-champions` re-checks the top frames with
+  temperature. `airloom verify-champions` re-checks the top frames with
   per-material as-built strength knockdowns and hole/cutout stress
   concentrations, and emits a bench print-and-test protocol.
 - Structural model checks the arms only (root stress, tip deflection,
@@ -265,7 +265,7 @@ the MA GF 7×4 data.
 
 ## Phase B (CFD) — milestone 1 complete: calibrated, verdict STABLE
 
-`framevo cfd-calibrate` generated 12 OpenFOAM cases (arms alone, deck/kit
+`airloom cfd-calibrate` generated 12 OpenFOAM cases (arms alone, deck/kit
 alone, full assembly, and a contrasting genome's full assembly — each at
 0°/20°/40° tilt, freestream BCs, one snappyHexMesh per geometry) and the
 overnight solve produced `cfd/calibration.md`. Findings: the handbook
@@ -274,7 +274,7 @@ buildup overestimated drag ~2× at cruise tilt; assembly interference
 contrast genome's ratios matched the baseline's within ~2 points at every
 angle — the error is **systematic, not gene-dependent**. The corrections
 now live in `aero.py` (`CAL_*` tables, applied in
-`drag_table_from_areas`), and the post-calibration `framevo robustness`
+`drag_table_from_areas`), and the post-calibration `airloom robustness`
 verdict is **STABLE** (min Spearman 0.958, no champion flips): the
 ranking is a frame property, not a model artifact. Consequence: the
 originally-planned per-candidate CFD pipeline (top-N per generation,
@@ -293,7 +293,7 @@ config/          platform.yaml (fixed hardware), scenarios.yaml (mission,
 data/uiuc/       cached UIUC propeller measurements (scripts/fetch_uiuc.py refreshes)
 data/source_one/ official Source One V6 7in DC plate DXF + provenance notes
 docs/            glossary.html (copied into results/ next to the gallery)
-src/framevo/     config, genome, realgeo (DXF outline parsing), frame_gen,
+src/airloom/     config, genome, realgeo (DXF outline parsing), frame_gen,
                  components, meshutil, rotor_model, aero, dryden, simulator,
                  structures, evaluate, parallel, evolution, designer,
                  narrator, loop, dbstore, lineage, gallery, render, cli
@@ -306,7 +306,7 @@ results/         everything a run produces (see above)
 
 ## License
 
-framevo is free software: you can redistribute it and/or modify it under the
+airloom is free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version. See [LICENSE](LICENSE) for the full text.

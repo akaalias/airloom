@@ -23,7 +23,7 @@ also the natural input for a CalculiX/shell pass later, and the report ends
 with a physical print-and-test protocol, which beats any simulation.
 
 Output: results/champion_check.md + a returned summary dict.
-CLI: `framevo verify-champions [--top N] [--run-id ID]`.
+CLI: `airloom verify-champions [--top N] [--run-id ID]`.
 """
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 """Dryden turbulence: statistical properties match the MIL-F-8785C spec."""
 import numpy as np
 
-from framevo.dryden import dryden_gusts, dryden_params
+from airloom.dryden import dryden_gusts, dryden_params
 
 
 def test_variance_matches_spec():

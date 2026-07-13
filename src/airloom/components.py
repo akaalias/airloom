@@ -7,7 +7,7 @@ boolean union where possible so results stay watertight; if the union engine
 rejects a shape we degrade gracefully to a plain concatenation, which still
 renders and measures correctly.
 
-Only numpy and trimesh are used -- no other framevo modules -- so this file
+Only numpy and trimesh are used -- no other airloom modules -- so this file
 can be imported standalone (e.g. from the mesh-preview scripts).
 """
 from __future__ import annotations

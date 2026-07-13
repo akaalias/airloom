@@ -32,7 +32,7 @@ SCENARIO_ORDER_KEY = "calm_warm"  # flown first when early-reject is enabled
 
 
 def _log(msg: str) -> None:
-    print(f"[framevo] {msg}", flush=True)
+    print(f"[airloom] {msg}", flush=True)
 
 
 class EvolutionLoop:
@@ -99,7 +99,7 @@ class EvolutionLoop:
             self.store.finish_run(self.run_id, status="stopped")
             _log("run stopped -- everything up to the last completed "
                  "generation is saved; continue any time with "
-                 "`framevo run --generations N`")
+                 "`airloom run --generations N`")
             return
         self._join_narrators()  # let pending note-enrichments land
         self._write_artifacts(ev.generations - 1)

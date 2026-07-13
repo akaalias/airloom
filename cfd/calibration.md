@@ -21,4 +21,4 @@
 - 20°: -0.00259 m² (-27.4% of full-assembly drag)
 - 40°: -0.00509 m² (-36.6% of full-assembly drag)
 
-Update `CD_ARM`/`CD_BODY` in `aero.py` from the arms/body ratios, add an interference term if the residual is material, then re-run `framevo robustness` — a STABLE verdict closes Phase B milestone 1.
+Update `CD_ARM`/`CD_BODY` in `aero.py` from the arms/body ratios, add an interference term if the residual is material, then re-run `airloom robustness` — a STABLE verdict closes Phase B milestone 1.

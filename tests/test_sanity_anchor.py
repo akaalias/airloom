@@ -11,10 +11,10 @@ from pathlib import Path
 
 import numpy as np
 
-from framevo.config import Propulsion
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
-from framevo.rotor_model import RotorModel
+from airloom.config import Propulsion
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
+from airloom.rotor_model import RotorModel
 
 ROOT = Path(__file__).resolve().parent.parent
 

@@ -4,10 +4,10 @@ import math
 
 import pytest
 
-from framevo.aero import build_drag_table
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
-from framevo.simulator import simulate_scenario
+from airloom.aero import build_drag_table
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
+from airloom.simulator import simulate_scenario
 
 
 def analytic_cruise_power(mass, drag, rotor, rho, v):

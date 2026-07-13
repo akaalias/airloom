@@ -44,7 +44,7 @@ designer:
   # failure histogram, and proposes new genome vectors (operator
   # `designer`). Fail-soft: skipped if the CLI is unavailable. Prompts and
   # outcomes land in run.db (shown per generation in the gallery) and
-  # results/designer_log.md. `framevo run --inspiration ideas.md` feeds a
+  # results/designer_log.md. `airloom run --inspiration ideas.md` feeds a
   # user-written idea file into every design round.
   enabled: true
   every_generations: 3

@@ -2,7 +2,7 @@
 
 Idea files for the Claude designer. Feed one into a run with:
 
-    framevo run --fresh --inspiration inspirations/zen.md
+    airloom run --fresh --inspiration inspirations/zen.md
 
 The file's content is stored with the run (`runs.inspiration_text`),
 shown in the gallery header, and injected into every designer brief —

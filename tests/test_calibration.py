@@ -4,10 +4,10 @@ import math
 
 import pytest
 
-from framevo.aero import (build_drag_table, drag_table_from_areas,
+from airloom.aero import (build_drag_table, drag_table_from_areas,
                           measure_areas)
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
 
 # full-assembly CdA measured by OpenFOAM on the baseline geometry,
 # flow along body x (cfd/calibration.md, 2026-07-14)
@@ -40,7 +40,7 @@ def test_calibration_reduces_cruise_drag(cfg, baseline):
 
 
 def test_flight_energy_drops_under_calibration(cfg, rotor, baseline):
-    from framevo.simulator import simulate_scenario
+    from airloom.simulator import simulate_scenario
     areas = measure_areas(baseline, cfg.platform)
     cal = drag_table_from_areas(areas)
     raw = drag_table_from_areas(areas, calibrated=False)

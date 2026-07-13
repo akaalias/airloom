@@ -6,11 +6,11 @@ repository (GPLv3):
 
     https://github.com/tbs-trappy/source_one
 
-It is cached here because this drawing is framevo's **genome substrate**:
-`src/framevo/realgeo.py` parses the plate outlines straight from the DXF —
+It is cached here because this drawing is airloom's **genome substrate**:
+`src/airloom/realgeo.py` parses the plate outlines straight from the DXF —
 arcs, cutouts and every bolt hole — and the genes morph those outlines
 (`frame_gen.py`). The generation-0 baseline genome is **measured from this
-file** (see `src/framevo/genome.py`):
+file** (see `src/airloom/genome.py`):
 
 | measured from the DXF | value |
 |---|---|

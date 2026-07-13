@@ -71,7 +71,7 @@ flight_controller:
 # as_built_strength_frac: what fraction of the datasheet tensile strength an
 # as-printed/as-cut part actually delivers in bending (perimeter seams, layer
 # adhesion, moisture, print defects). Used only by the champion verification
-# report (framevo verify-champions), NOT by the in-loop constraint.
+# report (airloom verify-champions), NOT by the in-loop constraint.
 materials:
   - name: cf_plate        # CNC-cut quasi-isotropic carbon laminate (not printed)
     density_kg_m3: 1600.0

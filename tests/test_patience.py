@@ -4,9 +4,9 @@ import math
 import numpy as np
 import pytest
 
-from framevo.evolution import (gens_since_significant_improvement, pivot_rank,
+from airloom.evolution import (gens_since_significant_improvement, pivot_rank,
                                propose_next, select_far_parents)
-from framevo.genome import Genome
+from airloom.genome import Genome
 
 
 def test_gens_since_significant_improvement():

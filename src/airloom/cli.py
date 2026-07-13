@@ -1,4 +1,4 @@
-"""framevo command line: run / resume the loop, query lineage, rebuild the
+"""airloom command line: run / resume the loop, query lineage, rebuild the
 gallery."""
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ def _snapshot_results(results, note: str) -> None:
 
     def git(*a: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", "-C", str(results),
-                               "-c", "user.name=framevo",
-                               "-c", "user.email=framevo@local",
+                               "-c", "user.name=airloom",
+                               "-c", "user.email=airloom@local",
                                *a], capture_output=True, text=True)
 
     try:
@@ -39,11 +39,11 @@ def _snapshot_results(results, note: str) -> None:
         done = git("commit", "-q", "-m", f"snapshot {note}")
         if done.returncode == 0:
             head = git("rev-parse", "--short", "HEAD").stdout.strip()
-            print(f"[framevo] results snapshot committed "
+            print(f"[airloom] results snapshot committed "
                   f"(results/.git @ {head})", flush=True)
         # nonzero = nothing changed since the last snapshot: fine
     except FileNotFoundError:
-        print("[framevo] git not available -- results snapshot skipped",
+        print("[airloom] git not available -- results snapshot skipped",
               flush=True)
 
 
@@ -58,7 +58,7 @@ def _clear_results(results) -> None:
         if p.name == ".git":
             continue
         shutil.rmtree(p) if p.is_dir() else p.unlink()
-    print("[framevo] results folder cleared for the fresh run "
+    print("[airloom] results folder cleared for the fresh run "
           "(history in results/.git)", flush=True)
 
 
@@ -127,7 +127,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         try:
             for line in sys.stdin:
                 if line.strip().lower() in ("q", "quit", "exit", "stop"):
-                    print("[framevo] stopping gracefully -- finishing the "
+                    print("[airloom] stopping gracefully -- finishing the "
                           "tasks in flight...", flush=True)
                     stop_event.set()
                     return
@@ -135,14 +135,14 @@ def cmd_run(args: argparse.Namespace) -> int:
             pass
 
     threading.Thread(target=_watch_stdin, daemon=True).start()
-    print("[framevo] type 'quit' + enter (or ctrl-c) to stop gracefully; "
+    print("[airloom] type 'quit' + enter (or ctrl-c) to stop gracefully; "
           "the run stays resumable", flush=True)
     try:
         loop.run(stop_event=stop_event)
     except KeyboardInterrupt:
         stop_event.set()
-        print("\n[framevo] interrupted -- run saved through the last "
-              "completed generation; continue with `framevo run`", flush=True)
+        print("\n[airloom] interrupted -- run saved through the last "
+              "completed generation; continue with `airloom run`", flush=True)
         return 130
     lb = cfg.evolution.results_dir / "leaderboard.md"
     if lb.exists():
@@ -219,7 +219,7 @@ def cmd_robustness(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="framevo",
+    ap = argparse.ArgumentParser(prog="airloom",
                                  description="evolve quadcopter frames for Wh/km")
     sub = ap.add_subparsers(dest="cmd", required=True)
 

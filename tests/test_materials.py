@@ -1,9 +1,9 @@
 """The material gene: library mapping, mass effect, structural consequences."""
 import pytest
 
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
-from framevo.structures import check_structure
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
+from airloom.structures import check_structure
 
 
 def test_material_gene_maps_onto_library(cfg):

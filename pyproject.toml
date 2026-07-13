@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "framevo"
+name = "airloom"
 version = "0.1.0"
 description = "Evolutionary optimization of quadcopter frame geometry for Wh/km across adverse-weather scenarios"
 readme = "README.md"
@@ -26,7 +26,8 @@ dependencies = [
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-framevo = "framevo.cli:main"
+airloom = "airloom.cli:main"
+framevo = "airloom.cli:main"  # legacy alias (pre-rename muscle memory)
 
 [tool.setuptools.packages.find]
 where = ["src"]

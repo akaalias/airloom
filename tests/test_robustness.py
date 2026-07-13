@@ -5,12 +5,12 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from framevo.aero import (CD_ARM, CD_BODY, build_drag_table,
+from airloom.aero import (CD_ARM, CD_BODY, build_drag_table,
                           drag_table_from_areas, measure_areas)
-from framevo.evaluate import robustness_task
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
-from framevo.robustness import (KNOB_SETS, apply_knobs, kendall_tau,
+from airloom.evaluate import robustness_task
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
+from airloom.robustness import (KNOB_SETS, apply_knobs, kendall_tau,
                                 perturbed_rotor, spearman)
 
 

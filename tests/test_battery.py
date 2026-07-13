@@ -10,10 +10,10 @@ import math
 
 import pytest
 
-from framevo.aero import build_drag_table
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
-from framevo.simulator import simulate_scenario
+from airloom.aero import build_drag_table
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
+from airloom.simulator import simulate_scenario
 
 
 @pytest.fixture(scope="module")
@@ -74,7 +74,7 @@ def test_storm_saturation_clamps_instead_of_killing(cfg, rotor, baseline):
     the high-demand regime deterministically (under CFD-calibrated drag the
     baseline barely saturates at all -- which is the calibration working,
     not the clamp semantics changing)."""
-    from framevo.aero import drag_table_from_areas, measure_areas
+    from airloom.aero import drag_table_from_areas, measure_areas
     frame, _ = baseline
     drag = drag_table_from_areas(measure_areas(frame, cfg.platform),
                                  calibrated=False)

@@ -4,8 +4,8 @@ import math
 import numpy as np
 import pytest
 
-from framevo.meshutil import polygon_properties
-from framevo.structures import (cantilever_deflection, cantilever_stress,
+from airloom.meshutil import polygon_properties
+from airloom.structures import (cantilever_deflection, cantilever_stress,
                                 first_bending_frequency)
 
 # hand-calculated case: rectangular section w=16 mm, h=8 mm, L=110 mm,

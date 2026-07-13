@@ -462,13 +462,13 @@ var DEF_YAW=-0.9,DEF_PITCH=0.8;
 var blobCache={};
 // ---- on-demand mesh loading: payloads live in per-candidate
 // frames/gen_XXXX/<hash>.mesh.js files (JSONP-style: they call
-// framevoBlob(id, data)). <script src> injection works over BOTH file://
+// airloomBlob(id, data)). <script src> injection works over BOTH file://
 // (where fetch() is CORS-blocked) and GitHub Pages, so index.html stays
 // small no matter how long the run gets.
 var BLOBS={},BLOB_PENDING={};
 var bsEl=document.getElementById("blob-src");
 var BLOB_SRC=bsEl?JSON.parse(bsEl.textContent):{};
-window.framevoBlob=function(id,data){
+window.airloomBlob=function(id,data){
   BLOBS[id]=data;
   (BLOB_PENDING[id]||[]).forEach(function(r){r()});
   delete BLOB_PENDING[id];
@@ -1247,7 +1247,7 @@ def _mesh_js_for(results_dir: Path, png_path: str | None) -> str | None:
     try:
         if not js.exists() or js.stat().st_mtime < p.stat().st_mtime:
             h = p.name.split(".")[0]
-            js.write_text(f'framevoBlob("m-{h}",{p.read_text()});')
+            js.write_text(f'airloomBlob("m-{h}",{p.read_text()});')
     except OSError:
         return None
     return _rel(results_dir, str(js))

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from framevo.config import Config, load_config
-from framevo.rotor_model import RotorModel
+from airloom.config import Config, load_config
+from airloom.rotor_model import RotorModel
 
 ROOT = Path(__file__).resolve().parent.parent
 

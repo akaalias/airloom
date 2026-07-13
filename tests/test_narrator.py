@@ -1,7 +1,7 @@
 """Narrator: reply parsing must survive one bad note without losing all."""
 import json
 
-from framevo.narrator import _parse_notes
+from airloom.narrator import _parse_notes
 
 H1, H2, H3 = "aaa111", "bbb222", "ccc333"
 

@@ -1,8 +1,8 @@
 """Frame generator: the real Source One V6 assembly and its validity rules."""
 import numpy as np
 
-from framevo.frame_gen import build_frame
-from framevo.genome import Genome
+from airloom.frame_gen import build_frame
+from airloom.genome import Genome
 
 
 def test_baseline_reproduces_the_real_v6(cfg):

@@ -120,7 +120,7 @@ design can never be lost. Drawn as dotted vertical pass-through edges in
 <dt>Lineage / parentage</dt>
 <dd>Every candidate records <code>parent_a</code>, <code>parent_b</code>, its operator, its
 birth generation and mutation magnitude &mdash; a self-referencing SQLite table, so
-<code>framevo lineage &lt;hash&gt;</code> walks the full ancestor chain
+<code>airloom lineage &lt;hash&gt;</code> walks the full ancestor chain
 (<code>WITH RECURSIVE</code>) and shows how fitness improved along it.</dd>
 
 <dt>Designer round</dt>
@@ -171,7 +171,7 @@ instead, and the family tree is skipped.</dd>
 <dt>Determinism / resume</dt>
 <dd>Per-generation RNG seeds and fixed per-scenario turbulence seeds make
 evaluations reproducible; after a crash or a graceful stop,
-<code>framevo run</code> resumes the latest run by default (<code>--fresh</code>
+<code>airloom run</code> resumes the latest run by default (<code>--fresh</code>
 forces a new one), continuing from the last completed generation and
 re-using every already-evaluated genome via its hash.</dd>
 </dl>
