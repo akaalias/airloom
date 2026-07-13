@@ -191,7 +191,9 @@ table.dt.hd b{font-size:17px}
 #ovl.open{display:flex}
 .ovl-bar{display:flex;align-items:center;gap:22px;padding:14px 26px;
   border-bottom:1px solid var(--rule)}
-.ovl-bar .hash{font:15px var(--mono);color:var(--muted)}
+.ovl-bar .hash{font:17px var(--serif);color:var(--ink)}
+.ovl-bar .hash .h{font:15px var(--mono);color:var(--muted)}
+.ovl-bar .hash .num{font-weight:700}
 .ovl-tabs{display:flex;gap:2px}
 .ovl-tabs button{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
@@ -203,6 +205,23 @@ table.dt.hd b{font-size:17px}
   border:none;color:var(--muted);cursor:pointer;padding:0 6px}
 #ovl-close:hover{color:var(--ink)}
 .ovl-lgd{border-bottom:1px solid var(--rule);padding:7px 16px;flex-shrink:0}
+/* improvement setters / the champion keep their inverted bar in the overlay */
+#ovl.inv .ovl-bar,#ovl.inv .ovl-lgd{background:var(--ink);
+  border-bottom-color:#3a382f}
+#ovl.inv .ovl-bar .hash{color:var(--paper)}
+#ovl.inv .ovl-bar .hash .h{color:var(--disc)}
+#ovl.inv .ovl-tabs button{color:var(--disc);border-color:#3a382f}
+#ovl.inv .ovl-tabs button.on{color:var(--paper);border-color:var(--paper)}
+#ovl.inv #ovl-close{color:var(--disc)}
+#ovl.inv #ovl-close:hover{color:var(--paper)}
+#ovl.inv .ovl-lgd .lgd{color:var(--disc)}
+#ovl.inv .ovl-lgd .lg:hover,#ovl.inv .ovl-lgd .lg.gl{color:var(--paper)}
+.ovl-views{position:absolute;left:26px;bottom:12px;display:flex;gap:2px;z-index:5}
+.ovl-views button{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  background:var(--paper);border:1px solid var(--rule);padding:4px 10px;
+  cursor:pointer}
+.ovl-views button:hover{color:var(--ink);border-color:var(--ink)}
 .ovl-body{flex:1;display:none;min-height:0}
 .ovl-body.on{display:flex}
 .ovl-body .pane{flex:1;display:flex;flex-direction:column;min-width:0}
@@ -223,9 +242,10 @@ function b64bytes(s){var b=atob(s),a=new Uint8Array(b.length);
   for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
 var VS="attribute vec3 aP;attribute vec3 aN;attribute vec4 aC;"+
   "uniform mat3 uR;uniform vec3 uT;uniform float uS;uniform vec2 uA;"+
+  "uniform vec2 uPn;"+
   "varying vec3 vN;varying vec4 vC;"+
   "void main(){vec3 p=uR*(aP-uT);"+
-  "gl_Position=vec4(p.x*uS*uA.x,p.y*uS*uA.y,-p.z*0.25,1.0);"+
+  "gl_Position=vec4(p.x*uS*uA.x+uPn.x,p.y*uS*uA.y+uPn.y,-p.z*0.25,1.0);"+
   "vN=uR*aN;vC=aC;}";
 var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
   "void main(){vec3 L=normalize(vec3(0.35,0.48,0.85));"+
@@ -320,9 +340,10 @@ function decodeBlob(id){
 // canvas (with a small margin) at the state's base pitch
 function makeState(basePitch){
   var bp=(basePitch===undefined?DEF_PITCH:basePitch);
-  var st={yaw:DEF_YAW,pitch:bp,zoom:1.0,basePitch:bp,viewers:[]};
+  var st={yaw:DEF_YAW,pitch:bp,zoom:1.0,panX:0,panY:0,basePitch:bp,viewers:[]};
   st.redraw=function(){st.viewers.forEach(function(v){v.draw()})};
-  st.reset=function(){st.yaw=DEF_YAW;st.pitch=st.basePitch;st.zoom=1.0;st.redraw()};
+  st.reset=function(){st.yaw=DEF_YAW;st.pitch=st.basePitch;st.zoom=1.0;
+    st.panX=0;st.panY=0;st.redraw()};
   return st;
 }
 function makeViewer(canvas,state){
@@ -349,7 +370,8 @@ function makeViewer(canvas,state){
     return b;
   }
   var uR=gl.getUniformLocation(prog,"uR"),uT=gl.getUniformLocation(prog,"uT"),
-      uS=gl.getUniformLocation(prog,"uS"),uA=gl.getUniformLocation(prog,"uA");
+      uS=gl.getUniformLocation(prog,"uS"),uA=gl.getUniformLocation(prog,"uA"),
+      uPn=gl.getUniformLocation(prog,"uPn");
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(1.0,1.0,0.973,1.0);
   var models=[]; // [{bufs, nf, nOpq}], shared center/scale from first
@@ -392,6 +414,7 @@ function makeViewer(canvas,state){
                                     0,cp,sp]);
       var asp=w>h?[h/w,1]:[1,w/h];
       gl.uniform2f(uA,asp[0],asp[1]);
+      gl.uniform2f(uPn,state.panX||0,state.panY||0);
       // fit factor: at zoom 1 the model's projected extents (at the
       // state's base pitch) reach 92% of the canvas on the tighter axis
       var fit=1;
@@ -420,14 +443,20 @@ function makeViewer(canvas,state){
     }
   };
   state.viewers.push(view);
-  var dragging=false,lastX=0,lastY=0;
+  var dragging=false,panning=false,lastX=0,lastY=0;
   canvas.addEventListener("pointerdown",function(e){
-    dragging=true;lastX=e.clientX;lastY=e.clientY;
+    dragging=true;panning=e.metaKey||e.ctrlKey; // cmd/ctrl-drag pans
+    lastX=e.clientX;lastY=e.clientY;
     canvas.setPointerCapture(e.pointerId);canvas.style.cursor="grabbing"});
   canvas.addEventListener("pointermove",function(e){
     if(!dragging)return;
-    state.yaw+=(e.clientX-lastX)*0.011;
-    state.pitch=Math.max(-1.6,Math.min(1.6,state.pitch+(e.clientY-lastY)*0.011));
+    if(panning){
+      state.panX+=(e.clientX-lastX)*2/Math.max(1,canvas.clientWidth);
+      state.panY-=(e.clientY-lastY)*2/Math.max(1,canvas.clientHeight);
+    }else{
+      state.yaw+=(e.clientX-lastX)*0.011;
+      state.pitch=Math.max(-1.6,Math.min(1.6,state.pitch+(e.clientY-lastY)*0.011));
+    }
     lastX=e.clientX;lastY=e.clientY;state.redraw()});
   canvas.addEventListener("pointerup",function(){
     dragging=false;canvas.style.cursor="grab"});
@@ -467,8 +496,12 @@ function openOverlay(d){
   ensureViewers();
   if(!soloV)return; // no webgl
   ovl.classList.add("open");
+  ovl.classList.toggle("inv",d.setter==="1");
   document.body.style.overflow="hidden";
-  ovl.querySelector(".ovl-bar .hash").textContent=d.title||"";
+  // hash and fit are trusted generator output (hex + number)
+  ovl.querySelector(".ovl-bar .hash").innerHTML=
+    'candidate <span class="h">'+(d.title||"")+"</span>"+
+    (d.fit?' &middot; <span class="num">'+d.fit+"</span>&thinsp;Wh/km":"");
   soloV.loadBlob(d.mesh);
   soloState.reset();
   var cmpBtn=ovl.querySelector('button[data-tab="compare"]');
@@ -478,7 +511,8 @@ function openOverlay(d){
     cmpBtn.disabled=false;
     cmpA.loadBlob(d.ancestor);cmpB.loadBlob(d.mesh);
     document.getElementById("anc-hash").textContent=d.anctitle||"";
-    document.getElementById("cur-hash").textContent=d.title||"";
+    document.getElementById("cur-hash").textContent=
+      (d.title||"")+(d.fit?" · "+d.fit:"");
     cmpState.reset();
   }else{
     cmpBtn.disabled=true;
@@ -489,7 +523,7 @@ function openOverlay(d){
     diffV.load([{id:d.mesh,evolved:true},
                 {id:d.ancestor,evolved:true,ghost:true}]);
     document.getElementById("diff-hash").textContent=(d.title||"")+
-      "  vs  "+(d.anctitle||"");
+      (d.fit?" · "+d.fit:"")+"  vs  "+(d.anctitle||"");
     diffState.reset();
   }else{
     diffBtn.disabled=true;
@@ -509,7 +543,28 @@ document.addEventListener("keydown",function(e){
 document.querySelectorAll("img.peek").forEach(function(img){
   img.addEventListener("click",function(){
     openOverlay({mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
-                 title:img.dataset.title,anctitle:img.dataset.anctitle});
+                 title:img.dataset.title,anctitle:img.dataset.anctitle,
+                 fit:img.dataset.fit,setter:img.dataset.setter});
+  });
+});
+// quick view presets act on whichever tab is showing
+// nose (FPV camera) = +X in mesh space; yaw/pitch pairs put it facing
+// the viewer (front), pointing left/right in profile, or up in plan views
+var VIEWS={front:[Math.PI/2,0],left:[Math.PI,0],right:[0,0],
+           top:[-Math.PI/2,Math.PI/2],bottom:[Math.PI/2,-Math.PI/2]};
+function activeState(){
+  var b=ovl.querySelector(".ovl-tabs button.on");
+  var t=b?b.dataset.tab:"solo";
+  return t==="compare"?cmpState:t==="diff"?diffState:soloState;
+}
+ovl.querySelectorAll(".ovl-views button").forEach(function(b){
+  b.addEventListener("click",function(){
+    var st=activeState(),v=b.dataset.view;
+    st.panX=0;st.panY=0;
+    if(v==="default"){st.reset();return}
+    if(v==="fit"){st.zoom=1.0}
+    else{st.yaw=VIEWS[v][0];st.pitch=VIEWS[v][1]}
+    st.redraw();
   });
 });
 window.addEventListener("resize",function(){
@@ -1015,6 +1070,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         c = cands[h]
         fit = store.fitness_of(c)
         invalid = not math.isfinite(fit)
+        is_setter = h in setter_hashes or h == best_hash
         # invalid renders get a red diagonal cross drawn over them
         xo, xc = ('<span class="xed">', "</span>") if invalid else ("", "")
         img = _rel(results_dir, c["png_path"])
@@ -1038,9 +1094,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                     anc_attr = (f' data-ancestor="m-{root}" data-anctitle='
                                 f'"{root} · g{cands[root]["generation_born"]}'
                                 f' · {_fmt(rfit)}"')
+            setter_attr = ' data-setter="1"' if is_setter else ""
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
                       f'<img class="peek" src="{bottom}" '
-                      f'alt="{h}" data-mesh="m-{h}" data-title="{h} · {_fmt(fit)}"'
+                      f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
+                      f'data-fit="{_fmt(fit)}"{setter_attr}'
                       f'{anc_attr}>{xc}'
                       f'<div class="hint">click to open the 3D model</div></div>'
                       f"{_parts_legend_html()}</div>")
@@ -1117,8 +1175,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             if text:
                 notes += (f'<div class="note{cls2}"><span class="nlab">'
                           f"{label}</span>{html.escape(text)}</div>")
-        dcls = "detail" + \
-            (" setter" if (h in setter_hashes or h == best_hash) else "") + \
+        dcls = "detail" + (" setter" if is_setter else "") + \
             (" champion" if h == best_hash else "")
         gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'
                       f"{gene_rows}</table>")
@@ -1156,8 +1213,9 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         f'<div class="ovl-lgd">{_parts_legend_html()}</div>'
         '<div class="ovl-body on" data-tab="solo" style="position:relative">'
         '<div class="pane"><canvas id="ovl-solo"></canvas></div>'
-        '<div class="ovl-hint">drag to rotate &middot; scroll to zoom &middot; '
-        "double-click resets &middot; esc closes</div></div>"
+        '<div class="ovl-hint">drag to rotate &middot; &#8984;-drag pans '
+        "&middot; scroll to zoom &middot; double-click resets &middot; "
+        "esc closes</div></div>"
         '<div class="ovl-body" data-tab="compare" style="position:relative">'
         '<div class="pane"><div class="cap">oldest ancestor '
         '<span class="hash" id="anc-hash"></span></div>'
@@ -1176,7 +1234,16 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         "</span></div>"
         '<canvas id="ovl-diff"></canvas></div>'
         '<div class="ovl-hint">only the parts evolution changes are shown, '
-        "superimposed</div></div>")
+        "superimposed</div></div>"
+        '<div class="ovl-views">'
+        '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
+        '<button data-view="front">front</button>'
+        '<button data-view="top">top</button>'
+        '<button data-view="bottom">bottom</button>'
+        '<button data-view="left">left</button>'
+        '<button data-view="right">right</button>'
+        '<button data-view="default" title="default view (double-click)">'
+        "default</button></div>")
     parts.extend(blobs)
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
