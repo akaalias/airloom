@@ -1,5 +1,7 @@
 .venv/
 results/
+cfd/cases/
+cfd/geometry/
 __pycache__/
 *.egg-info/
 build/

@@ -195,6 +195,14 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_cfd_calibrate(args: argparse.Namespace) -> int:
+    from .cfd import run_calibration
+    cfg = load_config(args.root)
+    run_calibration(cfg, Path(args.root).resolve() / "cfd",
+                    solve=args.solve, report=args.report)
+    return 0
+
+
 def cmd_verify_champions(args: argparse.Namespace) -> int:
     from .champion import verify_champions
     cfg = load_config(args.root, results_dir=args.results)
@@ -289,6 +297,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--top", type=int, default=5,
                    help="how many of the best frames to verify")
     p.set_defaults(fn=cmd_verify_champions)
+
+    p = sub.add_parser("cfd-calibrate",
+                       help="Phase B milestone 1: generate (and optionally"
+                            " solve) the OpenFOAM drag-calibration cases"
+                            " under cfd/; --report compares measured CdA"
+                            " with the component buildup")
+    _add_common(p)
+    p.add_argument("--solve", action="store_true",
+                   help="run the cases through Docker"
+                        " (opencfd/openfoam-default); CPU-heavy")
+    p.add_argument("--report", action="store_true",
+                   help="parse solved cases and write cfd/calibration.md")
+    p.set_defaults(fn=cmd_cfd_calibrate)
 
     args = ap.parse_args(argv)
     return args.fn(args)

@@ -226,3 +226,34 @@ Pre-Phase-B verification layer (built 2026-07-13):
   (`as_built_strength_frac`), refined deflection, print-and-test protocol
   → `results/champion_check.md`. Deliberately not FEM; a CalculiX pass
   would consume the same per-station geometry.
+
+## Phase B — milestone 1: CFD calibration (in progress)
+
+The robustness sweep reframed Phase B: only the ARM drag coefficient
+changes decisions, so before any per-candidate pipeline we calibrate the
+buildup's global knobs with a handful of OpenFOAM cases (`framevo
+cfd-calibrate`, cases + report under `cfd/`):
+
+1. **Four geometries**: baseline arms alone, baseline deck/body alone
+   (plates + battery + stack + motors + camera + antennas), the full
+   baseline assembly, and the full assembly of a contrasting genome
+   (long swept arms, wide deck gap).
+2. **Three flow angles each** (0°/20°/40° tilt at 12 m/s — the sim's
+   operating band), via freestream far-field BCs so each geometry is
+   meshed once (snappyHexMesh) and solved three times (simpleFoam,
+   k-ω SST, forces function object → measured CdA).
+3. **Attribution**: arms-alone calibrates `CD_ARM`; body-alone `CD_BODY`;
+   (full − arms − body) MEASURES the interference the buildup assumes to
+   be zero; contrast-vs-baseline interference fraction tests whether
+   interference varies with the genes (a ranking issue) or is a constant
+   offset (absolute-only issue).
+4. **Acceptance**: update the calibrated knobs, re-run
+   `framevo robustness`. STABLE verdict ⇒ the full per-candidate CFD
+   pipeline (original Phase B scope) is unnecessary; still-FRAGILE ⇒
+   build it for the top-N per generation as originally planned.
+
+Rotor–airframe interaction stays out of scope: the wash-term knob was the
+most rank-stable of the whole sweep (Spearman ≥ 0.986 at −50 %/+100 %).
+Solver runs in Docker (`opencfd/openfoam-default`, arm64-native), strictly
+optional and flag-gated per the local-first rule; the harness generates
+runnable cases + a manifest without Docker present.
