@@ -1,4 +1,12 @@
-"""The 13-gene continuous frame genome: bounds, hashing, random sampling."""
+"""The frame genome: morph parameters over the REAL Source One V6 outlines.
+
+Genes no longer describe primitives -- they deform the official plate
+drawings (data/source_one/) under zone constraints that keep every candidate
+a plausible, printable derivative of the real design: arm tongues and motor
+mounts stay rigid, the 30.5 mm stack pattern stays exact, plates stretch
+around their functional regions. Gene value 1.0 (for the scale genes)
+reproduces the real V6 part.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -6,53 +14,61 @@ from dataclasses import dataclass
 
 import numpy as np
 
-# (name, low, high) -- all lengths in meters, angles in degrees.
-# Sized for the 7-inch DroneAid-kit / TBS-Source-One-style plate-deck class.
-# body_* genes describe the deck: plate footprint, standoff gap (height),
-# corner fillet, pitch of the battery wedge. `material` selects a
-# print/plate material from the platform library (continuous in [0,1),
-# floored onto the list -- see Platform.material_for).
+# (name, low, high) -- scales are relative to the real V6 part; lengths in
+# meters, angles in degrees.
 GENOME_SPEC: tuple[tuple[str, float, float], ...] = (
-    ("arm_length", 0.08, 0.22),
-    ("arm_width", 0.009, 0.030),
-    ("arm_height", 0.0035, 0.012),
-    ("arm_sweep_deg", 25.0, 65.0),
-    ("arm_dihedral_deg", -8.0, 8.0),
-    ("section_blend", 0.0, 1.0),
-    ("arm_taper", 0.5, 1.0),
-    ("body_length", 0.090, 0.240),
-    ("body_width", 0.036, 0.090),
-    ("body_height", 0.020, 0.055),
-    ("body_fillet", 0.0, 0.012),
-    ("body_pitch_deg", 0.0, 15.0),
-    ("thickness_scale", 0.6, 1.8),
+    ("arm_length_scale", 0.75, 1.35),   # shaft stretch (wheelbase)
+    ("arm_width_scale", 0.75, 1.40),    # shaft width at the zone borders
+    ("arm_waist_scale", 0.55, 1.30),    # extra narrowing at mid-shaft
+    ("arm_thickness", 0.004, 0.009),    # real: 6 mm plate
+    ("front_sweep_deg", 30.0, 52.0),    # front arm azimuth from +x (nose)
+    ("rear_sweep_deg", 34.0, 62.0),     # rear arm azimuth from -x (tail)
+    ("plate_length_scale", 0.85, 1.30),
+    ("plate_width_scale", 0.85, 1.25),
+    ("deck_gap", 0.020, 0.045),         # standoff length; real: M3x30
+    ("battery_wedge_deg", 0.0, 15.0),
+    ("plate_thickness_scale", 0.7, 1.6),  # x 2 mm real plates
     ("material", 0.0, 0.999),
 )
 
+N_GENES = len(GENOME_SPEC)
+GENE_NAMES = tuple(name for name, _, _ in GENOME_SPEC)
+LOWER = np.array([lo for _, lo, _ in GENOME_SPEC])
+UPPER = np.array([hi for _, _, hi in GENOME_SPEC])
+RANGE = UPPER - LOWER
+
+# Generation 0 seed = the actual Source One V6 7in DC: every scale at 1.0,
+# 6 mm carbon arms, 2 mm plates, M3x30 standoffs, sweep angles from the
+# bolt-hole registration against the main plate, carbon plate material.
+BASELINE = {
+    "arm_length_scale": 1.0, "arm_width_scale": 1.0, "arm_waist_scale": 1.0,
+    "arm_thickness": 0.006, "front_sweep_deg": 31.4, "rear_sweep_deg": 36.0,
+    "plate_length_scale": 1.0, "plate_width_scale": 1.0, "deck_gap": 0.030,
+    "battery_wedge_deg": 2.0, "plate_thickness_scale": 1.0,
+    "material": 0.05,  # cf_plate
+}
+
 # human-readable labels + formatting for galleries/tooltips
 GENE_FORMAT: tuple[tuple[str, str, str], ...] = (
-    # (gene, label, unit) -- unit "mm" scales x1000, "deg"/"x"/"" are direct
-    ("arm_length", "arm length", "mm"),
-    ("arm_width", "arm width", "mm"),
-    ("arm_height", "arm thickness", "mm"),
-    ("arm_sweep_deg", "arm sweep", "deg"),
-    ("arm_dihedral_deg", "arm dihedral", "deg"),
-    ("section_blend", "section blend", ""),
-    ("arm_taper", "arm taper", ""),
-    ("body_length", "deck length", "mm"),
-    ("body_width", "deck width", "mm"),
-    ("body_height", "deck gap", "mm"),
-    ("body_fillet", "corner fillet", "mm"),
-    ("body_pitch_deg", "battery wedge", "deg"),
-    ("thickness_scale", "plate thickness", "x"),
+    ("arm_length_scale", "arm length", "x"),
+    ("arm_width_scale", "arm width", "x"),
+    ("arm_waist_scale", "arm waist", "x"),
+    ("arm_thickness", "arm thickness", "mm"),
+    ("front_sweep_deg", "front sweep", "deg"),
+    ("rear_sweep_deg", "rear sweep", "deg"),
+    ("plate_length_scale", "plate length", "x"),
+    ("plate_width_scale", "plate width", "x"),
+    ("deck_gap", "deck gap", "mm"),
+    ("battery_wedge_deg", "battery wedge", "deg"),
+    ("plate_thickness_scale", "plate thickness", "x"),
     ("material", "material", ""),
 )
 
 
 def describe_genome(genes: dict[str, float],
                     material_name: str | None = None) -> list[tuple[str, str]]:
-    """(label, formatted value) pairs for display, e.g. ('arm length',
-    '135.0 mm'). The material gene shows its resolved library name."""
+    """(label, formatted value) pairs for display. Scale genes read as
+    multiples of the real Source One V6 part ('x1.00' = the real shape)."""
     out = []
     for gene, label, unit in GENE_FORMAT:
         v = genes.get(gene)
@@ -69,28 +85,6 @@ def describe_genome(genes: dict[str, float],
         else:
             out.append((label, f"{v:.2f}"))
     return out
-
-
-N_GENES = len(GENOME_SPEC)
-GENE_NAMES = tuple(name for name, _, _ in GENOME_SPEC)
-LOWER = np.array([lo for _, lo, _ in GENOME_SPEC])
-UPPER = np.array([hi for _, _, hi in GENOME_SPEC])
-RANGE = UPPER - LOWER
-
-# Generation-0 seed, MEASURED from the official TBS Source One V6 7in DC
-# plate drawing (data/source_one/So1-V6-7inDC-2025-JUL-07.dxf, GPLv3):
-# bottom plate 106.6 x 48.5 x 2 mm, arms 160.7 mm long x 6 mm thick with a
-# ~22 mm root tongue and ~13-17 mm shaft, M3x30 standoffs, carbon plate.
-# arm_length here is attach-point -> rotor axis (tongue and motor-end flare
-# are inside the deck / under the motor pad), giving a ~0.32 m wheelbase.
-# Symmetric X approximates the DeadCat sweep.
-BASELINE = {
-    "arm_length": 0.126, "arm_width": 0.018, "arm_height": 0.006,
-    "arm_sweep_deg": 45.0, "arm_dihedral_deg": 0.0, "section_blend": 0.25,
-    "arm_taper": 0.75, "body_length": 0.107, "body_width": 0.0485,
-    "body_height": 0.030, "body_fillet": 0.005, "body_pitch_deg": 2.0,
-    "thickness_scale": 1.0, "material": 0.05,  # cf_plate
-}
 
 
 @dataclass(frozen=True)

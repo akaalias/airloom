@@ -1,22 +1,19 @@
-"""Genome -> parametric plate-deck frame: watertight mesh, mass/CG, hard
-validity checks.
+"""Genome -> a complete, real Source One V6-derived drone assembly.
 
-The construction follows the TBS Source One V6 assembly (the DroneAid kit's
-frame archetype; baseline dimensions measured from the official 7in DC DXF in
-data/source_one/):
+Every structural part is the official plate outline (data/source_one/),
+morphed by the genome under zone constraints (realgeo.py); every component
+is a dimension-accurate model of the actual kit hardware (components.py):
+21700 cell pack, FC/ESC stack, 2806 motors, 3-blade props, camera, VTX and
+ELRS antennas, GPS, XT60 and routed wiring looms.
 
-  - bottom plate (2 mm class) with four flat plate arms whose ROOT TONGUES
-    rest on it inside the deck sandwich, clamped by the standoff bolts
-  - M3 standoffs to the top plate; the FC + 4-in-1 ESC stack sits in the gap
-  - battery pack strapped on TOP of the top plate; the wedge gene tilts it
-    about its front bottom edge (a real wedge mount -- it never sinks into
-    the plate)
-  - motor cans and prop disks are visual fixed components; the stack IS part
-    of the bluff body for drag, wiring is visual only
+Assembly (z up, x forward, origin at the main plate top surface):
+  main plate [ -tp, 0 ] -> arm tongues on it [0, ta] -> mid plate clamps
+  them [ta, ta+tp] -> standoffs (deck_gap) -> top plate; the FC/ESC stack
+  lives in the gap; the battery is strapped on the top plate (wedge gene);
+  camera at the nose, antennas + GPS at the tail.
 
-Body axes: x forward, y left, z up, origin at the top surface of the bottom
-plate. Invalid genomes are still meshed when geometrically possible (their
-STLs are archived with an _INVALID suffix) but never simulated: fitness = inf.
+Invalid genomes are still meshed when possible (their STLs are archived
+with an _INVALID suffix) but never simulated: fitness = inf.
 """
 from __future__ import annotations
 
@@ -26,29 +23,25 @@ from dataclasses import dataclass
 import numpy as np
 import trimesh
 
+from . import components as comp
 from .config import Material, Platform
 from .genome import Genome
-from .meshutil import (extrude_convex_polygon, polygon_area, polygon_properties,
-                       rounded_rect, superellipse_section, sweep_section, union)
+from .realgeo import (STOCK_ANCHORS, ArmOutline, extrude, load_outlines,
+                      mirror_y, morph_arm, morph_plate, shaft_min_width)
 
-ROTOR_Z_ABOVE_TIP = 0.030   # motor stack between arm tip and rotor plane
-# root tongue inside the deck sandwich: long enough for an M3 clamp-bolt
-# pair. (The real Source One uses ~22 mm interlocking notched tongues; we do
-# not model notches, so tongues are shorter and must not touch.)
-ARM_EMBED = 0.016
-ROOT_GAP_MIN = 0.004        # clearance between adjacent root tongues (bolts)
-STACK_SIZE = 0.0305         # FC / ESC board footprint
-STACK_BOARD_T = 0.004
-STACK_Z = (0.008, 0.016)    # board undersides above the bottom plate
+MOTOR_H = 0.026            # motor stack height above the arm mount
+STACK_H = 0.0216           # FC + ESC stack height inside the gap
+STANDOFF_R = 0.0025
+MAX_TONGUE_OVERLAP_MM2 = 1.0
 
 
 @dataclass
 class ArmProperties:
-    length: float
-    root_area: float          # cross-section area at the root
-    root_i_bend: float        # second moment for vertical bending, at the root
-    root_height: float        # section height (stress fiber distance = h/2)
-    mass: float               # one arm, solid, incl. motor pad
+    length: float             # cantilever length: tongue end -> motor axis
+    root_area: float          # shaft cross-section area (min width x t)
+    root_i_bend: float        # second moment for vertical bending
+    root_height: float        # plate thickness (stress fiber = t/2)
+    mass: float               # one arm
     planform_width_mean: float
 
 
@@ -57,12 +50,9 @@ class FrameModel:
     genome: Genome
     valid: bool
     failure_reason: str | None
-    mesh: trimesh.Trimesh | None        # the FRAME only (deck + arms): the STL
+    mesh: trimesh.Trimesh | None        # the FRAME plates+arms (the STL)
     arms_mesh: trimesh.Trimesh | None
-    body_mesh: trimesh.Trimesh | None   # deck + battery + stack: bluff body (aero)
-    # labeled visual parts for colored renders/viewers. Keys: deck, arms
-    # (evolved geometry); battery, stack, wiring, motors, props (fixed
-    # platform). Motors/props/wiring never enter the drag rasterization.
+    body_mesh: trimesh.Trimesh | None   # everything else that meets the wind
     parts: dict[str, trimesh.Trimesh | None]
     frame_mass: float
     total_mass: float
@@ -70,91 +60,124 @@ class FrameModel:
     rotor_centers: np.ndarray  # (4, 3)
     arm: ArmProperties | None
     material: Material
-    top_area_footprint: float  # plan-view deck/battery footprint area
+    top_area_footprint: float
 
     @property
     def hash(self) -> str:
         return self.genome.hash
 
 
-def _dist_outside_rounded_rect(p: np.ndarray, length: float, width: float,
-                               fillet: float) -> float:
-    """Signed distance from a plan-view point to a rounded-rect boundary
-    (positive outside)."""
-    r = min(fillet, 0.49 * min(length, width))
-    dx = abs(p[0]) - (length / 2.0 - r)
-    dy = abs(p[1]) - (width / 2.0 - r)
-    if dx <= 0.0 and dy <= 0.0:
-        return max(dx, dy) - r  # inside
-    return math.hypot(max(dx, 0.0), max(dy, 0.0)) - r
+def _tongue_region(outline: ArmOutline, az: float, t_m) -> np.ndarray:
+    """The tongue's occupancy rectangle in world mm (for clamp coverage)."""
+    c, s = math.cos(az), math.sin(az)
+    hw = outline.width / 2.0 + 2.0
+    corners = np.array([[0.0, -hw], [outline.tongue_end, -hw],
+                        [outline.tongue_end, hw], [0.0, hw]])
+    tx, ty = 1e3 * t_m[0], 1e3 * t_m[1]
+    return np.column_stack([tx + corners[:, 0] * c - corners[:, 1] * s,
+                            ty + corners[:, 0] * s + corners[:, 1] * c])
+
+
+def _rot_z(mesh: trimesh.Trimesh, angle: float) -> trimesh.Trimesh:
+    mesh.apply_transform(trimesh.transformations.rotation_matrix(angle, [0, 0, 1]))
+    return mesh
+
+
+def _try_union(parts: list[trimesh.Trimesh]) -> trimesh.Trimesh:
+    try:
+        return trimesh.boolean.union(parts, engine="manifold")
+    except Exception:
+        return trimesh.util.concatenate(parts)
 
 
 def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> FrameModel:
     g = genome.as_dict()
-    bl, bw = g["body_length"], g["body_width"]       # deck plate footprint
-    gap = g["body_height"]                            # standoff height
-    fillet = g["body_fillet"]
-    plate_t = platform.plate_base_m * g["thickness_scale"]
     material = platform.material_for(g["material"])
+    rho = material.density_kg_m3
+    outlines = load_outlines(str(platform.propulsion.uiuc_data_dir.parent / "source_one"))
     batt = platform.battery
     batt_l, batt_w, batt_h = batt.size_m
-    arm_h = g["arm_height"]
     failure: str | None = None
 
-    # -- hard constraint: FC/ESC stack and arm tongues must fit in the gap
-    if gap < platform.fc_stack_height_m or gap < arm_h + platform.fc_stack_height_m / 2:
-        failure = "deck gap too small for stack + arm tongues"
+    tp = platform.plate_base_m * g["plate_thickness_scale"]
+    ta = g["arm_thickness"]
+    gap = g["deck_gap"]
+    top_z = ta + tp + gap  # underside of the top plate
 
-    # -- hard constraint: the top plate must carry the battery pack
-    if failure is None and (bl < batt.support_frac * batt_l
-                            or bw < batt.support_frac * batt_w):
-        failure = "top plate too small to support battery"
+    # -- morph the real outlines
+    arm_front = morph_arm(outlines["arm_front"], g["arm_length_scale"],
+                          g["arm_width_scale"], g["arm_waist_scale"])
+    arm_rear = morph_arm(outlines["arm_rear"], g["arm_length_scale"],
+                         g["arm_width_scale"], g["arm_waist_scale"])
+    sx, sy = g["plate_length_scale"], g["plate_width_scale"]
+    p_main = morph_plate(outlines["plate_main"], sx, sy)
+    p_mid = morph_plate(outlines["plate_mid"], sx, sy)
+    p_top = morph_plate(outlines["plate_top"], sx, sy)
 
-    # -- hard constraint: flat plate area for the 30.5 mm FC mount pattern
-    flat = platform.fc_mount_flat_m
-    if failure is None and (bl - 2 * fillet < flat or bw - 2 * fillet < flat):
-        failure = "no flat area for flight-controller mount"
+    # -- hard constraint: the FC/ESC stack must fit in the gap
+    if gap < STACK_H + 0.001:
+        failure = "deck gap too small for FC/ESC stack"
 
-    # -- arm layout: front pair at +-sweep from x, rear pair mirrored.
-    # Root tongues rest ON the bottom plate (inside the sandwich).
-    sweep = math.radians(g["arm_sweep_deg"])
-    dihedral = math.radians(g["arm_dihedral_deg"])
-    azimuths = [sweep, -sweep, math.pi - sweep, -(math.pi - sweep)]
-    arm_len = g["arm_length"]
-    arm_z = arm_h / 2.0
-
-    roots, tips, attaches, rotor_centers = [], [], [], []
-    for az in azimuths:
-        d = np.array([math.cos(az), math.sin(az)])
-        # ray-rectangle intersection for the attach point on the deck outline
-        tx = (bl / 2.0) / abs(d[0]) if abs(d[0]) > 1e-9 else math.inf
-        ty = (bw / 2.0) / abs(d[1]) if abs(d[1]) > 1e-9 else math.inf
-        attach = d * min(tx, ty)
-        attaches.append(attach)
-        root = np.array([*(attach - d * ARM_EMBED), arm_z])
-        direction = np.array([d[0] * math.cos(dihedral), d[1] * math.cos(dihedral),
-                              math.sin(dihedral)])
-        tip = root + direction * (arm_len + ARM_EMBED)
-        roots.append(root)
-        tips.append(tip)
-        rotor_centers.append(tip + np.array([0.0, 0.0,
-                                             platform.motor_pad_height_m + ROTOR_Z_ABOVE_TIP]))
+    # -- arm placement at the drawing-derived plate anchors; anchors scale
+    # with the plate morph, sweep genes rotate each arm about its anchor.
+    # Left/right arms are mirrored chirality like the real DC parts.
+    az_f = math.radians(g["front_sweep_deg"])
+    az_r = math.pi - math.radians(g["rear_sweep_deg"])
+    tfx, tfy = STOCK_ANCHORS["front"][1]
+    trx, try_ = STOCK_ANCHORS["rear"][1]
+    scale = np.array([sx, sy]) * 1e-3
+    arms_spec = [  # (outline, azimuth, anchor T in meters)
+        (arm_front, az_f, np.array([tfx, tfy]) * scale),
+        (mirror_y(arm_front), -az_f, np.array([tfx, -tfy]) * scale),
+        (mirror_y(arm_rear), az_r, np.array([trx, try_]) * scale),
+        (arm_rear, -az_r, np.array([trx, -try_]) * scale),
+    ]
+    placements: list[tuple[ArmOutline, float, np.ndarray]] = list(arms_spec)
+    rotor_centers = []
+    rotor_z = ta + MOTOR_H
+    for outline, az, t_m in placements:
+        mx, my = outline.motor_xy
+        c, s = math.cos(az), math.sin(az)
+        rotor_centers.append([t_m[0] + 1e-3 * (mx * c - my * s),
+                              t_m[1] + 1e-3 * (mx * s + my * c), rotor_z])
     rotor_centers_arr = np.array(rotor_centers)
 
-    # -- hard constraint: root tongues must not collide inside the sandwich
-    # (each needs clamp-bolt room; unlike the real Source One we do not model
-    # interlocking notches, so tongues may not cross at the center either)
+    # -- hard constraints on the REAL 2D geometry: placed arm outlines must
+    # not overlap each other (no notch redesign is modeled), and every
+    # tongue bolt must land on the main plate
     if failure is None:
-        min_gap = g["arm_width"] + ROOT_GAP_MIN
-        root_ends = [a - (a / np.linalg.norm(a)) * ARM_EMBED for a in attaches]
+        from shapely import affinity
+        from shapely.geometry import Point, Polygon as ShPoly
+        placed = []
+        for outline, az, t_m in placements:
+            poly = affinity.rotate(ShPoly(outline.shell), math.degrees(az),
+                                   origin=(0, 0))
+            poly = affinity.translate(poly, 1e3 * t_m[0], 1e3 * t_m[1])
+            placed.append(poly)
         for i in range(4):
             for j in range(i + 1, 4):
-                if np.linalg.norm(attaches[i] - attaches[j]) < min_gap \
-                        or np.linalg.norm(root_ends[i] - root_ends[j]) < min_gap:
-                    failure = "arm root tongues overlap in the deck"
+                if placed[i].intersection(placed[j]).area > MAX_TONGUE_OVERLAP_MM2:
+                    failure = "arm root tongues collide on the main plate"
                     break
             if failure:
                 break
+        if failure is None:
+            # each arm is held by its tongue bolt pair: both bolts must land
+            # on main-plate material with >= 2.5 mm edge margin (bolt holes
+            # are re-cut with the plates, which regenerate per candidate)
+            plate_clamp = ShPoly(p_main.shell).buffer(-2.5)
+            for outline, az, t_m in placements:
+                bolts = [h for h in outline.holes
+                         if h[0] < outline.tongue_end and h[2] < 1.6]
+                c, s = math.cos(az), math.sin(az)
+                for bx, by, _ in bolts:
+                    wx = 1e3 * t_m[0] + bx * c - by * s
+                    wy = 1e3 * t_m[1] + bx * s + by * c
+                    if not plate_clamp.contains(Point(wx, wy)):
+                        failure = "arm tongue bolts miss the main plate"
+                        break
+                if failure:
+                    break
 
     # -- hard constraint: rotor-rotor separation
     prop_d = platform.propulsion.prop_diameter_m
@@ -169,179 +192,201 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
             if failure:
                 break
 
-    # -- hard constraint: rotor tip clearance from deck AND battery, each
-    # checked against its own footprint (plan view; conservative about the
-    # z offset from dihedral)
+    # -- hard constraint: rotor clearance from battery and top plate.
+    # 3D-aware: the horizontal check applies only when the prop plane is
+    # within a 5 mm safety band of the obstacle's z-range (on the real V6
+    # the rear props sweep below the top-plate corners with mm to spare --
+    # the deck_gap gene trades that margin directly).
     if failure is None:
         need = prop_d / 2.0 + clear
-        for rc in rotor_centers:
-            if _dist_outside_rounded_rect(rc[:2], bl, bw, fillet) < need:
-                failure = "rotor too close to deck"
+        z_band = 0.005
+        obstacles = (  # (length, width, z_lo, z_hi)
+            (batt_l, batt_w, top_z + tp, top_z + tp + batt_h),
+            (p_top.length * 1e-3, p_top.width * 1e-3, top_z, top_z + tp),
+        )
+        for rc in rotor_centers_arr:
+            for ll, ww, z_lo, z_hi in obstacles:
+                if rc[2] < z_lo - z_band or rc[2] > z_hi + z_band:
+                    continue  # prop plane clears this obstacle vertically
+                dx = max(abs(rc[0]) - ll / 2.0, 0.0)
+                dy = max(abs(rc[1]) - ww / 2.0, 0.0)
+                if math.hypot(dx, dy) < need:
+                    failure = "rotor too close to deck/battery"
+                    break
+            if failure:
                 break
-            if _dist_outside_rounded_rect(rc[:2], batt_l, batt_w, 0.0) < need:
-                failure = "rotor too close to battery"
-                break
 
-    # -- arm section properties (solid print/plate material)
-    section = superellipse_section(g["arm_width"], arm_h, g["section_blend"])
-    area, _, i_bend = polygon_properties(section)
-    area = abs(area)
-    taper = g["arm_taper"]
-    rho = material.density_kg_m3
-    # linear scale 1 -> taper: volume = A_root * L * (1 + t + t^2)/3,
-    # plus the constant-section root tongue inside the sandwich
-    arm_volume = area * arm_len * (1.0 + taper + taper * taper) / 3.0 \
-        + area * ARM_EMBED
-    pad_volume = math.pi * platform.motor_pad_radius_m ** 2 * platform.motor_pad_height_m
-    arm_mass = (arm_volume + pad_volume) * rho
-    arm_props = ArmProperties(
-        length=arm_len, root_area=area, root_i_bend=abs(i_bend),
-        root_height=arm_h, mass=arm_mass,
-        planform_width_mean=g["arm_width"] * (1.0 + taper) / 2.0,
-    )
+    # -- structural section from the real morphed outline
+    w_min = shaft_min_width(arm_front) * 1e-3
+    i_bend = w_min * ta ** 3 / 12.0
+    arm_len = (arm_front.motor_xy[0] - arm_front.tongue_end) * 1e-3
 
-    # -- deck mass: two plates + four standoffs
-    plate_poly = rounded_rect(bl, bw, fillet)
-    plate_area = abs(polygon_area(plate_poly))
-    deck_mass = 2.0 * plate_area * plate_t * rho \
-        + 4.0 * gap * platform.standoff_mass_per_m
-
-    frame_mass = deck_mass + 4.0 * arm_mass
-    total_mass = frame_mass + platform.fixed_mass_kg
-
-    # -- CG (informative)
-    t_ = np.linspace(0.0, 1.0, 33)
-    s2 = (1.0 + (taper - 1.0) * t_) ** 2
-    arm_centroid_frac = float(np.trapezoid(t_ * s2, t_) / np.trapezoid(s2, t_))
-    batt_z = gap + plate_t + batt_h / 2.0  # battery rides on the top plate
-    moments = np.array([0.0, 0.0, batt.mass_kg * batt_z
-                        + plate_area * plate_t * rho * (gap + plate_t / 2.0)])
-    for root, tip, rc in zip(roots, tips, rotor_centers):
-        arm_c = root + (tip - root) * arm_centroid_frac
-        moments += arm_mass * arm_c + platform.propulsion.motor_mass_kg * rc
-    cg = moments / total_mass
-
-    # -- mesh (also for invalid genomes: their STLs are archived)
+    # -- build the real part meshes
     mesh = arms_mesh = body_mesh = None
     parts: dict[str, trimesh.Trimesh | None] = {
-        "deck": None, "arms": None, "battery": None, "stack": None,
-        "wiring": None, "motors": None, "props": None}
-    if want_mesh:
-        try:
-            deck_solids = []
-            bottom = extrude_convex_polygon(plate_poly, -plate_t, 0.0)
-            top = extrude_convex_polygon(plate_poly, gap, gap + plate_t)
-            deck_solids += [bottom, top]
-            sx = bl / 2.0 - max(fillet, 0.008)
-            sy = bw / 2.0 - max(fillet, 0.008)
-            for px, py in ((sx, sy), (-sx, sy), (-sx, -sy), (sx, -sy)):
-                s = trimesh.creation.cylinder(radius=platform.standoff_radius_m,
-                                              height=gap + plate_t, sections=10)
-                s.apply_translation([px, py, gap / 2.0])
-                deck_solids.append(s)
-            deck_mesh = union(deck_solids)
+        k: None for k in ("deck", "arms", "battery", "stack", "wiring",
+                          "camera", "antennas", "motors", "props")}
+    frame_mass = math.nan
+    try:
+        main_mesh = extrude(p_main, tp)
+        main_mesh.apply_translation([0, 0, -tp])
+        mid_mesh = extrude(p_mid, tp)
+        mid_mesh.apply_translation([0, 0, ta])
+        top_mesh = extrude(p_top, tp)
+        top_mesh.apply_translation([0, 0, top_z])
+        standoffs = []
+        sx_off = 0.36 * p_mid.length * 1e-3
+        sy_off = 0.30 * p_mid.width * 1e-3
+        for px, py in ((sx_off, sy_off), (-sx_off, sy_off),
+                       (-sx_off, -sy_off), (sx_off, -sy_off)):
+            so = trimesh.creation.cylinder(radius=STANDOFF_R, height=gap, sections=12)
+            so.apply_translation([px, py, ta + tp + gap / 2.0])
+            standoffs.append(so)
+        deck_mesh = _try_union([main_mesh, mid_mesh, top_mesh] + standoffs)
 
-            # battery wedge: hinged at its FRONT bottom edge so the rear
-            # lifts -- the pack never sinks through the plate
-            battery_box = trimesh.creation.box((batt_l, batt_w, batt_h))
-            pitch = math.radians(g["body_pitch_deg"])
-            if pitch > 1e-9:
-                rot = trimesh.transformations.rotation_matrix(
-                    pitch, [0, 1, 0], [batt_l / 2.0, 0.0, -batt_h / 2.0])
-                battery_box.apply_transform(rot)
-            battery_box.apply_translation([0.0, 0.0, batt_z])
+        arm_meshes = []
+        for outline, az, t_m in placements:
+            am = extrude(outline, ta)
+            _rot_z(am, az)
+            am.apply_translation([t_m[0], t_m[1], 0.0])
+            arm_meshes.append(am)
+        arms_mesh = _try_union(arm_meshes)
 
-            # FC + 4-in-1 ESC boards inside the deck gap (a real bluff body
-            # between the plates -> included in the drag mesh)
-            stack_solids = []
-            for z0 in STACK_Z:
-                board = trimesh.creation.box((STACK_SIZE, STACK_SIZE, STACK_BOARD_T))
-                board.apply_translation([0.0, 0.0, z0 + STACK_BOARD_T / 2.0])
-                stack_solids.append(board)
-            stack_mesh = union(stack_solids)
+        # frame mass from the REAL volumes
+        plate_vol = main_mesh.volume + mid_mesh.volume + top_mesh.volume
+        arm_vol = sum(a.volume for a in arm_meshes)
+        frame_mass = (plate_vol + arm_vol) * rho \
+            + 4.0 * gap * platform.standoff_mass_per_m
 
-            # wiring (visual only): XT60 block on the top plate rear + cable
-            xt60 = trimesh.creation.box((0.016, 0.009, 0.009))
-            xt60.apply_translation([-bl / 2.0 + 0.010, 0.0,
-                                    gap + plate_t + 0.0045])
-            cable = trimesh.creation.cylinder(
-                radius=0.002,
-                segment=[[-0.005, 0.0, STACK_Z[1]],
-                         [-bl / 2.0 - 0.006, 0.0, gap + plate_t + 0.004]])
-            wiring_mesh = union([xt60, cable])
+        # -- fixed components, placed like the real build
+        battery = comp.battery_pack()
+        _rot_z(battery, math.pi / 2)  # long side along x
+        wedge = math.radians(g["battery_wedge_deg"])
+        if wedge > 1e-9:
+            battery.apply_transform(trimesh.transformations.rotation_matrix(
+                wedge, [0, 1, 0], [batt_l / 2.0, 0.0, 0.0]))
+        battery.apply_translation([0, 0, top_z + tp])
 
-            arm_solids = []
-            for root, tip in zip(roots, tips):
-                arm_solids.append(sweep_section(section, root, tip, taper))
-                pad = trimesh.creation.cylinder(radius=platform.motor_pad_radius_m,
-                                                height=platform.motor_pad_height_m,
-                                                sections=16)
-                pad.apply_translation(tip + [0.0, 0.0, platform.motor_pad_height_m / 2.0])
-                arm_solids.append(pad)
-            arms_mesh = union(arm_solids)
+        stack = comp.fc_stack()
+        stack.apply_translation([0, 0, ta + tp])
 
-            # visual-only fixed components: motor cans + thin prop disks
-            motor_solids, prop_solids = [], []
-            for tip, rc in zip(tips, rotor_centers):
-                motor = trimesh.creation.cylinder(
-                    radius=platform.motor_body_radius_m,
-                    height=platform.motor_body_height_m, sections=14)
-                motor.apply_translation(
-                    tip + [0.0, 0.0, platform.motor_pad_height_m
-                           + platform.motor_body_height_m / 2.0])
-                motor_solids.append(motor)
-                disk = trimesh.creation.cylinder(
-                    radius=platform.propulsion.prop_diameter_m / 2.0,
-                    height=0.0022, sections=28)
-                disk.apply_translation(rc)
-                prop_solids.append(disk)
+        nose_x = p_top.length * 1e-3 / 2.0
+        tail_x = -nose_x
+        camera = comp.camera_micro()
+        camera.apply_transform(trimesh.transformations.rotation_matrix(
+            math.radians(-20), [0, 1, 0]))
+        camera.apply_translation([nose_x - 0.006, 0, top_z + tp + 0.012])
 
-            parts = {"deck": deck_mesh, "arms": arms_mesh,
-                     "battery": battery_box, "stack": stack_mesh,
-                     "wiring": wiring_mesh,
-                     "motors": union(motor_solids),
-                     "props": union(prop_solids)}
-            body_mesh = union([deck_mesh, battery_box, stack_mesh])  # aero
-            mesh = union([deck_mesh, arms_mesh])                     # the STL
-            if failure is None and not mesh.is_watertight:
-                failure = "mesh not watertight"
-        except Exception:
-            mesh = None
-            if failure is None:
-                failure = "mesh boolean union failed"
+        vtx = comp.vtx_antenna()
+        vtx.apply_transform(trimesh.transformations.rotation_matrix(
+            math.radians(135), [0, 1, 0]))
+        vtx.apply_translation([tail_x + 0.004, 0.012, top_z + tp + 0.002])
+        elrs = comp.elrs_dipole()
+        elrs.apply_transform(trimesh.transformations.rotation_matrix(
+            math.radians(150), [0, 1, 0]))
+        elrs.apply_translation([tail_x + 0.006, -0.012, top_z + tp + 0.002])
+        gps = comp.gps_puck()
+        gps.apply_translation([tail_x + 0.030, 0, top_z + tp])
+        antennas = trimesh.util.concatenate([vtx, elrs, gps])
+
+        # -- wiring: motor looms along each arm, battery lead to the XT60,
+        # camera + VTX coax
+        looms = []
+        for (outline, az, t_m), rc in zip(placements, rotor_centers_arr):
+            base = np.array([rc[0], rc[1], ta + 0.002])
+            mid = np.array([t_m[0] + 0.45 * (rc[0] - t_m[0]),
+                            t_m[1] + 0.45 * (rc[1] - t_m[1]), ta + 0.004])
+            inb = np.array([0.5 * t_m[0], 0.5 * t_m[1], ta + tp + 0.004])
+            looms.append(comp.wire_bundle([base, mid, inb], n=3))
+        xt = comp.xt60()
+        xt.apply_translation([-0.030, batt_w / 2.0 - 0.004, top_z + tp + 0.006])
+        lead = comp.wire([[-batt_l / 2.0 + 0.004, 0.008, top_z + tp + 0.012],
+                          [-0.042, batt_w / 2.0 - 0.002, top_z + tp + 0.010],
+                          [-0.036, batt_w / 2.0 - 0.004, top_z + tp + 0.006]],
+                         radius=0.0016)
+        cam_coax = comp.wire([[nose_x - 0.012, 0.004, top_z + tp + 0.008],
+                              [nose_x - 0.030, 0.006, top_z - gap / 2.0],
+                              [0.020, 0.008, ta + tp + 0.014]])
+        vtx_coax = comp.wire([[tail_x + 0.006, 0.012, top_z + tp],
+                              [tail_x + 0.020, 0.010, top_z - gap / 2.0],
+                              [-0.020, 0.006, ta + tp + 0.014]])
+        wiring = trimesh.util.concatenate(looms + [xt, lead, cam_coax, vtx_coax])
+
+        motors_l, props_l = [], []
+        for rc in rotor_centers_arr:
+            m = comp.motor_2806()
+            m.apply_translation([rc[0], rc[1], ta])
+            motors_l.append(m)
+            p = comp.propeller_7x4_3blade()
+            p.apply_translation([rc[0], rc[1], rotor_z + 0.004])
+            props_l.append(p)
+
+        parts = {"deck": deck_mesh, "arms": arms_mesh, "battery": battery,
+                 "stack": stack, "wiring": wiring, "camera": camera,
+                 "antennas": antennas,
+                 "motors": trimesh.util.concatenate(motors_l),
+                 "props": trimesh.util.concatenate(props_l)}
+        # aero bluff body: everything substantial the wind sees except arms
+        # (own Cd class) and the spinning props (handled by the rotor
+        # model). Antennas and wiring are omitted from the raster: <2% of
+        # frontal area but thousands of triangles.
+        body_mesh = trimesh.util.concatenate(
+            [deck_mesh, battery, stack, camera, parts["motors"]])
+        mesh = _try_union([deck_mesh, arms_mesh])
+        if failure is None and not mesh.is_watertight:
+            failure = "mesh not watertight"
+    except Exception:
+        if failure is None:
+            failure = "real-geometry meshing failed"
+
+    total_mass = (frame_mass if math.isfinite(frame_mass) else 0.0) \
+        + platform.fixed_mass_kg
+    arm_mass = (arm_vol * rho / 4.0) if math.isfinite(frame_mass) else 0.01
+    arm_props = ArmProperties(
+        length=arm_len, root_area=w_min * ta, root_i_bend=i_bend,
+        root_height=ta, mass=arm_mass, planform_width_mean=w_min)
+
+    # -- CG (informative)
+    cg = np.zeros(3)
+    if mesh is not None:
+        moments = mesh.volume * rho * mesh.center_mass \
+            + batt.mass_kg * np.array([0, 0, top_z + tp + batt_h / 2.0])
+        for rc in rotor_centers_arr:
+            moments = moments + platform.propulsion.motor_mass_kg * rc
+        cg = moments / max(total_mass, 1e-9)
 
     return FrameModel(genome=genome, valid=failure is None, failure_reason=failure,
                       mesh=mesh, arms_mesh=arms_mesh, body_mesh=body_mesh,
-                      parts=parts,
-                      frame_mass=frame_mass, total_mass=total_mass, cg=cg,
-                      rotor_centers=rotor_centers_arr, arm=arm_props,
+                      parts=parts, frame_mass=frame_mass, total_mass=total_mass,
+                      cg=cg, rotor_centers=rotor_centers_arr, arm=arm_props,
                       material=material,
-                      top_area_footprint=max(plate_area, batt_l * batt_w))
+                      top_area_footprint=max(p_top.length * p_top.width,
+                                             batt_l * batt_w * 1e6) * 1e-6)
 
 
 def export_printable_parts(genome: Genome, platform: Platform,
                            out_dir) -> list[str]:
-    """The individual frame pieces, each flat in print/cut orientation:
-    bottom_plate.stl, top_plate.stl, arm.stl (x4 identical). Units: meters.
-    Bolt holes are not modeled (see README limitations)."""
+    """The champion's individual pieces, flat in print/cut orientation --
+    real morphed Source One outlines with their bolt holes and cutouts."""
     from pathlib import Path
 
     g = genome.as_dict()
-    plate_t = platform.plate_base_m * g["thickness_scale"]
-    poly = rounded_rect(g["body_length"], g["body_width"], g["body_fillet"])
-    section = superellipse_section(g["arm_width"], g["arm_height"],
-                                   g["section_blend"])
+    outlines = load_outlines(str(platform.propulsion.uiuc_data_dir.parent / "source_one"))
+    tp = platform.plate_base_m * g["plate_thickness_scale"]
+    sx, sy = g["plate_length_scale"], g["plate_width_scale"]
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     written = []
     for name, solid in (
-        ("bottom_plate", extrude_convex_polygon(poly, 0.0, plate_t)),
-        ("top_plate", extrude_convex_polygon(poly, 0.0, plate_t)),
-        ("arm", sweep_section(section,
-                              np.array([0.0, 0.0, g["arm_height"] / 2.0]),
-                              np.array([g["arm_length"] + ARM_EMBED, 0.0,
-                                        g["arm_height"] / 2.0]),
-                              g["arm_taper"])),
+        ("arm_front", extrude(morph_arm(outlines["arm_front"], g["arm_length_scale"],
+                                        g["arm_width_scale"], g["arm_waist_scale"]),
+                              g["arm_thickness"])),
+        ("arm_rear", extrude(morph_arm(outlines["arm_rear"], g["arm_length_scale"],
+                                       g["arm_width_scale"], g["arm_waist_scale"]),
+                             g["arm_thickness"])),
+        ("plate_main", extrude(morph_plate(outlines["plate_main"], sx, sy), tp)),
+        ("plate_mid", extrude(morph_plate(outlines["plate_mid"], sx, sy), tp)),
+        ("plate_top", extrude(morph_plate(outlines["plate_top"], sx, sy), tp)),
     ):
         p = out / f"{name}.stl"
         solid.export(p)

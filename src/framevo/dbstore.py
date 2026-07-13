@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 # bump when the schema changes: stale run.db files are reset automatically
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (

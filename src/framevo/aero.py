@@ -31,11 +31,7 @@ TILT_GRID_DEG = np.array([0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0])
 CD_BODY = 1.05
 
 
-def arm_cd(section_blend: float) -> float:
-    """Piecewise-linear: 0 -> 1.9 (rect), 0.5 -> 1.1 (ellipse), 1 -> 0.6 (faired)."""
-    if section_blend <= 0.5:
-        return 1.9 + (1.1 - 1.9) * (section_blend / 0.5)
-    return 1.1 + (0.6 - 1.1) * ((section_blend - 0.5) / 0.5)
+CD_ARM = 1.7  # flat carbon plate arm, edges rounded, edge-on flow
 
 
 def projected_area(mesh: Any, direction: np.ndarray,
@@ -108,8 +104,7 @@ class DragTable:
 
 
 def build_drag_table(frame: "FrameModel", platform: Platform) -> DragTable:
-    g = frame.genome.as_dict()
-    cd_a = arm_cd(g["section_blend"])
+    cd_a = CD_ARM
     arms, body = frame.arms_mesh, frame.body_mesh
 
     cda_x, cda_y = [], []

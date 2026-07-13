@@ -35,10 +35,13 @@ PART_COLORS: dict[str, tuple[str, float]] = {
     "battery": ("#4a6fa5", 1.00),  # fixed: 6S Li-Ion pack
     "stack": ("#5a7a52", 1.00),    # fixed: FC + 4-in-1 ESC boards in the gap
     "wiring": ("#8a6a1e", 1.00),   # fixed: XT60 + battery lead
+    "camera": ("#2b2a28", 1.00),   # fixed: micro FPV camera
+    "antennas": ("#3f7f8a", 1.00), # fixed: VTX / ELRS antennas + GPS
     "motors": ("#55534c", 1.00),   # fixed: motor cans
-    "props": ("#b9b6a6", 0.38),    # fixed: prop disks (translucent)
+    "props": ("#b9b6a6", 0.55),    # fixed: real 3-blade props (translucent)
 }
-DRAW_ORDER = ("deck", "battery", "stack", "wiring", "motors", "arms", "props")
+DRAW_ORDER = ("deck", "battery", "stack", "wiring", "camera", "antennas",
+              "motors", "arms", "props")
 
 
 def render_parts(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
