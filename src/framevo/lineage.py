@@ -435,31 +435,42 @@ card.className="ncard";
 document.body.appendChild(card);
 function esc(s){{var d=document.createElement("i");d.textContent=s==null?"":s;
   return d.innerHTML}}
-function ancestors(h){{ // hovered candidate + every ancestor, via parent walk
-  var seen={{}};seen[h]=1;var q=[h];
+function ancestors(h,hovg){{
+  // hovered candidate + every ancestor, via parent walk. Value = the
+  // ancestor's CUTOFF generation: the last row where it contributed to
+  // this lineage (parents are selected from the previous generation, so
+  // a child born at g means its parents acted at g-1). Carry-over copies
+  // beyond that row are parallel survival, not ancestry -- kept dim.
+  var cut={{}};cut[h]=hovg;var q=[h];
   while(q.length){{
-    var c=META[q.pop()];
+    var x=q.pop(),c=META[x];
     if(!c)continue;
-    [c.a,c.b].forEach(function(p){{if(p&&!seen[p]){{seen[p]=1;q.push(p)}}}});
+    [c.a,c.b].forEach(function(p){{
+      if(!p)return;
+      var pc=c.g-1;
+      if(cut[p]===undefined){{cut[p]=pc;q.push(p)}}
+      else if(pc>cut[p])cut[p]=pc;
+    }});
   }}
-  return seen;
+  return cut;
 }}
 var pinned=null;
 function show(h,pin,hovg){{
   var c=META[h];
-  var set=ancestors(h);
-  // only light history: marks at or before the hovered row -- never the
-  // hovered lineage's LATER carry-over copies or trails
+  var set=ancestors(h,hovg);
+  // light each ancestor only through its own cutoff row: the last
+  // generation where it actually fed this lineage
   function back(n){{
-    return !!set[n.dataset.h]&&
-      (n.dataset.g===undefined||+n.dataset.g<=hovg);
+    var cu=set[n.dataset.h];
+    return cu!==undefined&&
+      (n.dataset.g===undefined||+n.dataset.g<=cu);
   }}
   svgs.forEach(function(svg){{ // both columns light the same ancestry
     svg.classList.add("focus");
     svg.querySelectorAll(".nd,.bs,.ch,.cl,.im,.xm,.el").forEach(function(n){{
       n.classList.toggle("lit",back(n))}});
     svg.querySelectorAll(".ed").forEach(function(e){{
-      e.classList.toggle("lit",!!set[e.dataset.c])}});
+      e.classList.toggle("lit",set[e.dataset.c]!==undefined)}});
   }});
   if(!c){{card.style.display="none";return}}
   var nAnc=Object.keys(set).length-1;
