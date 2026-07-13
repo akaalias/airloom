@@ -244,7 +244,9 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
                 **overrides: Any) -> Config:
     """Load platform/scenarios/evolution YAML into one Config.
 
-    overrides: population, generations, seed, optimizer, workers, results_dir.
+    overrides: population, generations, seed, optimizer, workers, results_dir,
+    designer_model, narrator_model, designer_enabled, narrator_enabled,
+    designer_every, designer_candidates, patience, lambda_worst.
     """
     root = Path(root).resolve()
     cdir = root / config_dir
@@ -325,7 +327,10 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
     )
     ag = scen["aggregation"]
     aggregation = Aggregation(
-        mode=str(ag["mode"]), lambda_worst=float(ag["lambda_worst"]),
+        mode=str(ag["mode"]),
+        lambda_worst=(float(overrides["lambda_worst"])
+                      if overrides.get("lambda_worst") is not None
+                      else float(ag["lambda_worst"])),
         target_whkm=(float(ag["target_aggregate_whkm"])
                      if ag.get("target_aggregate_whkm") else None),
         record_whkm=(float(ag["record_aggregate_whkm"])
@@ -341,7 +346,9 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
     pt = ga.get("patience", {})
     patience = Patience(
         enabled=bool(pt.get("enabled", False)),
-        generations=int(pt.get("generations", 6)),
+        generations=(int(overrides["patience"])
+                     if overrides.get("patience") is not None
+                     else int(pt.get("generations", 6))),
         min_rel_improvement=float(pt.get("min_rel_improvement", 0.005)),
         pivot_fraction=float(pt.get("pivot_fraction", 0.5)),
         sigma_boost=float(pt.get("sigma_boost", 3.0)),
@@ -369,17 +376,23 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         results_dir = root / results_dir
     nr = evo.get("narrator", {})
     narrator = Narrator(
-        enabled=bool(nr.get("enabled", False)),
-        model=str(nr.get("model", "") or ""),
+        enabled=(bool(nr.get("enabled", False))
+                 if overrides.get("narrator_enabled") is None
+                 else bool(overrides["narrator_enabled"])),
+        model=str(overrides.get("narrator_model") or nr.get("model", "") or ""),
         timeout_s=float(nr.get("timeout_s", 300)),
     )
     dz = evo.get("designer", {})
     designer = Designer(
-        enabled=bool(dz.get("enabled", False)),
-        every_generations=int(dz.get("every_generations", 6)),
-        candidates=int(dz.get("candidates", 3)),
+        enabled=(bool(dz.get("enabled", False))
+                 if overrides.get("designer_enabled") is None
+                 else bool(overrides["designer_enabled"])),
+        every_generations=int(overrides.get("designer_every")
+                              or dz.get("every_generations", 6)),
+        candidates=int(overrides.get("designer_candidates")
+                       or dz.get("candidates", 3)),
         gen0_candidates=int(dz.get("gen0_candidates", 0)),
-        model=str(dz.get("model", "") or ""),
+        model=str(overrides.get("designer_model") or dz.get("model", "") or ""),
         timeout_s=float(dz.get("timeout_s", 300)),
     )
     evolution = Evolution(

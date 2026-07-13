@@ -38,9 +38,12 @@ def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
 
     from .render import DRAW_ORDER, PART_COLORS
 
-    # per-part decimation budget: keeps interactive blobs ~150 KB while the
-    # physics/STL meshes stay full resolution
-    budget = {"deck": 3200, "arms": 2200, "wiring": 1400, "motors": 1400,
+    # per-part decimation budget; the physics/STL meshes stay full
+    # resolution. The evolved parts (deck, arms) get generous budgets --
+    # aggressive decimation warped their thin truss webs into false spikes
+    # on screen -- while the fixed kit stays cheap. Bigger blobs simply
+    # count against the gallery's total embed budget.
+    budget = {"deck": 12000, "arms": 7000, "wiring": 1400, "motors": 1400,
               "props": 1600, "battery": 900, "stack": 900, "antennas": 700,
               "camera": 300}
     try:

@@ -66,7 +66,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     cfg = load_config(args.root, population=args.population,
                       generations=args.generations, seed=args.seed,
                       optimizer=args.optimizer, workers=args.workers,
-                      results_dir=args.results)
+                      results_dir=args.results,
+                      designer_model=args.designer_model or args.claude_model,
+                      narrator_model=args.narrator_model or args.claude_model,
+                      designer_enabled=False if args.no_designer else None,
+                      narrator_enabled=False if args.no_narrator else None,
+                      designer_every=args.designer_every,
+                      designer_candidates=args.designer_candidates,
+                      patience=args.patience,
+                      lambda_worst=args.lambda_worst)
     from .dbstore import Store
     from .loop import EvolutionLoop
 
@@ -210,6 +218,26 @@ def main(argv: list[str] | None = None) -> int:
                    help="(default behavior) continue the latest/named run")
     p.add_argument("--fresh", action="store_true",
                    help="force a brand-new run instead of resuming the latest")
+    p.add_argument("--claude-model", default=None, metavar="MODEL",
+                   help="model for BOTH the designer and narrator claude"
+                        " calls (e.g. opus, haiku, or a full model id);"
+                        " empty = the claude CLI's default")
+    p.add_argument("--designer-model", default=None, metavar="MODEL",
+                   help="model for designer rounds (overrides --claude-model)")
+    p.add_argument("--narrator-model", default=None, metavar="MODEL",
+                   help="model for narrator notes (overrides --claude-model)")
+    p.add_argument("--designer-every", type=int, default=None, metavar="K",
+                   help="designer round every K generations")
+    p.add_argument("--designer-candidates", type=int, default=None,
+                   metavar="N", help="candidates per designer round")
+    p.add_argument("--no-designer", action="store_true",
+                   help="disable Claude designer rounds for this run")
+    p.add_argument("--no-narrator", action="store_true",
+                   help="disable Claude lab-notebook notes for this run")
+    p.add_argument("--patience", type=int, default=None, metavar="GENS",
+                   help="plateau generations before a pivot round")
+    p.add_argument("--lambda-worst", type=float, default=None,
+                   help="worst-scenario weight in the fitness aggregate")
     p.set_defaults(fn=cmd_run)
 
     p = sub.add_parser("lineage", help="print a candidate's ancestor chain")
