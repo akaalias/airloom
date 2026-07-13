@@ -61,6 +61,41 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 .inspiration pre{white-space:pre-wrap;font:13.5px/1.55 var(--serif);
   border-left:2px solid var(--rule);padding:2px 0 2px 16px;
   margin:10px 0 0;text-align:left}
+/* per-generation two-column layout: inputs (left) -> candidates (right) */
+.genrow{display:flex;gap:26px;align-items:flex-start}
+.genin{flex:0 0 264px;position:sticky;top:12px;font-size:13.5px;
+  color:var(--muted);border-right:1px solid var(--rule);
+  padding-right:22px;min-width:0}
+.genrow .row{flex:1;min-width:0}
+@media(max-width:1100px){.genrow{flex-direction:column}
+  .genin{position:static;flex:none;border-right:none;padding-right:0;
+  border-bottom:1px solid var(--rule);padding-bottom:14px;width:100%}}
+.ginlab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
+  margin-bottom:8px}
+.badge{display:inline-block;font:600 10.5px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.06em;padding:3px 8px;border:1px solid var(--rule);
+  border-radius:2px;color:var(--muted);margin:0 6px 8px 0;line-height:1.5}
+.badge.pivot{color:#2e6e63;border-color:#2e6e63}
+.badge.claude{color:#6a4a8a;border-color:#b9a6cf}
+.knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
+.knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
+  font-size:13px}
+.knobs td.num{text-align:right;font-feature-settings:"tnum" 1}
+.kline{font-size:12.5px;font-style:italic;line-height:1.65;
+  color:var(--faint);margin:0 0 12px}
+.dround{margin:0;font-size:13px;color:var(--muted)}
+.dround summary{cursor:pointer;font:600 11px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.07em;color:#6a4a8a}
+.dround ul{margin:10px 0 6px;padding-left:18px;line-height:1.5}
+.dround li{margin-bottom:6px}
+.dround li.rej{color:#8c2f1f;opacity:.8}
+.dround .plab{font-style:italic;margin:8px 0 4px}
+.dround pre{white-space:pre-wrap;font:11px/1.5 var(--mono);
+  border-left:2px solid #b9a6cf;padding:4px 0 4px 12px;margin:0;
+  max-height:340px;overflow-y:auto}
 h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
@@ -1003,9 +1038,105 @@ def _inspiration_html(store: Store, run_id: str) -> str:
             f'</summary><pre>{html.escape(text)}</pre></details>')
 
 
+_ROUND_KIND_LABEL = {
+    "opening": "opening round &mdash; gen-0 design hypotheses",
+    "periodic": "scheduled round",
+    "pivot": "pivot round &mdash; “take a step back” ask",
+}
+
+
+_OPERATOR_LABEL = [  # display order in the inputs panel
+    ("carried", "elites carried over unchanged"),
+    ("seed", "seeds (baseline + random probes)"),
+    ("designer", "claude-designed"),
+    ("crossover", "crossovers (tournament parents)"),
+    ("mutation", "mutants (single parent)"),
+    ("pivot", "pivot crosses (far parent)"),
+    ("immigrant", "random immigrants"),
+    ("cmaes", "cma-es samples"),
+]
+
+
+def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
+                           pop_rows: list, evolution=None) -> str:
+    """The generation's INPUT side: how its slots were bred (operator mix),
+    the GA knob values in force, and any Claude designer round -- badges,
+    each proposal's fate, and the exact prompt."""
+    born: dict[str, int] = {}
+    carried = 0
+    for r in pop_rows:
+        c = cands.get(r["hash"])
+        if c is None:
+            continue
+        if c["generation_born"] < g:
+            carried += 1
+        else:
+            born[c["operator"]] = born.get(c["operator"], 0) + 1
+    born["carried"] = carried
+    pivot_bred = born.get("pivot", 0) > 0
+    rnd = store.designer_round_for(run_id, g)
+
+    out = ['<aside class="genin"><div class="ginlab">inputs</div>']
+    if pivot_bred:
+        out.append('<span class="badge pivot">&#10227; pivot generation '
+                   '&mdash; bred with far parents after a plateau</span>')
+    if rnd is not None:
+        accepted = json.loads(rnd["accepted_json"])
+        rejected = json.loads(rnd["rejected_json"])
+        label = _ROUND_KIND_LABEL.get(rnd["kind"], rnd["kind"])
+        counts = f"{len(accepted)} design(s) injected"
+        if rejected:
+            counts += f", {len(rejected)} rejected pre-flight"
+        out.append(f'<span class="badge claude">&#10022; claude designer '
+                   f'&middot; {label} &middot; {counts}</span>')
+
+    rows = "".join(
+        f'<tr><td>{label}</td><td class="num">{born[op]}</td></tr>'
+        for op, label in _OPERATOR_LABEL if born.get(op))
+    out.append(f'<table class="knobs">{rows}</table>')
+
+    if evolution is not None and evolution.optimizer != "cmaes":
+        from .evolution import mutation_sigma
+        ga = evolution.ga
+        sigma = mutation_sigma(ga, g)
+        knobs = [f"mutation &sigma; {sigma:.3f} of gene range"]
+        if pivot_bred:
+            pt = ga.patience
+            knobs.append(f"pivot &sigma; {min(max(sigma * pt.sigma_boost, sigma), 0.30):.3f} "
+                         f"on {pt.pivot_fraction:.0%} of non-elite slots")
+        knobs.append(f"crossover {ga.crossover_prob:.0%} &middot; "
+                     f"immigrants {ga.immigrant_prob:.0%}")
+        knobs.append(f"tournament k={ga.tournament_k} &middot; "
+                     f"elitism {ga.elitism} &middot; "
+                     f"patience {ga.patience.generations} gen")
+        out.append('<div class="kline">' + "<br>".join(knobs) + "</div>")
+
+    if rnd is not None:
+        items = []
+        for a in json.loads(rnd["accepted_json"]):
+            items.append(
+                f'<li><a href="#d-{html.escape(a["hash"])}"><code>'
+                f'{html.escape(a["hash"][:8])}</code></a> &mdash; '
+                f'{html.escape(a.get("rationale") or "(no rationale)")}</li>')
+        for r in json.loads(rnd["rejected_json"]):
+            items.append(
+                f'<li class="rej">rejected pre-flight '
+                f'({html.escape(r.get("reason") or "?")}) &mdash; '
+                f'{html.escape(r.get("rationale") or "")}</li>')
+        out.append(
+            '<details class="dround"><summary>what claude was asked, and '
+            "what it proposed</summary>"
+            f'<ul>{"".join(items)}</ul>'
+            '<div class="plab">the full prompt sent to claude:</div>'
+            f'<pre>{html.escape(rnd["prompt"])}</pre></details>')
+    out.append("</aside>")
+    return "".join(out)
+
+
 def write_gallery(store: Store, run_id: str, results_dir: Path,
                   target_whkm: float | None = None,
-                  record_whkm: float | None = None) -> Path:
+                  record_whkm: float | None = None,
+                  evolution=None) -> Path:
     cands = {r["hash"]: r for r in store.candidates_for_run(run_id)}
     gens = store.generations_with_population(run_id)
     scen_cache: dict[str, list] = {}
@@ -1053,6 +1184,9 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         rows = sorted(store.population(run_id, g),
                       key=lambda r: (r["fitness"] is None, r["fitness"] or 0.0))
         parts.append(f"<h2>generation {g}</h2>")
+        parts.append('<div class="genrow">')
+        parts.append(_generation_input_html(store, run_id, g, cands, rows,
+                                            evolution))
         parts.append('<div class="row">')
         for row in rows:
             h = row["hash"]
@@ -1083,7 +1217,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 "</div>")
             if h not in detail_ids:
                 detail_ids.append(h)
-        parts.append("</div>")
+        parts.append("</div></div>")  # close .row and .genrow
 
     # embedding a mesh blob for every candidate would make very long runs
     # enormous, so blobs are embedded by priority -- champion & setters,

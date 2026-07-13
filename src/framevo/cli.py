@@ -70,6 +70,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     from .dbstore import Store
     from .loop import EvolutionLoop
 
+    inspiration = None
+    if args.inspiration:
+        ipath = Path(args.inspiration)
+        if not ipath.is_file():
+            print(f"inspiration file not found: {ipath}", file=sys.stderr)
+            return 1
+        inspiration = (str(ipath), ipath.read_text())
+
     # every run start (fresh or continuing) snapshots results/ first
     _snapshot_results(cfg.evolution.results_dir,
                       f"before {'fresh' if args.fresh else 'continuing'} run "
@@ -100,7 +108,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         resume = True  # explicit --run-id of an existing run always resumes
     store.close()
     run_id = run_id or time.strftime("run_%Y%m%d_%H%M%S")
-    loop = EvolutionLoop(cfg, run_id, resume=resume)
+    loop = EvolutionLoop(cfg, run_id, resume=resume, inspiration=inspiration)
 
     # graceful stop: type quit/exit/q + enter, or ctrl-c
     import threading
@@ -164,7 +172,7 @@ def cmd_gallery(args: argparse.Namespace) -> int:
         import shutil
         shutil.copyfile(glossary, results / "glossary.html")
     gallery.write_gallery(store, run_id, results, cfg.aggregation.target_whkm,
-                          cfg.aggregation.record_whkm)
+                          cfg.aggregation.record_whkm, cfg.evolution)
     gallery.write_leaderboard(store, run_id, results,
                               [s.name for s in cfg.scenarios])
     gallery.write_convergence(store, run_id, results)
@@ -186,10 +194,18 @@ def main(argv: list[str] | None = None) -> int:
     _add_common(p)
     p.add_argument("--generations", type=int, default=None)
     p.add_argument("--population", type=int, default=None)
-    p.add_argument("--seed", type=int, default=None)
+    p.add_argument("--seed", type=int, default=None,
+                   help="master RNG seed for a new run (default: random unless"
+                        " set in evolution.yaml; resume always reuses the"
+                        " run's stored seed)")
     p.add_argument("--optimizer", choices=["ga", "cmaes"], default=None)
     p.add_argument("--workers", type=int, default=None)
     p.add_argument("--run-id", default=None)
+    p.add_argument("--inspiration", default=None, metavar="PATH",
+                   help="markdown/text file of ideas for the Claude designer"
+                        " to draw on (e.g. 'think of the shapes of frogs');"
+                        " stored with the run and shown in the gallery."
+                        " On resume it replaces the run's stored inspiration")
     p.add_argument("--resume", action="store_true",
                    help="(default behavior) continue the latest/named run")
     p.add_argument("--fresh", action="store_true",

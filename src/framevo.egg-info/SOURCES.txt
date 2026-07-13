@@ -3,8 +3,10 @@ pyproject.toml
 src/framevo/__init__.py
 src/framevo/aero.py
 src/framevo/cli.py
+src/framevo/components.py
 src/framevo/config.py
 src/framevo/dbstore.py
+src/framevo/designer.py
 src/framevo/dryden.py
 src/framevo/evaluate.py
 src/framevo/evolution.py
@@ -14,7 +16,9 @@ src/framevo/genome.py
 src/framevo/lineage.py
 src/framevo/loop.py
 src/framevo/meshutil.py
+src/framevo/narrator.py
 src/framevo/parallel.py
+src/framevo/realgeo.py
 src/framevo/render.py
 src/framevo/rotor_model.py
 src/framevo/simulator.py
@@ -25,10 +29,13 @@ src/framevo.egg-info/dependency_links.txt
 src/framevo.egg-info/entry_points.txt
 src/framevo.egg-info/requires.txt
 src/framevo.egg-info/top_level.txt
+tests/test_components.py
+tests/test_designer.py
 tests/test_dryden.py
 tests/test_energy.py
 tests/test_frame_gen.py
 tests/test_materials.py
+tests/test_patience.py
 tests/test_rotor_model.py
 tests/test_sanity_anchor.py
 tests/test_structures.py

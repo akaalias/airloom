@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS runs (
     generations_done INTEGER NOT NULL DEFAULT 0,
     config_json TEXT NOT NULL,
     git_hash TEXT,
-    status TEXT NOT NULL DEFAULT 'running'
+    status TEXT NOT NULL DEFAULT 'running',
+    inspiration_path TEXT,
+    inspiration_text TEXT
 );
 CREATE TABLE IF NOT EXISTS candidates (
     run_id TEXT NOT NULL,
@@ -78,6 +80,16 @@ CREATE TABLE IF NOT EXISTS populations (
     hash TEXT NOT NULL,
     fitness REAL,
     PRIMARY KEY (run_id, generation, slot)
+);
+CREATE TABLE IF NOT EXISTS designer_rounds (
+    run_id TEXT NOT NULL,
+    generation INTEGER NOT NULL,
+    kind TEXT NOT NULL,            -- opening | periodic | pivot
+    prompt TEXT NOT NULL,          -- the full brief sent to claude -p
+    accepted_json TEXT NOT NULL,   -- [{hash, rationale}, ...]
+    rejected_json TEXT NOT NULL,   -- [{rationale, reason}, ...]
+    created_utc REAL NOT NULL,
+    PRIMARY KEY (run_id, generation)
 );
 CREATE TABLE IF NOT EXISTS cma_state (
     run_id TEXT NOT NULL,
@@ -158,6 +170,10 @@ class Store:
         for col in ("hypothesis", "method", "result_note"):
             if col not in have:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
+        have = {r[1] for r in self.conn.execute("PRAGMA table_info(runs)")}
+        for col in ("inspiration_path", "inspiration_text"):
+            if col not in have:
+                self.conn.execute(f"ALTER TABLE runs ADD COLUMN {col} TEXT")
 
     # -- runs ---------------------------------------------------------------
     def create_run(self, run_id: str, seed: int, optimizer: str, population: int,
@@ -167,6 +183,12 @@ class Store:
             " generations_target, config_json, git_hash) VALUES (?,?,?,?,?,?,?,?)",
             (run_id, time.time(), seed, optimizer, population, generations,
              config_json, git_hash(root)))
+        self.conn.commit()
+
+    def set_inspiration(self, run_id: str, path: str, text: str) -> None:
+        self.conn.execute(
+            "UPDATE runs SET inspiration_path=?, inspiration_text=?"
+            " WHERE run_id=?", (path, text, run_id))
         self.conn.commit()
 
     def get_run(self, run_id: str) -> sqlite3.Row | None:
@@ -330,6 +352,29 @@ class Store:
              GROUP BY c.hash
              ORDER BY depth, c.generation_born
             """, (h, run_id, run_id, run_id)).fetchall()
+
+    # -- designer rounds ----------------------------------------------------------
+    def record_designer_round(self, run_id: str, generation: int, kind: str,
+                              prompt: str, accepted: list[dict],
+                              rejected: list[dict]) -> None:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO designer_rounds (run_id, generation, kind,"
+            " prompt, accepted_json, rejected_json, created_utc)"
+            " VALUES (?,?,?,?,?,?,?)",
+            (run_id, generation, kind, prompt, json.dumps(accepted),
+             json.dumps(rejected), time.time()))
+        self.conn.commit()
+
+    def designer_round_for(self, run_id: str,
+                           generation: int) -> sqlite3.Row | None:
+        return self.conn.execute(
+            "SELECT * FROM designer_rounds WHERE run_id=? AND generation=?",
+            (run_id, generation)).fetchone()
+
+    def designer_rounds_for(self, run_id: str) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM designer_rounds WHERE run_id=? ORDER BY generation",
+            (run_id,)).fetchall()
 
     # -- cma provenance -----------------------------------------------------------
     def save_cma_state(self, run_id: str, generation: int, mean: list[float],

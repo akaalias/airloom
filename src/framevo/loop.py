@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import secrets
 import shutil
 import statistics
 import time
@@ -37,7 +38,8 @@ def _log(msg: str) -> None:
 class EvolutionLoop:
     _stop = None
 
-    def __init__(self, cfg: Config, run_id: str, resume: bool = False):
+    def __init__(self, cfg: Config, run_id: str, resume: bool = False,
+                 inspiration: tuple[str, str] | None = None):
         self.cfg = cfg
         self.run_id = run_id
         self.results = cfg.evolution.results_dir
@@ -48,18 +50,32 @@ class EvolutionLoop:
 
         existing = self.store.get_run(run_id)
         if existing is None:
+            # config seed None -> every new run gets its own random seed
+            # (persisted in run.db, so resume replays the exact same streams)
+            self.seed = ev.seed if ev.seed is not None \
+                else secrets.randbelow(2 ** 31)
+            if ev.seed is None:
+                _log(f"drew random seed {self.seed} for this run"
+                     " (set evolution.seed or --seed to reproduce)")
             snapshot = json.dumps({
                 "population": ev.population, "generations": ev.generations,
-                "optimizer": ev.optimizer, "seed": ev.seed,
+                "optimizer": ev.optimizer, "seed": self.seed,
                 "aggregation": asdict(cfg.aggregation),
                 "early_reject": asdict(cfg.early_reject),
                 "mission": asdict(cfg.mission),
                 "scenarios": [s.name for s in cfg.scenarios],
             })
-            self.store.create_run(run_id, ev.seed, ev.optimizer, ev.population,
+            self.store.create_run(run_id, self.seed, ev.optimizer, ev.population,
                                   ev.generations, snapshot, cfg.root)
+            if inspiration is not None:
+                self.store.set_inspiration(run_id, *inspiration)
+                _log(f"inspiration recorded from {inspiration[0]}")
             self.start_gen = 0
         elif resume:
+            self.seed = int(existing["seed"])  # the run's own seed, not config's
+            if inspiration is not None:  # steer the remaining designer rounds
+                self.store.set_inspiration(run_id, *inspiration)
+                _log(f"inspiration updated from {inspiration[0]}")
             done = self.store.generations_with_population(run_id)
             self.start_gen = (max(done) + 1) if done else 0
             self.store.update_generations_target(run_id, ev.generations)
@@ -94,7 +110,7 @@ class EvolutionLoop:
     def _run_generations(self, ev, cmaes) -> None:
         for gen in range(self.start_gen, ev.generations):
             t0 = time.time()
-            rng = generation_rng(ev.seed, gen)
+            rng = generation_rng(self.seed, gen)
 
             if cmaes is not None:
                 xs = cmaes.ask(rng)
@@ -102,12 +118,13 @@ class EvolutionLoop:
                                       "cmaes", cmaes.sigma) for x in xs]
             elif gen == 0:
                 proposals = propose_gen0(ev.population, rng)
+                proposals = self._designer_round(gen, proposals)
             else:
                 prev = self._load_population(gen - 1)
                 pivot, far = self._patience_state(gen)
                 proposals = propose_next(prev, gen, ev.ga, rng,
                                          pivot=pivot, far_parents=far)
-                proposals = self._designer_round(gen, proposals)
+                proposals = self._designer_round(gen, proposals, pivot=pivot)
 
             new_hashes = [p.genome.hash for p in proposals
                           if self.store.get_candidate(self.run_id,
@@ -327,17 +344,24 @@ class EvolutionLoop:
             t.join(timeout=timeout)
 
     # ------------------------------------------------------------ designer --
-    def _designer_round(self, gen: int, proposals: list[Proposal]) -> list[Proposal]:
+    def _designer_round(self, gen: int, proposals: list[Proposal],
+                        pivot: int = 0) -> list[Proposal]:
+        """Fires at gen 0 (opening hypotheses), on the periodic cadence, and
+        whenever patience declares a pivot (a step-back ask with the full
+        plateau context)."""
         dz = self.cfg.evolution.designer
-        if not dz.enabled or gen % dz.every_generations != 0:
+        n = dz.gen0_candidates if gen == 0 else dz.candidates
+        due = gen == 0 or pivot > 0 or gen % dz.every_generations == 0
+        if not dz.enabled or n <= 0 or not due:
             return proposals
+        kind = "opening" if gen == 0 else ("pivot" if pivot else "periodic")
         from .designer import design_round
         designed = design_round(self.store, self.run_id, self.cfg, gen,
-                                dz.candidates, dz.model, dz.timeout_s,
-                                self.results)
+                                n, dz.model, dz.timeout_s,
+                                self.results, kind=kind)
         if not designed:
             return proposals
-        _log(f"designer round: injecting {len(designed)} candidates")
+        _log(f"designer round ({kind}): injecting {len(designed)} candidates")
         seen = {p.genome.hash for p in proposals}
         designed = [d for d in designed if d.genome.hash not in seen]
         keep = len(proposals) - len(designed)
@@ -409,7 +433,8 @@ class EvolutionLoop:
             shutil.copyfile(glossary, self.results / "glossary.html")
         gallery_mod.write_gallery(self.store, self.run_id, self.results,
                                   self.cfg.aggregation.target_whkm,
-                                  self.cfg.aggregation.record_whkm)
+                                  self.cfg.aggregation.record_whkm,
+                                  self.cfg.evolution)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
         gallery_mod.write_convergence(self.store, self.run_id, self.results)

@@ -2,7 +2,9 @@
 optimizer: ga            # ga | cmaes (cmaes has no discrete parents; see README)
 population: 16
 generations: 40
-seed: 42
+seed: null    # null = each new run draws a random seed (logged + stored in
+              # run.db; resume replays it exactly). Set an int (e.g. 42) to
+              # make from-scratch runs reproducible.
 
 ga:
   tournament_k: 3
@@ -25,7 +27,7 @@ ga:
   # plateau survives another patience window. Elites are never touched.
   patience:
     enabled: true
-    generations: 6
+    generations: 3
     min_rel_improvement: 0.005   # what counts as "moving the needle"
     pivot_fraction: 0.5          # non-elite slots bred with a far parent
     sigma_boost: 3.0             # hypermutation multiplier while pivoting
@@ -35,13 +37,20 @@ cmaes:
   sigma0: 0.25                 # fraction of normalized [0,1] genome space
 
 designer:
-  # Headless-Claude design rounds: every K generations, `claude -p` receives
-  # the elites, their per-scenario results and the failure histogram, and
-  # proposes new genome vectors (operator `designer`). Fail-soft: skipped if
-  # the CLI is unavailable. Rationales land in results/designer_log.md.
+  # Headless-Claude design rounds: every K generations -- and additionally
+  # whenever patience declares a pivot ("take a step back" ask) -- `claude
+  # -p` receives the best-per-generation trajectory, the elites with their
+  # per-scenario results, how its own earlier proposals fared, and the
+  # failure histogram, and proposes new genome vectors (operator
+  # `designer`). Fail-soft: skipped if the CLI is unavailable. Prompts and
+  # outcomes land in run.db (shown per generation in the gallery) and
+  # results/designer_log.md. `framevo run --inspiration ideas.md` feeds a
+  # user-written idea file into every design round.
   enabled: true
-  every_generations: 6
+  every_generations: 3
   candidates: 3
+  gen0_candidates: 5           # Claude-designed slots in the initial
+                               # population (replace random seeds; 0 = off)
   model: ""                    # empty = the claude CLI's default model
   timeout_s: 300
 

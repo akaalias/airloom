@@ -91,6 +91,10 @@ def _try_union(parts: list[trimesh.Trimesh]) -> trimesh.Trimesh:
 
 
 def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> FrameModel:
+    """want_mesh=False runs only the geometric hard-constraint checks (2D
+    outlines + rotor placement) and skips meshing/mass: a cheap validity
+    pre-screen. Note the watertight-mesh check and the flight-load
+    structural check are NOT covered, and mass/cg fields are placeholders."""
     g = genome.as_dict()
     material = platform.material_for(g["material"])
     rho = material.density_kg_m3
@@ -227,117 +231,118 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
         k: None for k in ("deck", "arms", "battery", "stack", "wiring",
                           "camera", "antennas", "motors", "props")}
     frame_mass = math.nan
-    try:
-        main_mesh = extrude(p_main, tp)
-        main_mesh.apply_translation([0, 0, -tp])
-        mid_mesh = extrude(p_mid, tp)
-        mid_mesh.apply_translation([0, 0, ta])
-        top_mesh = extrude(p_top, tp)
-        top_mesh.apply_translation([0, 0, top_z])
-        standoffs = []
-        sx_off = 0.36 * p_mid.length * 1e-3
-        sy_off = 0.30 * p_mid.width * 1e-3
-        for px, py in ((sx_off, sy_off), (-sx_off, sy_off),
-                       (-sx_off, -sy_off), (sx_off, -sy_off)):
-            so = trimesh.creation.cylinder(radius=STANDOFF_R, height=gap, sections=12)
-            so.apply_translation([px, py, ta + tp + gap / 2.0])
-            standoffs.append(so)
-        deck_mesh = _try_union([main_mesh, mid_mesh, top_mesh] + standoffs)
+    if want_mesh:  # skipped for cheap constraint-only pre-screens
+        try:
+            main_mesh = extrude(p_main, tp)
+            main_mesh.apply_translation([0, 0, -tp])
+            mid_mesh = extrude(p_mid, tp)
+            mid_mesh.apply_translation([0, 0, ta])
+            top_mesh = extrude(p_top, tp)
+            top_mesh.apply_translation([0, 0, top_z])
+            standoffs = []
+            sx_off = 0.36 * p_mid.length * 1e-3
+            sy_off = 0.30 * p_mid.width * 1e-3
+            for px, py in ((sx_off, sy_off), (-sx_off, sy_off),
+                           (-sx_off, -sy_off), (sx_off, -sy_off)):
+                so = trimesh.creation.cylinder(radius=STANDOFF_R, height=gap, sections=12)
+                so.apply_translation([px, py, ta + tp + gap / 2.0])
+                standoffs.append(so)
+            deck_mesh = _try_union([main_mesh, mid_mesh, top_mesh] + standoffs)
 
-        arm_meshes = []
-        for outline, az, t_m in placements:
-            am = extrude(outline, ta)
-            _rot_z(am, az)
-            am.apply_translation([t_m[0], t_m[1], 0.0])
-            arm_meshes.append(am)
-        arms_mesh = _try_union(arm_meshes)
+            arm_meshes = []
+            for outline, az, t_m in placements:
+                am = extrude(outline, ta)
+                _rot_z(am, az)
+                am.apply_translation([t_m[0], t_m[1], 0.0])
+                arm_meshes.append(am)
+            arms_mesh = _try_union(arm_meshes)
 
-        # frame mass from the REAL volumes
-        plate_vol = main_mesh.volume + mid_mesh.volume + top_mesh.volume
-        arm_vol = sum(a.volume for a in arm_meshes)
-        frame_mass = (plate_vol + arm_vol) * rho \
-            + 4.0 * gap * platform.standoff_mass_per_m
+            # frame mass from the REAL volumes
+            plate_vol = main_mesh.volume + mid_mesh.volume + top_mesh.volume
+            arm_vol = sum(a.volume for a in arm_meshes)
+            frame_mass = (plate_vol + arm_vol) * rho \
+                + 4.0 * gap * platform.standoff_mass_per_m
 
-        # -- fixed components, placed like the real build
-        battery = comp.battery_pack()
-        _rot_z(battery, math.pi / 2)  # long side along x
-        wedge = math.radians(g["battery_wedge_deg"])
-        if wedge > 1e-9:
-            battery.apply_transform(trimesh.transformations.rotation_matrix(
-                wedge, [0, 1, 0], [batt_l / 2.0, 0.0, 0.0]))
-        battery.apply_translation([0, 0, top_z + tp])
+            # -- fixed components, placed like the real build
+            battery = comp.battery_pack()
+            _rot_z(battery, math.pi / 2)  # long side along x
+            wedge = math.radians(g["battery_wedge_deg"])
+            if wedge > 1e-9:
+                battery.apply_transform(trimesh.transformations.rotation_matrix(
+                    wedge, [0, 1, 0], [batt_l / 2.0, 0.0, 0.0]))
+            battery.apply_translation([0, 0, top_z + tp])
 
-        stack = comp.fc_stack()
-        stack.apply_translation([0, 0, ta + tp])
+            stack = comp.fc_stack()
+            stack.apply_translation([0, 0, ta + tp])
 
-        nose_x = p_top.length * 1e-3 / 2.0
-        tail_x = -nose_x
-        camera = comp.camera_micro()
-        camera.apply_transform(trimesh.transformations.rotation_matrix(
-            math.radians(-20), [0, 1, 0]))
-        camera.apply_translation([nose_x - 0.006, 0, top_z + tp + 0.012])
+            nose_x = p_top.length * 1e-3 / 2.0
+            tail_x = -nose_x
+            camera = comp.camera_micro()
+            camera.apply_transform(trimesh.transformations.rotation_matrix(
+                math.radians(-20), [0, 1, 0]))
+            camera.apply_translation([nose_x - 0.006, 0, top_z + tp + 0.012])
 
-        vtx = comp.vtx_antenna()
-        vtx.apply_transform(trimesh.transformations.rotation_matrix(
-            math.radians(135), [0, 1, 0]))
-        vtx.apply_translation([tail_x + 0.004, 0.012, top_z + tp + 0.002])
-        elrs = comp.elrs_dipole()
-        elrs.apply_transform(trimesh.transformations.rotation_matrix(
-            math.radians(150), [0, 1, 0]))
-        elrs.apply_translation([tail_x + 0.006, -0.012, top_z + tp + 0.002])
-        gps = comp.gps_puck()
-        gps.apply_translation([tail_x + 0.030, 0, top_z + tp])
-        antennas = trimesh.util.concatenate([vtx, elrs, gps])
+            vtx = comp.vtx_antenna()
+            vtx.apply_transform(trimesh.transformations.rotation_matrix(
+                math.radians(135), [0, 1, 0]))
+            vtx.apply_translation([tail_x + 0.004, 0.012, top_z + tp + 0.002])
+            elrs = comp.elrs_dipole()
+            elrs.apply_transform(trimesh.transformations.rotation_matrix(
+                math.radians(150), [0, 1, 0]))
+            elrs.apply_translation([tail_x + 0.006, -0.012, top_z + tp + 0.002])
+            gps = comp.gps_puck()
+            gps.apply_translation([tail_x + 0.030, 0, top_z + tp])
+            antennas = trimesh.util.concatenate([vtx, elrs, gps])
 
-        # -- wiring: motor looms along each arm, battery lead to the XT60,
-        # camera + VTX coax
-        looms = []
-        for (outline, az, t_m), rc in zip(placements, rotor_centers_arr):
-            base = np.array([rc[0], rc[1], ta + 0.002])
-            mid = np.array([t_m[0] + 0.45 * (rc[0] - t_m[0]),
-                            t_m[1] + 0.45 * (rc[1] - t_m[1]), ta + 0.004])
-            inb = np.array([0.5 * t_m[0], 0.5 * t_m[1], ta + tp + 0.004])
-            looms.append(comp.wire_bundle([base, mid, inb], n=3))
-        xt = comp.xt60()
-        xt.apply_translation([-0.030, batt_w / 2.0 - 0.004, top_z + tp + 0.006])
-        lead = comp.wire([[-batt_l / 2.0 + 0.004, 0.008, top_z + tp + 0.012],
-                          [-0.042, batt_w / 2.0 - 0.002, top_z + tp + 0.010],
-                          [-0.036, batt_w / 2.0 - 0.004, top_z + tp + 0.006]],
-                         radius=0.0016)
-        cam_coax = comp.wire([[nose_x - 0.012, 0.004, top_z + tp + 0.008],
-                              [nose_x - 0.030, 0.006, top_z - gap / 2.0],
-                              [0.020, 0.008, ta + tp + 0.014]])
-        vtx_coax = comp.wire([[tail_x + 0.006, 0.012, top_z + tp],
-                              [tail_x + 0.020, 0.010, top_z - gap / 2.0],
-                              [-0.020, 0.006, ta + tp + 0.014]])
-        wiring = trimesh.util.concatenate(looms + [xt, lead, cam_coax, vtx_coax])
+            # -- wiring: motor looms along each arm, battery lead to the XT60,
+            # camera + VTX coax
+            looms = []
+            for (outline, az, t_m), rc in zip(placements, rotor_centers_arr):
+                base = np.array([rc[0], rc[1], ta + 0.002])
+                mid = np.array([t_m[0] + 0.45 * (rc[0] - t_m[0]),
+                                t_m[1] + 0.45 * (rc[1] - t_m[1]), ta + 0.004])
+                inb = np.array([0.5 * t_m[0], 0.5 * t_m[1], ta + tp + 0.004])
+                looms.append(comp.wire_bundle([base, mid, inb], n=3))
+            xt = comp.xt60()
+            xt.apply_translation([-0.030, batt_w / 2.0 - 0.004, top_z + tp + 0.006])
+            lead = comp.wire([[-batt_l / 2.0 + 0.004, 0.008, top_z + tp + 0.012],
+                              [-0.042, batt_w / 2.0 - 0.002, top_z + tp + 0.010],
+                              [-0.036, batt_w / 2.0 - 0.004, top_z + tp + 0.006]],
+                             radius=0.0016)
+            cam_coax = comp.wire([[nose_x - 0.012, 0.004, top_z + tp + 0.008],
+                                  [nose_x - 0.030, 0.006, top_z - gap / 2.0],
+                                  [0.020, 0.008, ta + tp + 0.014]])
+            vtx_coax = comp.wire([[tail_x + 0.006, 0.012, top_z + tp],
+                                  [tail_x + 0.020, 0.010, top_z - gap / 2.0],
+                                  [-0.020, 0.006, ta + tp + 0.014]])
+            wiring = trimesh.util.concatenate(looms + [xt, lead, cam_coax, vtx_coax])
 
-        motors_l, props_l = [], []
-        for rc in rotor_centers_arr:
-            m = comp.motor_2806()
-            m.apply_translation([rc[0], rc[1], ta])
-            motors_l.append(m)
-            p = comp.propeller_7x4_3blade()
-            p.apply_translation([rc[0], rc[1], rotor_z + 0.004])
-            props_l.append(p)
+            motors_l, props_l = [], []
+            for rc in rotor_centers_arr:
+                m = comp.motor_2806()
+                m.apply_translation([rc[0], rc[1], ta])
+                motors_l.append(m)
+                p = comp.propeller_7x4_3blade()
+                p.apply_translation([rc[0], rc[1], rotor_z + 0.004])
+                props_l.append(p)
 
-        parts = {"deck": deck_mesh, "arms": arms_mesh, "battery": battery,
-                 "stack": stack, "wiring": wiring, "camera": camera,
-                 "antennas": antennas,
-                 "motors": trimesh.util.concatenate(motors_l),
-                 "props": trimesh.util.concatenate(props_l)}
-        # aero bluff body: everything substantial the wind sees except arms
-        # (own Cd class) and the spinning props (handled by the rotor
-        # model). Antennas and wiring are omitted from the raster: <2% of
-        # frontal area but thousands of triangles.
-        body_mesh = trimesh.util.concatenate(
-            [deck_mesh, battery, stack, camera, parts["motors"]])
-        mesh = _try_union([deck_mesh, arms_mesh])
-        if failure is None and not mesh.is_watertight:
-            failure = "mesh not watertight"
-    except Exception:
-        if failure is None:
-            failure = "real-geometry meshing failed"
+            parts = {"deck": deck_mesh, "arms": arms_mesh, "battery": battery,
+                     "stack": stack, "wiring": wiring, "camera": camera,
+                     "antennas": antennas,
+                     "motors": trimesh.util.concatenate(motors_l),
+                     "props": trimesh.util.concatenate(props_l)}
+            # aero bluff body: everything substantial the wind sees except arms
+            # (own Cd class) and the spinning props (handled by the rotor
+            # model). Antennas and wiring are omitted from the raster: <2% of
+            # frontal area but thousands of triangles.
+            body_mesh = trimesh.util.concatenate(
+                [deck_mesh, battery, stack, camera, parts["motors"]])
+            mesh = _try_union([deck_mesh, arms_mesh])
+            if failure is None and not mesh.is_watertight:
+                failure = "mesh not watertight"
+        except Exception:
+            if failure is None:
+                failure = "real-geometry meshing failed"
 
     total_mass = (frame_mass if math.isfinite(frame_mass) else 0.0) \
         + platform.fixed_mass_kg

@@ -189,6 +189,7 @@ class Designer:
     enabled: bool
     every_generations: int
     candidates: int
+    gen0_candidates: int  # designed slots in the initial population (0 = off)
     model: str
     timeout_s: float
 
@@ -205,7 +206,7 @@ class Evolution:
     optimizer: str
     population: int
     generations: int
-    seed: int
+    seed: int | None  # None = draw a fresh random seed per new run
     ga: GAParams
     cmaes_sigma0: float
     designer: Designer
@@ -377,6 +378,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         enabled=bool(dz.get("enabled", False)),
         every_generations=int(dz.get("every_generations", 6)),
         candidates=int(dz.get("candidates", 3)),
+        gen0_candidates=int(dz.get("gen0_candidates", 0)),
         model=str(dz.get("model", "") or ""),
         timeout_s=float(dz.get("timeout_s", 300)),
     )
@@ -384,7 +386,8 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         optimizer=str(overrides.get("optimizer") or evo["optimizer"]),
         population=int(overrides.get("population") or evo["population"]),
         generations=int(overrides.get("generations") or evo["generations"]),
-        seed=int(overrides["seed"]) if overrides.get("seed") is not None else int(evo["seed"]),
+        seed=int(overrides["seed"]) if overrides.get("seed") is not None
+        else (int(evo["seed"]) if evo.get("seed") is not None else None),
         ga=ga_params,
         cmaes_sigma0=float(evo["cmaes"]["sigma0"]),
         designer=designer,

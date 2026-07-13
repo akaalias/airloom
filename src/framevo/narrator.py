@@ -123,9 +123,37 @@ end with one concrete idea worth testing next.
 CANDIDATES (one JSON per line):
 {chr(10).join(lines)}
 
-Respond with ONLY a JSON object mapping each hash to its sections:
+Respond with ONLY a STRICT JSON object mapping each hash to its sections
+(double-quoted, quotes inside text escaped, no trailing commas):
 {{"<hash>": {{"hypothesis": "...", "method": "...", "result": "..."}}, ...}}
 """
+
+
+def _parse_notes(text: str, hashes: list[str]) -> dict[str, dict]:
+    """Parse the narrator's reply; if the full object is malformed (one bad
+    escape used to lose the whole generation), salvage per-candidate."""
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {}
+    blob = match.group(0)
+    try:
+        got = json.loads(blob)
+        return got if isinstance(got, dict) else {}
+    except json.JSONDecodeError:
+        pass
+    salvaged: dict[str, dict] = {}
+    for h in hashes:  # sections are flat objects: match to the closing brace
+        m = re.search(re.escape(h) + r'"\s*:\s*(\{[^{}]*\})', blob)
+        if not m:
+            continue
+        try:
+            salvaged[h] = json.loads(m.group(1))
+        except json.JSONDecodeError:
+            continue
+    if salvaged:
+        print(f"[framevo] narrator reply was malformed JSON -- salvaged "
+              f"{len(salvaged)}/{len(hashes)} notes", flush=True)
+    return salvaged
 
 
 def prepare_candidates(store: Store, run_id: str,
@@ -218,8 +246,7 @@ def enrich_notes(db_path: str, run_id: str, gen: int, cands: list[dict],
                              timeout=timeout_s)
         envelope = json.loads(run.stdout)
         text = envelope.get("result", "") if isinstance(envelope, dict) else ""
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        got = json.loads(match.group(0)) if match else {}
+        got = _parse_notes(text, [c["hash"] for c in cands])
         wanted = {c["hash"]: _fallback(c) for c in cands}
         for h, sec in got.items():
             if h in wanted and isinstance(sec, dict):

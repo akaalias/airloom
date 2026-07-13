@@ -4,6 +4,10 @@ trimesh>=4.0
 manifold3d>=2.5
 pyyaml>=6.0
 matplotlib>=3.8
+shapely>=2.0
+mapbox_earcut>=1.0
+ezdxf>=1.1
+fast-simplification>=0.1
 
 [dev]
 pytest>=8.0

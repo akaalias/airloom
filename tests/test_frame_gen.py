@@ -56,3 +56,15 @@ def test_random_genomes_always_mesh(cfg):
         assert frame.mesh is not None or not frame.valid
         valid += frame.valid
     assert valid >= 1  # the space is not degenerate
+
+
+def test_meshless_prescreen_matches_constraints(cfg):
+    """want_mesh=False must reproduce the geometric verdicts without meshing."""
+    ok = build_frame(Genome.baseline(), cfg.platform, want_mesh=False)
+    assert ok.valid and ok.mesh is None and ok.arm is not None
+
+    g = Genome.baseline().as_dict()
+    g["deck_gap"] = 0.020
+    bad = build_frame(Genome.from_dict(g), cfg.platform, want_mesh=False)
+    assert not bad.valid and "stack" in bad.failure_reason
+    assert bad.mesh is None
