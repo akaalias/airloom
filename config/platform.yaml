@@ -65,26 +65,32 @@ materials:
     density_kg_m3: 1600.0
     tensile_strength_pa: 600.0e6
     youngs_modulus_pa: 70.0e9
+    min_plate_thickness_m: 0.0012
   - name: pa12_cf         # carbon-fiber nylon (PA12-CF / PAHT-CF class)
     density_kg_m3: 1170.0
     tensile_strength_pa: 110.0e6
     youngs_modulus_pa: 7.6e9
+    min_plate_thickness_m: 0.0016
   - name: pet_cf          # carbon-fiber PET
     density_kg_m3: 1310.0
     tensile_strength_pa: 90.0e6
     youngs_modulus_pa: 6.2e9
+    min_plate_thickness_m: 0.0016
   - name: pla_plus
     density_kg_m3: 1240.0
     tensile_strength_pa: 60.0e6
     youngs_modulus_pa: 3.6e9
+    min_plate_thickness_m: 0.0016
   - name: petg
     density_kg_m3: 1270.0
     tensile_strength_pa: 50.0e6
     youngs_modulus_pa: 2.1e9
+    min_plate_thickness_m: 0.0016
   - name: asa
     density_kg_m3: 1070.0
     tensile_strength_pa: 40.0e6
     youngs_modulus_pa: 2.0e9
+    min_plate_thickness_m: 0.0016
 
 structure:
   safety_factor: 1.5

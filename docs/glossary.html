@@ -32,9 +32,20 @@ dd { margin: 2px 0 0 0; color: #33312b; }
 dd .fm { font-style: italic; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { border-bottom: 1px solid var(--accent); }
+/* shared top navigation (matches gallery.py NAV_CSS) */
+.topnav { display: flex; gap: 28px; justify-content: center;
+  align-items: baseline; border-bottom: 1px solid var(--rule);
+  padding: 0 0 12px; margin: 0 0 34px; }
+.topnav .brand { font: italic 14px var(--serif); color: var(--faint); }
+.topnav a { font: 600 12px var(--serif); font-feature-settings: "smcp" 1;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+  border-bottom: 2px solid transparent; padding-bottom: 3px; }
+.topnav a:hover { color: var(--ink); border-bottom-color: transparent; }
+.topnav a.on { color: var(--ink); border-bottom-color: var(--ink); }
 </style>
 </head>
 <body>
+<nav class="topnav"><span class="brand">framevo</span><a href="gallery.html">gallery</a><a href="lineage.html">family tree</a><a href="glossary.html" class="on">glossary</a></nav>
 <h1>framevo &mdash; glossary</h1>
 <p class="meta">Terms of the evolutionary algorithm, of the quadcopter-frame
 domain it optimizes, and of the result pages themselves. Companion to
@@ -257,6 +268,18 @@ arms.</dd>
 <dd>Each arm tongue's bolt pair must land on main-plate material. Sweeps far
 from stock need the plate scales to grow with them, or the bolts walk off
 the plate.</dd>
+
+<dt>Plate web width</dt>
+<dd>Every morphed deck plate must keep &ge;&thinsp;80&thinsp;% of the stock
+part&rsquo;s narrowest material web between its holes, cutouts and outer
+edge. The FC-stack holes stay pinned while the plates scale, so shrinking
+plates would otherwise slide cutouts into the holes and collapse the webs
+to unprintable slivers.</dd>
+
+<dt>Plate thickness (printed)</dt>
+<dd>Printed materials require &ge;&thinsp;1.6&thinsp;mm deck plates (CNC
+carbon: &ge;&thinsp;1.2&thinsp;mm) &mdash; per-material floors set in
+<code>config/platform.yaml</code>.</dd>
 
 <dt>Rotor clearance</dt>
 <dd>Rotor disks need &ge; 5&thinsp;mm from each other, and the prop disks are

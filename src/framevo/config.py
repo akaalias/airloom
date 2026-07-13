@@ -59,6 +59,9 @@ class Material:
     density_kg_m3: float
     tensile_strength_pa: float
     youngs_modulus_pa: float
+    # thinnest deck plate the process can produce reliably (0 = no floor);
+    # FDM-printed plates need more meat than CNC carbon laminate
+    min_plate_thickness_m: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -279,7 +282,8 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
     materials = tuple(
         Material(name=str(m["name"]), density_kg_m3=float(m["density_kg_m3"]),
                  tensile_strength_pa=float(m["tensile_strength_pa"]),
-                 youngs_modulus_pa=float(m["youngs_modulus_pa"]))
+                 youngs_modulus_pa=float(m["youngs_modulus_pa"]),
+                 min_plate_thickness_m=float(m.get("min_plate_thickness_m", 0.0)))
         for m in plat["materials"])
     fc, st, ge = plat["flight_controller"], plat["structure"], plat["geometry"]
     platform = Platform(

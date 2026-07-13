@@ -90,10 +90,14 @@ def _proposals_schema() -> dict:
 COUPLINGS = """Respect the hard constraints implied by the failure \
 histogram. Known couplings: the deck gap must exceed 0.023 m for the FC \
 stack; arm tongues collide when both sweeps sit at their minimums with wide \
-arms; and the tongue BOLTS must stay on the main plate -- sweeps far from \
+arms; the tongue BOLTS must stay on the main plate -- sweeps far from \
 stock (front 31.4, rear 36.0) need plate_length_scale/plate_width_scale to \
 grow with them (rule of thumb: keep sweeps within ~6 deg of stock unless \
-you also raise the plate scales by ~0.1 per extra 5 deg)."""
+you also raise the plate scales by ~0.1 per extra 5 deg); the FC-stack \
+holes stay PINNED while the plates scale, so plate scales below ~0.95 \
+crush the material webs between holes and cutouts (min 80% of the stock \
+web is enforced); and printed materials (anything but cf_plate) need \
+plate_thickness_scale >= 0.8 (>= 1.6 mm plates)."""
 
 ASK_PERIODIC = """Propose exactly {n} NEW genome vectors that are \
 meaningfully DIFFERENT from the elites and from each other — design \

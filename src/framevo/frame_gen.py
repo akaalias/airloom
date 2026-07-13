@@ -26,13 +26,26 @@ import trimesh
 from . import components as comp
 from .config import Material, Platform
 from .genome import Genome
+from functools import lru_cache
+
 from .realgeo import (STOCK_ANCHORS, ArmOutline, extrude, load_outlines,
-                      mirror_y, morph_arm, morph_plate, shaft_min_width)
+                      min_web_width, mirror_y, morph_arm, morph_plate,
+                      shaft_min_width)
 
 MOTOR_H = 0.026            # motor stack height above the arm mount
 STACK_H = 0.0216           # FC + ESC stack height inside the gap
 STANDOFF_R = 0.0025
 MAX_TONGUE_OVERLAP_MM2 = 1.0
+# morphed plates must keep >= this fraction of the stock part's narrowest
+# material web (pinned stack holes + shrinking plates collapse webs fast)
+MIN_WEB_FRACTION_OF_STOCK = 0.8
+
+
+@lru_cache(maxsize=2)
+def _stock_min_webs(data_dir: str) -> dict[str, float]:
+    outl = load_outlines(data_dir)
+    return {n: min_web_width(outl[n])
+            for n in ("plate_main", "plate_mid", "plate_top")}
 
 
 @dataclass
@@ -98,7 +111,8 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
     g = genome.as_dict()
     material = platform.material_for(g["material"])
     rho = material.density_kg_m3
-    outlines = load_outlines(str(platform.propulsion.uiuc_data_dir.parent / "source_one"))
+    src_dir = str(platform.propulsion.uiuc_data_dir.parent / "source_one")
+    outlines = load_outlines(src_dir)
     batt = platform.battery
     batt_l, batt_w, batt_h = batt.size_m
     failure: str | None = None
@@ -121,6 +135,24 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
     # -- hard constraint: the FC/ESC stack must fit in the gap
     if gap < STACK_H + 0.001:
         failure = "deck gap too small for FC/ESC stack"
+
+    # -- hard constraints: the morphed plates must stay manufacturable.
+    # Printed materials need a minimum plate thickness, and every plate
+    # must keep enough material web between its features (the stack holes
+    # stay pinned while everything else scales, so shrinking plates crush
+    # the webs between holes and cutouts).
+    if failure is None and 0.0 < material.min_plate_thickness_m \
+            and tp < material.min_plate_thickness_m - 1e-9:
+        failure = (f"plates too thin for {material.name} "
+                   f"({tp * 1e3:.1f} < {material.min_plate_thickness_m * 1e3:.1f} mm)")
+    if failure is None:
+        stock_webs = _stock_min_webs(src_dir)
+        for pl in (p_main, p_mid, p_top):
+            w = min_web_width(pl)
+            if w < MIN_WEB_FRACTION_OF_STOCK * stock_webs[pl.name]:
+                failure = (f"plate web too thin ({pl.name} {w:.2f} mm, "
+                           f"stock {stock_webs[pl.name]:.2f} mm)")
+                break
 
     # -- arm placement at the drawing-derived plate anchors; anchors scale
     # with the plate morph, sweep genes rotate each arm about its anchor.

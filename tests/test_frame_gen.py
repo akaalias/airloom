@@ -68,3 +68,25 @@ def test_meshless_prescreen_matches_constraints(cfg):
     bad = build_frame(Genome.from_dict(g), cfg.platform, want_mesh=False)
     assert not bad.valid and "stack" in bad.failure_reason
     assert bad.mesh is None
+
+
+def test_plate_web_collapse_rejected(cfg):
+    """Shrinking plates around the pinned stack holes crushes the material
+    webs between features -- the exact geometry a run champion exploited."""
+    g = Genome.baseline().as_dict()
+    g["plate_length_scale"] = 0.93
+    g["plate_width_scale"] = 0.94
+    frame = build_frame(Genome.from_dict(g), cfg.platform, want_mesh=False)
+    assert not frame.valid and "web" in frame.failure_reason
+
+
+def test_printed_plates_need_minimum_thickness(cfg):
+    g = Genome.baseline().as_dict()
+    g["material"] = 0.25          # pa12_cf (printed)
+    g["plate_thickness_scale"] = 0.7   # 1.4 mm < the 1.6 mm printed floor
+    frame = build_frame(Genome.from_dict(g), cfg.platform, want_mesh=False)
+    assert not frame.valid and "too thin" in frame.failure_reason
+
+    g["material"] = 0.05          # cf_plate: 1.2 mm floor -> 1.4 mm passes
+    frame = build_frame(Genome.from_dict(g), cfg.platform, want_mesh=False)
+    assert frame.failure_reason is None or "thin" not in frame.failure_reason

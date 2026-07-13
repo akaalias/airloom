@@ -302,6 +302,33 @@ def shaft_min_width(arm: ArmOutline) -> float:
     return min(widths) if widths else arm.width
 
 
+def min_web_width(outline: Outline) -> float:
+    """Narrowest material web (mm) between a plate's features -- holes,
+    lightening cutouts and the outer edge.
+
+    morph_plate pins the FC-stack holes while everything else scales, so a
+    shrinking plate slides its cutouts toward the pinned holes and the web
+    between them can collapse to (near) zero. Feature pairs closer than
+    0.05 mm in the SOURCE drawing are one feature complex by design and are
+    skipped -- the same rule is applied to stock and morphed outlines so
+    the two are comparable."""
+    from shapely.geometry import Point, Polygon
+
+    feats = [Polygon(c) for c in outline.cutouts]
+    feats += [Point(x, y).buffer(r) for x, y, r in outline.holes]
+    shell = Polygon(outline.shell).exterior
+    wmin = math.inf
+    for i, f in enumerate(feats):
+        d = shell.distance(f)
+        if d > 0.05:
+            wmin = min(wmin, d)
+        for g in feats[i + 1:]:
+            d = f.distance(g)
+            if d > 0.05:
+                wmin = min(wmin, d)
+    return wmin if math.isfinite(wmin) else outline.width
+
+
 def ray_to_boundary(outline: Outline, azimuth_rad: float) -> float:
     """Distance (mm) from the outline's origin to its boundary along a ray."""
     from shapely.geometry import LineString, Polygon
