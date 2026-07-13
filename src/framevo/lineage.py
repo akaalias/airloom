@@ -395,7 +395,7 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
 .tree:last-child .lg .tip{{left:auto;right:calc(100% + 12px)}}
 </style>
 <meta charset="utf-8">
-<title>framevo family tree</title>
+<title>Airloom — family tree</title>
 <div class="wrap">
 {nav_html("family tree")}
 <h1>family tree &mdash; run <code>{run_id}</code></h1>

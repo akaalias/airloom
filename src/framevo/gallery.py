@@ -64,7 +64,7 @@ def nav_html(active: str) -> str:
     links = "".join(
         f'<a href="{href}"{" class=\"on\"" if label == active else ""}>'
         f"{label}</a>" for href, label in _NAV_PAGES)
-    return f'<nav class="topnav"><span class="brand">framevo</span>{links}</nav>'
+    return f'<nav class="topnav"><span class="brand">Airloom</span>{links}</nav>'
 
 
 CSS = TUFTE_TOKENS + NAV_CSS + """
@@ -1826,10 +1826,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              f"<style>{CSS}</style>",
              '<meta charset="utf-8">',
              # auto-refresh is JS-based so an open overlay is never killed
-             "<title>framevo gallery</title>",
+             "<title>Airloom — the frame gallery</title>",
              '<div class="wrap">',
              nav_html("gallery"),
-             f"<h1>frame evolution &mdash; run <code>{html.escape(run_id)}</code></h1>",
+             f"<h1>Airloom &mdash; run <code>{html.escape(run_id)}</code></h1>",
              f'<p class="sub num">{len(gens)} generation(s) &middot; '
              f'{len(cands)} candidates ({n_valid} valid) &middot; '
              f'<span class="updated">regenerated {time.strftime("%H:%M:%S")}'

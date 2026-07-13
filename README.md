@@ -1,4 +1,8 @@
-# framevo — evolving quadcopter frames for Wh/km
+# Airloom — evolving quadcopter frames for Wh/km
+
+*(heirloom + air: every frame inherits from its ancestors, and the gallery
+is the family archive. The package/CLI is still `framevo` for now; the
+full rename is pending.)*
 
 A fully automated, headless research loop that evolves quadcopter **frame
 geometry** to minimize **energy per distance (Wh/km)** flown through a
