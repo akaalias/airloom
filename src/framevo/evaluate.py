@@ -104,7 +104,7 @@ def build_task(root: str, genome_values: tuple[float, ...], generation: int,
     picklable summary; the mesh itself stays in the STL file."""
     from .frame_gen import build_frame
     from .aero import build_drag_table
-    from .render import render_parts, render_placeholder
+    from .render import render_bottom_view, render_parts, render_placeholder
 
     cfg, rotor = _context(root)
     genome = Genome(genome_values)
@@ -120,6 +120,9 @@ def build_task(root: str, genome_values: tuple[float, ...], generation: int,
     if frame.mesh is not None:
         frame.mesh.export(stl_path)
         render_parts(frame.parts, png_path, valid=frame.valid)
+        render_bottom_view(frame.parts,
+                           png_path.with_name(png_path.stem + "_bottom.png"),
+                           valid=frame.valid)
         _write_mesh_blob(frame.parts, mesh_json_path)
     else:
         render_placeholder(png_path, frame.failure_reason or "no mesh")

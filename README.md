@@ -29,10 +29,12 @@ Worker count auto-scales to the core count.
   evaluation order — gray dots, a best-so-far step line with labeled
   improvements, invalid candidates as rust ×, generation ticks — so you can
   see what moved the needle and where the search plateaued. Below: one row
-  per generation sorted by fitness, then **detail blocks with an interactive
-  3D model at half width** (a small depth-buffered WebGL viewer fed by
-  embedded mesh data: drag to rotate, scroll to zoom, double-click to reset) beside the metrics
-  and the parents' thumbnails. Parts are colored by role: rust arms and
+  per generation sorted by fitness, then detail blocks showing a
+  **from-below still** of each candidate — click it to open a full-screen
+  overlay with two tabs: the interactive 3D model (depth-buffered WebGL,
+  drag/scroll/double-click), and a **side-by-side comparison with the
+  oldest ancestor of its lineage whose rotation and zoom stay in sync**.
+  Metrics, genome table and parent thumbnails sit beside each still. Parts are colored by role: rust arms and
   near-black deck plates are the **evolved** geometry; the blue Li-Ion pack,
   gray motor cans and pale translucent prop disks are the **fixed** kit.
 - `leaderboard.md` — top 10 with all metrics and per-scenario columns.

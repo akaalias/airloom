@@ -108,6 +108,89 @@ def _rel(results_dir: Path, p: str | None) -> str:
         return p
 
 
+
+LEGEND_TIPS = {
+    "crossover": "Simulated Binary Crossover: the child's genes are sampled "
+                 "around its two parents' values (closer for higher eta) -- "
+                 "the digital analogue of breeding two good frames.",
+    "pivot": "Patience exhausted: after 6 generations without a >=0.5% "
+             "improvement, children are bred from a tournament winner and a "
+             "FAR parent (the most genetically distant still-decent candidate "
+             "in the run's history) under boosted mutation, to break the "
+             "plateau.",
+    "designer": "Proposed by a headless-Claude design round: every few "
+                "generations the elites, their per-scenario results and the "
+                "failure histogram go to claude -p, which returns reasoned "
+                "genome hypotheses (rationales in results/designer_log.md).",
+    "mutation": "Gaussian noise on a subset of genes. Its sigma decays per "
+                "generation, so early search explores and late search "
+                "fine-tunes.",
+    "immigrant": "A fresh random genome injected (~10% of non-elite slots) "
+                 "to keep genetic diversity from collapsing.",
+    "elite": "Elite carry-over: the top candidates pass unchanged into the "
+             "next generation so the best design can never be lost. The "
+             "dashed line follows one candidate surviving; it reappears as "
+             "a SMALL node in the later row.",
+    "seed": "Generation 0: the real Source One V6 baseline plus random "
+            "genomes -- no parents.",
+    "cmaes": "Sampled from CMA-ES's adapted Gaussian (the flag-gated "
+             "alternative optimizer). No discrete parents; provenance is "
+             "the distribution's mean and sigma.",
+    "shade": "Node fill maps fitness onto a light-to-dark ramp within this "
+             "run: DARKER = lower aggregate Wh/km = better. The scale is "
+             "relative to this run's best and worst valid candidates.",
+    "size": "Large node = the candidate was BORN in that generation. Small "
+            "node = an elite carried over unchanged, shown again in a later "
+            "generation's population.",
+    "hollow": "Invalid design: it violated a hard constraint (tongue "
+              "collision, stack fit, rotor clearance, structural failure...) "
+              "or failed a flight scenario. Fitness = infinity; it is never "
+              "selected as a parent.",
+    "ring": "This candidate set a new best-so-far when it was evaluated -- "
+            "the same improvements the gallery chart labels on its step "
+            "line.",
+}
+
+
+def _legend_html() -> str:
+    from .lineage import OPERATOR_COLORS  # self-import safe at call time
+    items = []
+
+    def tip(key, title):
+        return (f'<span class="tip"><b>{title}</b><br>'
+                f'{html.escape(LEGEND_TIPS[key])}</span>')
+
+    for name, col in OPERATOR_COLORS.items():
+        label = "elite carry-over" if name == "elite" else name
+        dash = "border-top:2px dashed " if name == "elite" else "border-top:2px solid "
+        items.append(
+            f'<span class="lg"><span class="sw" style="width:16px;height:0;'
+            f'{dash}{col}"></span>{label}{tip(name, label)}</span>')
+    items.append(
+        '<span class="lg"><span class="sw">'
+        '<svg width="52" height="12"><circle cx="6" cy="6" r="5" fill="#111111"/>'
+        '<circle cx="22" cy="6" r="5" fill="#7a766b"/>'
+        '<circle cx="38" cy="6" r="5" fill="#d9d5c3"/></svg></span>'
+        'node shade = fitness' + tip("shade", "node shade") + "</span>")
+    items.append(
+        '<span class="lg"><span class="sw">'
+        '<svg width="34" height="16"><circle cx="8" cy="8" r="7" fill="#6b6a60"/>'
+        '<circle cx="24" cy="8" r="4" fill="#6b6a60"/></svg></span>'
+        'node size = born / carried' + tip("size", "node size") + "</span>")
+    items.append(
+        '<span class="lg"><span class="sw">'
+        '<svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" '
+        'stroke="#b9b6a6" stroke-width="1.4"/></svg></span>'
+        'hollow = invalid' + tip("hollow", "hollow node") + "</span>")
+    items.append(
+        '<span class="lg"><span class="sw">'
+        '<svg width="18" height="18"><circle cx="9" cy="9" r="5" fill="#111111"/>'
+        '<circle cx="9" cy="9" r="7.5" fill="none" stroke="#8c2f1f" '
+        'stroke-width="1.4"/></svg></span>'
+        'ring = best so far' + tip("ring", "best-so-far ring") + "</span>")
+    return '<div class="lgd">' + "".join(items) + "</div>"
+
+
 def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
     """A dedicated Tufte-styled page for the family tree, linked from the
     gallery. Embeds lineage.svg inline plus per-candidate metadata so that
@@ -195,6 +278,24 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
   color:var(--ink)}}
 .ncard td:first-child{{color:var(--muted)}}
 .ncard .anc{{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}}
+/* interactive legend (replaces the SVG's baked-in one) */
+.tree svg .svg-legend{{display:none}}
+.lgd{{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
+  align-items:center;font-size:13.5px;color:var(--muted);
+  max-width:1080px;margin:0 auto 16px}}
+.lg{{position:relative;display:inline-flex;align-items:center;gap:7px;
+  cursor:help;padding:2px 0}}
+.lg:hover{{color:var(--ink)}}
+.lg .sw{{display:inline-flex;align-items:center}}
+.lg .tip{{display:none;position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
+  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
+  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07);
+  font-style:normal}}
+.lg:hover .tip{{display:block}}
+.lg:nth-last-child(-n+3) .tip{{left:auto;right:calc(100% + 12px)}}
+.lg .tip b{{font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}}
 </style>
 <meta charset="utf-8">
 <title>framevo family tree</title>
@@ -209,6 +310,7 @@ the gallery chart). Edge colors name the operator. Hover any node to see
 the candidate and its full ancestry; click a node to pin the highlight
 while you scroll (click again or press esc to release).
 &middot; <a href="gallery.html">back to the gallery</a></p>
+{_legend_html()}
 <div class="tree">{svg}</div>
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
@@ -431,7 +533,9 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                    f' font-size="11" fill="#9b998c">g{g}</text>')
 
     # legend, above the first generation row; the elite swatch is dashed
-    # like the carry-over lines it stands for
+    # like the carry-over lines it stands for. Wrapped in a group so the
+    # html page can replace it with its interactive legend.
+    svg.append('<g class="svg-legend">')
     lx, ly = margin, 24
     for name, col in OPERATOR_COLORS.items():
         label = "elite carry-over" if name == "elite" else name
@@ -445,6 +549,7 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                f' stroke="#8c2f1f" stroke-width="1.3"/>')
     svg.append(f'<text x="{lx + 20}" y="{ly + 4}" font-size="10"'
                f' fill="#6b6a60">best so far</text>')
+    svg.append("</g>")
     svg.append("</svg>")
     out = results_dir / "lineage.svg"
     out.write_text("\n".join(svg))

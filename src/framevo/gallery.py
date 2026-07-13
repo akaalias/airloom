@@ -100,6 +100,34 @@ table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
 .parents figure{margin:0 0 10px}
 .parents img{width:100%;mix-blend-mode:multiply}
 .parents figcaption{font:12px var(--mono);color:var(--faint)}
+.viewer img.peek{cursor:zoom-in}
+#ovl{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;
+  flex-direction:column}
+#ovl.open{display:flex}
+.ovl-bar{display:flex;align-items:center;gap:22px;padding:14px 26px;
+  border-bottom:1px solid var(--rule)}
+.ovl-bar .hash{font:15px var(--mono);color:var(--muted)}
+.ovl-tabs{display:flex;gap:2px}
+.ovl-tabs button{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  background:none;border:1px solid var(--rule);padding:7px 16px;cursor:pointer}
+.ovl-tabs button.on{color:var(--ink);border-color:var(--ink);
+  border-bottom:2px solid var(--ink)}
+.ovl-tabs button:disabled{opacity:.35;cursor:default}
+#ovl-close{margin-left:auto;font:26px/1 var(--serif);background:none;
+  border:none;color:var(--muted);cursor:pointer;padding:0 6px}
+#ovl-close:hover{color:var(--ink)}
+.ovl-body{flex:1;display:none;min-height:0}
+.ovl-body.on{display:flex}
+.ovl-body .pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.ovl-body .pane+.pane{border-left:1px solid var(--rule)}
+.ovl-body .pane .cap{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  padding:10px 18px 0;display:flex;gap:14px;align-items:baseline}
+.ovl-body .pane .cap .hash{font:12px var(--mono);color:var(--faint)}
+.ovl-body canvas{flex:1;width:100%;min-height:0;cursor:grab;touch-action:none}
+.ovl-hint{position:absolute;right:26px;bottom:12px;font:italic 12px var(--serif);
+  color:var(--faint);pointer-events:none}
 """
 
 VIEWER_JS = r"""
@@ -117,24 +145,19 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
   "void main(){vec3 L=normalize(vec3(0.35,0.48,0.85));"+
   "float d=abs(dot(normalize(vN),L));float s=0.45+0.55*d;"+
   "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a);}";
-function initViewer(canvas){
-  var blob=document.getElementById(canvas.dataset.mesh);
-  if(!blob)return;
-  var d=JSON.parse(blob.textContent);
+
+var blobCache={};
+function decodeBlob(id){
+  if(blobCache[id])return blobCache[id];
+  var el=document.getElementById(id);
+  if(!el)return null;
+  var d=JSON.parse(el.textContent);
   var V=new Float32Array(b64bytes(d.v).buffer);
   var F=d.i==="u16"?new Uint16Array(b64bytes(d.f).buffer)
                    :new Uint32Array(b64bytes(d.f).buffer);
-  var cx=d.c[0],cy=d.c[1],cz=d.c[2],R=d.r||0.3;
   var nf=F.length/3;
   var FC=d.fc?new Uint8Array(b64bytes(d.fc)):new Uint8Array(nf);
   var PAL=d.p&&d.p.length?d.p:[[138,151,168,1]];
-  var gl=canvas.getContext("webgl",{antialias:true,alpha:false})
-       ||canvas.getContext("experimental-webgl");
-  if(!gl){ // ancient fallback: swap in the static PNG
-    var img=document.createElement("img");img.src=canvas.dataset.png||"";
-    canvas.parentNode.replaceChild(img,canvas);return}
-  // expand to flat (non-indexed) buffers: per-face normals + colors;
-  // translucent faces (prop disks) drawn in a second, depth-read-only pass
   var opaque=[],trans=[];
   for(var f=0;f<nf;f++)((PAL[FC[f]]||PAL[0])[3]<0.999?trans:opaque).push(f);
   var list=opaque.concat(trans),nOpq=opaque.length;
@@ -154,93 +177,160 @@ function initViewer(canvas){
       C[co]=pc[0]/255;C[co+1]=pc[1]/255;C[co+2]=pc[2]/255;C[co+3]=pc[3];
     }
   }
-  function shader(type,src){var s=gl.createShader(type);
-    gl.shaderSource(s,src);gl.compileShader(s);return s}
+  blobCache[id]={P:P,N:N,C:C,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3};
+  return blobCache[id];
+}
+
+// one GL viewer per canvas, created once; loadBlob swaps model data;
+// several viewers may share one state -> they rotate/zoom in sync
+function makeState(){
+  var st={yaw:-0.9,pitch:0.42,zoom:1.0,viewers:[]};
+  st.redraw=function(){st.viewers.forEach(function(v){v.draw()})};
+  st.reset=function(){st.yaw=-0.9;st.pitch=0.42;st.zoom=1.0;st.redraw()};
+  return st;
+}
+function makeViewer(canvas,state){
+  var gl=canvas.getContext("webgl",{antialias:true,alpha:false})
+       ||canvas.getContext("experimental-webgl");
+  if(!gl)return null;
+  function shader(type,src){var sh=gl.createShader(type);
+    gl.shaderSource(sh,src);gl.compileShader(sh);return sh}
   var prog=gl.createProgram();
   gl.attachShader(prog,shader(gl.VERTEX_SHADER,VS));
   gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,FS));
   gl.linkProgram(prog);gl.useProgram(prog);
-  function buf(data,attr,size){var b=gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER,b);
-    gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+  var bufs={aP:gl.createBuffer(),aN:gl.createBuffer(),aC:gl.createBuffer()};
+  function bind(attr,size){
+    gl.bindBuffer(gl.ARRAY_BUFFER,bufs[attr]);
     var loc=gl.getAttribLocation(prog,attr);
     gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0)}
-  buf(P,"aP",3);buf(N,"aN",3);buf(C,"aC",4);
+    gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0);
+  }
   var uR=gl.getUniformLocation(prog,"uR"),uT=gl.getUniformLocation(prog,"uT"),
       uS=gl.getUniformLocation(prog,"uS"),uA=gl.getUniformLocation(prog,"uA");
-  gl.uniform3f(uT,cx,cy,cz);
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(1.0,1.0,0.973,1.0);
-  var yaw=-0.9,pitch=0.42,zoom=1.0;
-  var dpr=window.devicePixelRatio||1;
-  function draw(){
-    var w=canvas.clientWidth,h=canvas.clientHeight;
-    if(canvas.width!==Math.round(w*dpr)){
-      canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
-    gl.viewport(0,0,canvas.width,canvas.height);
-    var cy2=Math.cos(yaw),sy=Math.sin(yaw),
-        cp=Math.cos(pitch),sp=Math.sin(pitch);
-    // rows: x' = R0.v, y' = R1.v (up), z' = R2.v (toward viewer)
-    gl.uniformMatrix3fv(uR,false,[cy2,-sy*sp,sy*cp,
-                                  sy,cy2*sp,-cy2*cp,
-                                  0,cp,sp]);
-    var asp=w>h?[h/w,1]:[1,w/h];
-    gl.uniform2f(uA,asp[0],asp[1]);
-    gl.uniform1f(uS,0.85*zoom/R);
-    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-    gl.disable(gl.BLEND);gl.depthMask(true);
-    gl.drawArrays(gl.TRIANGLES,0,nOpq*3);
-    if(nf>nOpq){ // translucent prop disks: blend, do not write depth
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-      gl.depthMask(false);
-      gl.drawArrays(gl.TRIANGLES,nOpq*3,(nf-nOpq)*3);
-      gl.depthMask(true);
+  var model=null;
+  var view={
+    canvas:canvas,
+    loadBlob:function(id){
+      model=decodeBlob(id);
+      if(!model)return;
+      gl.bindBuffer(gl.ARRAY_BUFFER,bufs.aP);
+      gl.bufferData(gl.ARRAY_BUFFER,model.P,gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,bufs.aN);
+      gl.bufferData(gl.ARRAY_BUFFER,model.N,gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,bufs.aC);
+      gl.bufferData(gl.ARRAY_BUFFER,model.C,gl.STATIC_DRAW);
+      gl.uniform3f(uT,model.c[0],model.c[1],model.c[2]);
+    },
+    draw:function(){
+      if(!model)return;
+      var dpr=window.devicePixelRatio||1;
+      var w=canvas.clientWidth,h=canvas.clientHeight;
+      if(w<2||h<2)return;
+      if(canvas.width!==Math.round(w*dpr)){
+        canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+      gl.viewport(0,0,canvas.width,canvas.height);
+      bind("aP",3);bind("aN",3);bind("aC",4);
+      var cy2=Math.cos(state.yaw),sy=Math.sin(state.yaw),
+          cp=Math.cos(state.pitch),sp=Math.sin(state.pitch);
+      gl.uniformMatrix3fv(uR,false,[cy2,-sy*sp,sy*cp,
+                                    sy,cy2*sp,-cy2*cp,
+                                    0,cp,sp]);
+      var asp=w>h?[h/w,1]:[1,w/h];
+      gl.uniform2f(uA,asp[0],asp[1]);
+      gl.uniform1f(uS,0.85*state.zoom/model.r);
+      gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+      gl.disable(gl.BLEND);gl.depthMask(true);
+      gl.drawArrays(gl.TRIANGLES,0,model.nOpq*3);
+      if(model.nf>model.nOpq){
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+        gl.depthMask(false);
+        gl.drawArrays(gl.TRIANGLES,model.nOpq*3,(model.nf-model.nOpq)*3);
+        gl.depthMask(true);
+      }
     }
-  }
+  };
+  state.viewers.push(view);
   var dragging=false,lastX=0,lastY=0;
   canvas.addEventListener("pointerdown",function(e){
     dragging=true;lastX=e.clientX;lastY=e.clientY;
     canvas.setPointerCapture(e.pointerId);canvas.style.cursor="grabbing"});
   canvas.addEventListener("pointermove",function(e){
     if(!dragging)return;
-    yaw+=(e.clientX-lastX)*0.011;
-    pitch=Math.max(-1.5,Math.min(1.5,pitch+(e.clientY-lastY)*0.011));
-    lastX=e.clientX;lastY=e.clientY;draw()});
+    state.yaw+=(e.clientX-lastX)*0.011;
+    state.pitch=Math.max(-1.6,Math.min(1.6,state.pitch+(e.clientY-lastY)*0.011));
+    lastX=e.clientX;lastY=e.clientY;state.redraw()});
   canvas.addEventListener("pointerup",function(){
     dragging=false;canvas.style.cursor="grab"});
   canvas.addEventListener("wheel",function(e){
     e.preventDefault();
-    zoom=Math.max(0.3,Math.min(8,zoom*Math.exp(-e.deltaY*0.0016)));
-    draw()},{passive:false});
-  canvas.addEventListener("dblclick",function(){
-    yaw=-0.9;pitch=0.42;zoom=1.0;draw()});
-  draw();
-  canvas.dataset.ready="1";
+    state.zoom=Math.max(0.3,Math.min(8,state.zoom*Math.exp(-e.deltaY*0.0016)));
+    state.redraw()},{passive:false});
+  canvas.addEventListener("dblclick",function(){state.reset()});
+  return view;
 }
-// lazy init: build a viewer once its canvas comes within 300px of the
-// viewport (plain scroll sweep -- reliable under file:// and every browser)
-var pending=Array.prototype.slice.call(document.querySelectorAll("canvas[data-mesh]"));
-var sweeping=false;
-function sweep(){
-  sweeping=false;
-  for(var i=pending.length-1;i>=0;i--){
-    var c=pending[i],r=c.getBoundingClientRect();
-    if(r.bottom>-300&&r.top<window.innerHeight+300){
-      pending.splice(i,1);
-      try{initViewer(c)}catch(err){}
-    }
+
+// ---- overlay: tab 1 = solo model, tab 2 = ancestor vs candidate (synced)
+var ovl=document.getElementById("ovl");
+if(!ovl)return;
+var soloState=makeState(),cmpState=makeState();
+var soloV=null,cmpA=null,cmpB=null,current=null;
+function ensureViewers(){
+  if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
+  if(!cmpA)cmpA=makeViewer(document.getElementById("ovl-anc"),cmpState);
+  if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
+}
+function setTab(name){
+  ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
+    b.classList.toggle("on",b.dataset.tab===name)});
+  ovl.querySelectorAll(".ovl-body").forEach(function(b){
+    b.classList.toggle("on",b.dataset.tab===name)});
+  requestAnimationFrame(function(){soloState.redraw();cmpState.redraw()});
+  setTimeout(function(){soloState.redraw();cmpState.redraw()},50);
+}
+function openOverlay(d){
+  current=d;
+  ensureViewers();
+  if(!soloV)return; // no webgl
+  ovl.classList.add("open");
+  document.body.style.overflow="hidden";
+  ovl.querySelector(".ovl-bar .hash").textContent=d.title||"";
+  soloV.loadBlob(d.mesh);
+  soloState.reset();
+  var cmpBtn=ovl.querySelector('button[data-tab="compare"]');
+  if(d.ancestor&&document.getElementById(d.ancestor)&&d.ancestor!==d.mesh){
+    cmpBtn.disabled=false;
+    cmpA.loadBlob(d.ancestor);cmpB.loadBlob(d.mesh);
+    document.getElementById("anc-hash").textContent=d.anctitle||"";
+    document.getElementById("cur-hash").textContent=d.title||"";
+    cmpState.reset();
+  }else{
+    cmpBtn.disabled=true;
   }
+  setTab("solo");
 }
-function queueSweep(){
-  if(!sweeping){sweeping=true;
-    setTimeout(sweep,60)}
+function closeOverlay(){
+  ovl.classList.remove("open");
+  document.body.style.overflow="";
 }
-window.addEventListener("scroll",queueSweep,{passive:true});
-window.addEventListener("resize",queueSweep);
-window.addEventListener("hashchange",queueSweep);
-sweep();
+ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
+  b.addEventListener("click",function(){if(!b.disabled)setTab(b.dataset.tab)});
+});
+document.getElementById("ovl-close").addEventListener("click",closeOverlay);
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape")closeOverlay()});
+document.querySelectorAll("img.peek").forEach(function(img){
+  img.addEventListener("click",function(){
+    openOverlay({mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
+                 title:img.dataset.title,anctitle:img.dataset.anctitle});
+  });
+});
+window.addEventListener("resize",function(){
+  if(ovl.classList.contains("open")){soloState.redraw();cmpState.redraw()}
+});
 })();
 """
 
@@ -258,6 +348,74 @@ def _rel(results_dir: Path, p: str | None) -> str:
         return str(Path(p).relative_to(results_dir))
     except ValueError:
         return p
+
+
+def _bottom_png_for(results_dir: Path, png_path: str | None) -> str | None:
+    """Relative path of the from-below still; backfilled from the viewer
+    blob for candidates built before bottom views existed."""
+    if not png_path:
+        return None
+    p = Path(png_path)
+    bottom = p.with_name(p.stem + "_bottom.png")
+    if not bottom.exists():
+        blob_path = p.with_suffix(".mesh.json")
+        blob_path = Path(str(p)[:-4] + ".mesh.json")
+        if not blob_path.exists():
+            return None
+        try:
+            _render_bottom_from_blob(blob_path, bottom)
+        except Exception:
+            return None
+    return _rel(results_dir, str(bottom))
+
+
+def _render_bottom_from_blob(blob_path: Path, out_path: Path) -> None:
+    """Rebuild the from-below still using the decimated viewer blob (used
+    only to backfill runs that predate bottom views)."""
+    import base64
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    d = json.loads(blob_path.read_text())
+    verts = np.frombuffer(base64.b64decode(d["v"]), dtype=np.float32).reshape(-1, 3)
+    dtype = np.uint16 if d["i"] == "u16" else np.uint32
+    faces = np.frombuffer(base64.b64decode(d["f"]), dtype=dtype).reshape(-1, 3)
+    fc = np.frombuffer(base64.b64decode(d["fc"]), dtype=np.uint8)
+    pal = np.array(d["p"], dtype=float)
+    colors = pal[fc]
+    rgba = np.column_stack([colors[:, :3] / 255.0, colors[:, 3]])
+    dpi = 90
+    fig = plt.figure(figsize=(440 / dpi, 440 / dpi), dpi=dpi)
+    ax = fig.add_subplot(111, projection="3d")
+    coll = Poly3DCollection(verts[faces], facecolors=rgba, zsort="average")
+    coll.set_linewidth(0.0)
+    ax.add_collection3d(coll)
+    half = 0.235
+    ax.set_xlim(-half, half); ax.set_ylim(-half, half); ax.set_zlim(-half, half)
+    ax.set_box_aspect((1, 1, 1))
+    ax.view_init(elev=-82, azim=-90)
+    ax.set_axis_off()
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    fig.savefig(out_path, dpi=dpi, facecolor="#fffff8")
+    plt.close(fig)
+
+
+def _oldest_ancestor(cands: dict, h: str) -> str | None:
+    """Walk the primary parent chain to the lineage's root."""
+    cur, seen = h, set()
+    while True:
+        c = cands.get(cur)
+        if c is None or cur in seen:
+            return cur if cur != h else None
+        seen.add(cur)
+        nxt = c["parent_a"] or c["parent_b"]
+        if not nxt or nxt not in cands:
+            return cur if cur != h else None
+        cur = nxt
 
 
 def _mesh_blob_for(results_dir: Path, png_path: str | None) -> str | None:
@@ -544,27 +702,50 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             viewer_hashes.add(c["hash"])
     for g in gens[-3:]:
         viewer_hashes.update(r["hash"] for r in store.population(run_id, g))
+    # the compare tab needs each viewer candidate's lineage root too
+    for h in list(viewer_hashes):
+        root = _oldest_ancestor(cands, h)
+        if root:
+            viewer_hashes.add(root)
 
     parts.append("<h2>candidate details &amp; parentage</h2>")
-    parts.append('<p class="sub" style="font-style:italic">drag a model to '
-                 "rotate it, scroll to zoom, double-click to reset the view "
-                 "(interactive 3D on the top candidates, improvement-setters "
-                 "and recent generations; static renders elsewhere)</p>")
+    parts.append('<p class="sub" style="font-style:italic">click a model to '
+                 "open it full-screen: tab 1 is the interactive 3D model, "
+                 "tab 2 compares it side-by-side with the oldest ancestor of "
+                 "its lineage, rotating in sync (available for the top "
+                 "candidates, improvement-setters and recent generations)</p>")
     blobs: list[str] = []
+    embedded: set[str] = set()
     for h in detail_ids:
         c = cands[h]
         fit = store.fitness_of(c)
         img = _rel(results_dir, c["png_path"])
         blob = _mesh_blob_for(results_dir, c["png_path"]) \
             if h in viewer_hashes else None
+        bottom = _bottom_png_for(results_dir, c["png_path"]) or img
         if blob is not None:
-            blobs.append(f'<script type="application/json" id="m-{h}">{blob}</script>')
-            viewer = (f'<div class="viewer"><canvas data-mesh="m-{h}" '
-                      f'data-png="{img}"></canvas>'
-                      f'<div class="hint">drag &middot; scroll &middot; '
-                      f"double-click resets</div></div>")
+            if h not in embedded:
+                blobs.append(f'<script type="application/json" id="m-{h}">{blob}</script>')
+                embedded.add(h)
+            root = _oldest_ancestor(cands, h)
+            anc_attr = ""
+            if root and root in viewer_hashes and root != h:
+                rblob = _mesh_blob_for(results_dir, cands[root]["png_path"])
+                if rblob is not None:
+                    if root not in embedded:
+                        blobs.append(f'<script type="application/json" '
+                                     f'id="m-{root}">{rblob}</script>')
+                        embedded.add(root)
+                    rfit = store.fitness_of(cands[root])
+                    anc_attr = (f' data-ancestor="m-{root}" data-anctitle='
+                                f'"{root} · g{cands[root]["generation_born"]}'
+                                f' · {_fmt(rfit)}"')
+            viewer = (f'<div class="viewer"><img class="peek" src="{bottom}" '
+                      f'alt="{h}" data-mesh="m-{h}" data-title="{h} · {_fmt(fit)}"'
+                      f'{anc_attr}>'
+                      f'<div class="hint">click to open the 3D model</div></div>')
         else:
-            viewer = f'<div class="viewer"><img src="{img}" alt="{h}"></div>'
+            viewer = f'<div class="viewer"><img src="{bottom}" alt="{h}"></div>'
 
         parent_imgs = []
         for pkey in ("parent_a", "parent_b"):
@@ -610,6 +791,29 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             f"</div>"
             f'</div><div class="parents">{parents_html}</div></div>')
 
+    parts.append(
+        '<div id="ovl">'
+        '<div class="ovl-bar">'
+        '<span class="ovl-tabs">'
+        '<button data-tab="solo" class="on">3d model</button>'
+        '<button data-tab="compare">compare with oldest ancestor</button>'
+        "</span>"
+        '<span class="hash"></span>'
+        '<button id="ovl-close" title="close (esc)">&#215;</button>'
+        "</div>"
+        '<div class="ovl-body on" data-tab="solo" style="position:relative">'
+        '<div class="pane"><canvas id="ovl-solo"></canvas></div>'
+        '<div class="ovl-hint">drag to rotate &middot; scroll to zoom &middot; '
+        "double-click resets &middot; esc closes</div></div>"
+        '<div class="ovl-body" data-tab="compare" style="position:relative">'
+        '<div class="pane"><div class="cap">oldest ancestor '
+        '<span class="hash" id="anc-hash"></span></div>'
+        '<canvas id="ovl-anc"></canvas></div>'
+        '<div class="pane"><div class="cap">this candidate '
+        '<span class="hash" id="cur-hash"></span></div>'
+        '<canvas id="ovl-cur"></canvas></div>'
+        '<div class="ovl-hint">the two models rotate and zoom in sync</div>'
+        "</div></div>")
     parts.extend(blobs)
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")

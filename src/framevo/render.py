@@ -74,6 +74,39 @@ def render_parts(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
     plt.close(fig)
 
 
+def render_bottom_view(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
+                       valid: bool = True,
+                       size_px: tuple[int, int] = (440, 440)) -> None:
+    """The gallery's detail-block still: from under the drone looking up --
+    the view that shows the evolved arm/plate geometry best."""
+    dpi = 90
+    fig = plt.figure(figsize=(size_px[0] / dpi, size_px[1] / dpi), dpi=dpi)
+    ax = fig.add_subplot(111, projection="3d")
+    light = matplotlib.colors.LightSource(azdeg=200, altdeg=-40)
+    fade = 1.0 if valid else 0.45
+    for name in DRAW_ORDER:
+        mesh = parts.get(name)
+        if mesh is None:
+            continue
+        color, alpha = PART_COLORS.get(name, ("#8a97a8", 1.0))
+        coll = Poly3DCollection(mesh.vertices[mesh.faces], facecolors=color,
+                                shade=True, lightsource=light,
+                                alpha=alpha * fade, zsort="average")
+        coll.set_linewidth(0.0)
+        ax.add_collection3d(coll)
+    half = 0.235
+    ax.set_xlim(-half, half)
+    ax.set_ylim(-half, half)
+    ax.set_zlim(-half, half)
+    ax.set_box_aspect((1.0, 1.0, 1.0))
+    ax.view_init(elev=-82, azim=-90)
+    ax.set_axis_off()
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=dpi, facecolor=PAPER)
+    plt.close(fig)
+
+
 def render_thumbnail(mesh: trimesh.Trimesh, path: Path, valid: bool = True,
                      size_px: tuple[int, int] = (720, 540)) -> None:
     """Single-mesh fallback (no labeled parts available)."""
