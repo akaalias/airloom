@@ -33,6 +33,20 @@ CD_BODY = 1.05
 
 CD_ARM = 1.7  # flat carbon plate arm, edges rounded, edge-on flow
 
+# CFD calibration (cfd/calibration.md; 12 OpenFOAM v2512 k-omega-SST cases,
+# 2026-07-14): per-class correction of the handbook Cds vs tilt, measured on
+# the real baseline geometry, plus the assembly interference factor
+# k = full/(arms + body) -- the buildup's missing term (wake shielding and
+# silhouette double-count make the assembly CHEAPER than the sum of parts).
+# The full-assembly ratios of a contrasting genome (long thin arms, open
+# deck) matched the baseline's within ~2 points at every angle, so these
+# corrections are systematic, not gene-dependent, and apply to every
+# candidate. Beyond 40 deg the last measured value holds (np.interp clamps).
+CAL_TILT_DEG = np.array([0.0, 20.0, 40.0])
+CAL_ARM_RATIO = np.array([0.674, 0.484, 0.614])    # measured/(area*CD_ARM)
+CAL_BODY_RATIO = np.array([1.086, 0.688, 0.822])   # measured/(area*CD_BODY)
+CAL_INTERFERENCE = np.array([0.945, 0.785, 0.732])  # full/(arms+body)
+
 
 def projected_area(mesh: Any, direction: np.ndarray,
                    cell: float = 0.002) -> float:
@@ -148,12 +162,30 @@ def measure_areas(frame: "FrameModel", platform: Platform) -> AreaTable:
 
 def drag_table_from_areas(areas: AreaTable, cd_arm: float = CD_ARM,
                           cd_body: float = CD_BODY,
-                          wash_scale: float = 1.0) -> DragTable:
-    return DragTable(tilt_deg=areas.tilt_deg.copy(),
-                     cda_x=areas.arm_x * cd_arm + areas.body_x * cd_body,
-                     cda_y=areas.arm_y * cd_arm + areas.body_y * cd_body,
-                     a_top=areas.a_top,
-                     wash_cda=areas.wash_area * cd_arm * wash_scale)
+                          wash_scale: float = 1.0,
+                          calibrated: bool = True) -> DragTable:
+    """CdA tables from raw areas. With `calibrated` (the default) the
+    CFD-fitted per-class ratios and the assembly interference factor are
+    applied per tilt; cd_arm/cd_body remain the reference handbook values
+    so the robustness sweep's knobs still scale each class. The y-flow
+    (crosswind) plane reuses the x-flow corrections -- the calibration
+    only measured body-x flow (documented approximation). The rotor-wash
+    term stays uncorrected: it models normal impingement on the arm
+    planform, not the external flow the CFD cases measured."""
+    if calibrated:
+        r_arm = np.interp(areas.tilt_deg, CAL_TILT_DEG, CAL_ARM_RATIO)
+        r_body = np.interp(areas.tilt_deg, CAL_TILT_DEG, CAL_BODY_RATIO)
+        k = np.interp(areas.tilt_deg, CAL_TILT_DEG, CAL_INTERFERENCE)
+    else:
+        r_arm = r_body = k = 1.0
+    return DragTable(
+        tilt_deg=areas.tilt_deg.copy(),
+        cda_x=(areas.arm_x * cd_arm * r_arm
+               + areas.body_x * cd_body * r_body) * k,
+        cda_y=(areas.arm_y * cd_arm * r_arm
+               + areas.body_y * cd_body * r_body) * k,
+        a_top=areas.a_top,
+        wash_cda=areas.wash_area * cd_arm * wash_scale)
 
 
 def build_drag_table(frame: "FrameModel", platform: Platform) -> DragTable:
