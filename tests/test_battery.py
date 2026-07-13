@@ -68,10 +68,16 @@ def test_pack_current_solution_matches_quadratic(cfg):
 
 
 def test_storm_saturation_clamps_instead_of_killing(cfg, rotor, baseline):
-    """The fixed 6S1P pack cannot hold 12 m/s through the storm's worst
-    gusts -- the vehicle must ride through at its capability limit, arrive
-    a little late and pay energy, NOT be declared a crash."""
-    frame, drag = baseline
+    """A vehicle that saturates in the storm's worst gusts must ride
+    through at its capability limit, arrive a little late and pay energy,
+    NOT be declared a crash. Uses the UNCALIBRATED drag table: it recreates
+    the high-demand regime deterministically (under CFD-calibrated drag the
+    baseline barely saturates at all -- which is the calibration working,
+    not the clamp semantics changing)."""
+    from framevo.aero import drag_table_from_areas, measure_areas
+    frame, _ = baseline
+    drag = drag_table_from_areas(measure_areas(frame, cfg.platform),
+                                 calibrated=False)
     scen = cfg.scenario("storm")
     res = simulate_scenario(frame.total_mass, drag, rotor, scen,
                             cfg.mission, cfg.rain,
