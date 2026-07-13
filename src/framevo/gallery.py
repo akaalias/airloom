@@ -485,19 +485,22 @@ function makeViewer(canvas,state){
   return view;
 }
 
-// ---- overlay: tab 1 = solo model, tab 2 = ancestor vs candidate (synced)
+// ---- overlay tabs: full kit, evolved parts, ancestor vs candidate
+// (synced, evolved parts only), evolution-difference superimposition
 var ovl=document.getElementById("ovl");
 if(!ovl)return;
-var soloState=makeState(),cmpState=makeState(),
+var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
     diffState=makeState(1.2); // near top-down: plan-shape reads best
-var soloV=null,cmpA=null,cmpB=null,diffV=null,current=null;
+var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
+  if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
   if(!cmpA)cmpA=makeViewer(document.getElementById("ovl-anc"),cmpState);
   if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
   if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
 }
-function redrawAll(){soloState.redraw();cmpState.redraw();diffState.redraw()}
+function redrawAll(){soloState.redraw();evoState.redraw();
+  cmpState.redraw();diffState.redraw()}
 function setTab(name){
   ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
@@ -521,12 +524,28 @@ function openOverlay(d){
     (d.fit?' &middot; <span class="num">'+d.fit+"</span>&thinsp;Wh/km":"");
   soloV.loadBlob(d.mesh);
   soloState.reset();
+  var evoBtn=ovl.querySelector('button[data-tab="evolved"]');
   var cmpBtn=ovl.querySelector('button[data-tab="compare"]');
   var diffBtn=ovl.querySelector('button[data-tab="diff"]');
   var hasAnc=d.ancestor&&document.getElementById(d.ancestor)&&d.ancestor!==d.mesh;
+  var meshEv=decodeBlob(d.mesh),ancEv=hasAnc?decodeBlob(d.ancestor):null;
+  if(meshEv&&meshEv.ev){
+    evoBtn.disabled=false;
+    evoV.load([{id:d.mesh,evolved:true}]);
+    evoState.reset();
+  }else{
+    evoBtn.disabled=true;
+  }
   if(hasAnc){
     cmpBtn.disabled=false;
-    cmpA.loadBlob(d.ancestor);cmpB.loadBlob(d.mesh);
+    // evolved parts only when both blobs carry the subset: the fixed kit
+    // is identical anyway and hides what actually changed
+    if(meshEv&&meshEv.ev&&ancEv&&ancEv.ev){
+      cmpA.load([{id:d.ancestor,evolved:true}]);
+      cmpB.load([{id:d.mesh,evolved:true}]);
+    }else{
+      cmpA.loadBlob(d.ancestor);cmpB.loadBlob(d.mesh);
+    }
     document.getElementById("anc-hash").textContent=d.anctitle||"";
     document.getElementById("cur-hash").textContent=
       (d.title||"")+(d.fit?" · "+d.fit:"");
@@ -534,7 +553,6 @@ function openOverlay(d){
   }else{
     cmpBtn.disabled=true;
   }
-  var meshEv=decodeBlob(d.mesh),ancEv=hasAnc?decodeBlob(d.ancestor):null;
   if(hasAnc&&meshEv&&meshEv.ev&&ancEv&&ancEv.ev){
     diffBtn.disabled=false;
     diffV.load([{id:d.mesh,evolved:true},
@@ -572,7 +590,8 @@ var VIEWS={front:[Math.PI/2,0],left:[Math.PI,0],right:[0,0],
 function activeState(){
   var b=ovl.querySelector(".ovl-tabs button.on");
   var t=b?b.dataset.tab:"solo";
-  return t==="compare"?cmpState:t==="diff"?diffState:soloState;
+  return t==="compare"?cmpState:t==="diff"?diffState:
+         t==="evolved"?evoState:soloState;
 }
 ovl.querySelectorAll(".ovl-views button").forEach(function(b){
   b.addEventListener("click",function(){
@@ -588,8 +607,7 @@ ovl.querySelectorAll(".ovl-views button").forEach(function(b){
   });
 });
 window.addEventListener("resize",function(){
-  if(ovl.classList.contains("open")){soloState.redraw();cmpState.redraw();
-    diffState.redraw()}
+  if(ovl.classList.contains("open"))redrawAll();
 });
 // auto-refresh while the run is live -- but never kill an open overlay
 setInterval(function(){
@@ -745,6 +763,29 @@ def progress_chart_svg(store: Store, run_id: str,
 
     s: list[str] = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" '
                     f'font-family="Palatino,Georgia,serif">']
+    # alternating generation bands (drawn first, everything else paints on
+    # top): every dot -- including the invalid strip -- reads as part of its
+    # generation. Even generations get an invisible rect so hovering any
+    # empty band area names the generation.
+    y_inv = 20  # centerline of the invalid strip up top
+    band_top = y_inv - 16
+    bounds: list[tuple[int, float]] = []  # (generation, left band edge)
+    prev_gen = None
+    for i, c in enumerate(cands):
+        if c["generation_born"] != prev_gen:
+            prev_gen = c["generation_born"]
+            bounds.append((prev_gen, ml + pw * i / n))
+    spans = [(g, x0, bounds[k + 1][1] if k + 1 < len(bounds) else ml + pw)
+             for k, (g, x0) in enumerate(bounds)]
+    n_in_gen: dict[int, int] = {}
+    for c in cands:
+        n_in_gen[c["generation_born"]] = n_in_gen.get(c["generation_born"], 0) + 1
+    for g, x0, x1 in spans:
+        s.append(f'<rect x="{x0:.1f}" y="{band_top}" width="{x1 - x0:.1f}" '
+                 f'height="{mt + ph - band_top:.1f}" fill="#8f8c78" '
+                 f'opacity="{"0.08" if g % 2 else "0"}">'
+                 f'<title>generation {g} &#183; {n_in_gen[g]} '
+                 f'candidate(s)</title></rect>')
     # y gridlines at nice round steps, plus the zero baseline
     raw = y_max / 5.0
     mag = 10.0 ** math.floor(math.log10(raw))
@@ -763,49 +804,32 @@ def progress_chart_svg(store: Store, run_id: str,
         s.append(f'<text x="{ml - 10}" y="{y + 4:.1f}" text-anchor="end" '
                  f'font-size="13" fill="#9b998c">{label}</text>')
         fv += step
-    # generation boundaries (pivot generations flagged in teal). At high
-    # generation counts, ticks + labels thin to a spaced subset so they stay
-    # readable; pivots take priority and tolerate a tighter gap.
+    # generation labels centered under their band; pivot generations keep
+    # their full-height teal marker (a structural event, always drawn).
+    # Labels appear only when the band is wide enough to own them.
     pivot_gens = {c["generation_born"] for c in cands if c["operator"] == "pivot"}
-    bounds: list[tuple[int, float]] = []
-    prev_gen = None
-    for i, c in enumerate(cands):
-        if c["generation_born"] != prev_gen:
-            prev_gen = c["generation_born"]
-            bounds.append((prev_gen, ml + pw * i / n))
-    last_lx = -1e9
-    for g, x in bounds:
-        is_pivot = g in pivot_gens
-        if is_pivot:
-            # a pivot is a structural event: full-height teal marker plus
-            # axis tick, drawn no matter how tight the label spacing gets
-            s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" '
+    for g, x0, x1 in spans:
+        if g in pivot_gens:
+            s.append(f'<line x1="{x0:.1f}" y1="{mt}" x2="{x0:.1f}" '
                      f'y2="{mt + ph}" stroke="#2e6e63" stroke-width="1.1" '
                      f'stroke-dasharray="5,4" opacity="0.65">'
                      f'<title>g{g}: pivot generation (plateau broken up with '
                      f'far-parent crossovers)</title></line>')
-            s.append(f'<line x1="{x:.1f}" y1="{mt + ph}" x2="{x:.1f}" '
+            s.append(f'<line x1="{x0:.1f}" y1="{mt + ph}" x2="{x0:.1f}" '
                      f'y2="{mt + ph + 5}" stroke="#2e6e63" stroke-width="1.6">'
                      f'<title>g{g}: pivot generation (plateau broken up with '
                      f'far-parent crossovers)</title></line>')
-        if x - last_lx < (14.0 if is_pivot else 36.0):
-            continue
-        last_lx = x
-        if not is_pivot:
-            s.append(f'<line x1="{x:.1f}" y1="{mt}" x2="{x:.1f}" y2="{mt + ph}" '
-                     f'stroke="#ece9da" stroke-width="1" stroke-dasharray="1,4"/>')
-        if is_pivot:
-            s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
+            s.append(f'<text x="{x0 + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
                      f'font-weight="700" fill="#2e6e63">g{g} &#10227;'
                      f'<title>pivot generation: plateau broken up with '
                      f'far-parent crossovers</title></text>')
-        else:
-            s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
-                     f'fill="#9b998c">g{g}</text>')
+        elif x1 - x0 >= 24.0:
+            s.append(f'<text x="{(x0 + x1) / 2:.1f}" y="{mt + ph + 16}" '
+                     f'font-size="11" fill="#9b998c" text-anchor="middle">'
+                     f'g{g}</text>')
 
     # invalid strip (design fails): floated well clear of the finite scale,
     # with its own infinity label on the y axis and a faint band behind it
-    y_inv = 20
     s.append(f'<rect x="{ml}" y="{y_inv - 16}" width="{pw}" '
              f'height="{mt - 10 - (y_inv - 16)}" fill="#8c2f1f" '
              f'opacity="0.05"/>')
@@ -888,7 +912,7 @@ def progress_chart_svg(store: Store, run_id: str,
                  f'Dave_C-style builds)</text>')
     s.append(f'<text x="{ml + pw / 2}" y="{H - 8}" text-anchor="middle" '
              f'font-size="13" font-style="italic" fill="#6b6a60">'
-             f'candidate # (evaluation order) &mdash; lower is better</text>')
+             f'candidate # (evaluation order) &#8212; lower is better</text>')
     s.append("</svg>")
     return "".join(s)
 
@@ -953,6 +977,11 @@ def _chart_legend_html() -> str:
              "Failed a structural or geometric check and never flew the "
              "scenarios, so it has no finite score &mdash; plotted on the "
              "&#8734; row."),
+        item('<span style="display:inline-block;width:14px;height:12px;'
+             'background:#8f8c78;opacity:0.25"></span>', "generation",
+             "Alternating shaded bands group the candidates of each "
+             "generation (labeled g0, g1, &hellip; below the axis); hover a "
+             "band for its candidate count."),
         item('<span style="color:#2e6e63;font-weight:700">g&#8202;&#10227;'
              "</span>", "pivot generation",
              "Patience ran out on a plateau: this generation was bred from "
@@ -1112,10 +1141,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
 
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">click a model to '
-                 "open it full-screen: tab 1 is the interactive 3D model, "
-                 "tab 2 compares it side-by-side with the oldest ancestor of "
-                 "its lineage, rotating in sync (very long runs shed the 3D "
-                 "models of their oldest, weakest candidates first)</p>")
+                 "open it full-screen: the full-kit model, its evolved "
+                 "components alone, a side-by-side with the oldest ancestor "
+                 "of its lineage rotating in sync, and the evolution "
+                 "difference overlay (very long runs shed the 3D models of "
+                 "their oldest, weakest candidates first)</p>")
     blobs: list[str] = []
     embedded: set[str] = set()
     for h in detail_ids:
@@ -1254,9 +1284,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div id="ovl">'
         '<div class="ovl-bar">'
         '<span class="ovl-tabs">'
-        '<button data-tab="solo" class="on">3d model</button>'
+        '<button data-tab="solo" class="on">full-kit model</button>'
+        '<button data-tab="evolved">evolved components</button>'
         '<button data-tab="compare">compare with oldest ancestor</button>'
-        '<button data-tab="diff">changed parts</button>'
+        '<button data-tab="diff">evolution difference</button>'
         "</span>"
         '<span class="hash"></span>'
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
@@ -1267,6 +1298,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div class="ovl-hint">drag to rotate &middot; &#8984;-drag pans '
         "&middot; scroll to zoom &middot; double-click resets &middot; "
         "esc closes</div></div>"
+        '<div class="ovl-body" data-tab="evolved" style="position:relative">'
+        '<div class="pane"><canvas id="ovl-evo"></canvas></div>'
+        '<div class="ovl-hint">only the evolved parts (deck + arms) are '
+        "shown &middot; fixed kit hidden</div></div>"
         '<div class="ovl-body" data-tab="compare" style="position:relative">'
         '<div class="pane"><div class="cap">oldest ancestor '
         '<span class="hash" id="anc-hash"></span></div>'
@@ -1274,10 +1309,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div class="pane"><div class="cap">this candidate '
         '<span class="hash" id="cur-hash"></span></div>'
         '<canvas id="ovl-cur"></canvas></div>'
-        '<div class="ovl-hint">the two models rotate and zoom in sync</div>'
+        '<div class="ovl-hint">evolved parts only &middot; '
+        "the two models rotate and zoom in sync</div>"
         "</div>"
         '<div class="ovl-body" data-tab="diff" style="position:relative">'
-        '<div class="pane"><div class="cap">evolved frame diff '
+        '<div class="pane"><div class="cap">evolution difference '
         '<span class="hash" id="diff-hash"></span>'
         '<span style="font-style:italic;text-transform:none;'
         'letter-spacing:0;font-weight:400">solid color = this candidate '
