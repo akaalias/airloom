@@ -128,11 +128,11 @@ Respond with ONLY a JSON object mapping each hash to its sections:
 """
 
 
-def narrate_generation(store: Store, run_id: str, gen: int,
-                       new_hashes: list[str], model: str,
-                       timeout_s: float) -> None:
+def prepare_candidates(store: Store, run_id: str,
+                       new_hashes: list[str]) -> tuple[list[dict], float | None]:
+    """Fast DB reads on the caller's thread: everything the narration needs."""
     if not new_hashes:
-        return
+        return [], None
     all_rows = {r["hash"]: r for r in store.candidates_for_run(run_id)}
     # best-so-far before this generation's candidates were evaluated
     best_before = None
@@ -178,7 +178,37 @@ def narrate_generation(store: Store, run_id: str, gen: int,
             "best_before": best_before,
         })
 
-    notes = {c["hash"]: _fallback(c) for c in cands}
+    return cands, best_before
+
+
+def narrate_generation(store: Store, run_id: str, gen: int,
+                       new_hashes: list[str], model: str,
+                       timeout_s: float) -> None:
+    """Synchronous convenience wrapper (used by tests)."""
+    cands, best_before = prepare_candidates(store, run_id, new_hashes)
+    write_fallback_notes(store, run_id, cands)
+    enrich_notes(str(store.path), run_id, gen, cands, best_before,
+                 model, timeout_s)
+
+
+def write_fallback_notes(store: Store, run_id: str, cands: list[dict]) -> None:
+    """Instant rule-based notes so the sections always exist; the async
+    Claude enrichment upgrades them in place afterwards."""
+    for c in cands:
+        sec = _fallback(c)
+        store.set_narrative(run_id, c["hash"], sec["hypothesis"],
+                            sec["method"], sec["result"])
+
+
+def enrich_notes(db_path: str, run_id: str, gen: int, cands: list[dict],
+                 best_before: float | None, model: str,
+                 timeout_s: float) -> None:
+    """The slow part -- ONE headless-Claude call -- designed to run on a
+    background thread with its own DB connection, off the loop's critical
+    path. Fail-soft: the fallback notes simply remain."""
+    if not cands:
+        return
+    notes: dict[str, dict] = {}
     try:
         brief = _build_brief(cands, gen, best_before)
         cmd = ["claude", "-p", brief, "--output-format", "json"]
@@ -190,15 +220,26 @@ def narrate_generation(store: Store, run_id: str, gen: int,
         text = envelope.get("result", "") if isinstance(envelope, dict) else ""
         match = re.search(r"\{.*\}", text, re.DOTALL)
         got = json.loads(match.group(0)) if match else {}
+        wanted = {c["hash"]: _fallback(c) for c in cands}
         for h, sec in got.items():
-            if h in notes and isinstance(sec, dict):
+            if h in wanted and isinstance(sec, dict):
+                merged = wanted[h]
                 for k in ("hypothesis", "method", "result"):
                     if isinstance(sec.get(k), str) and sec[k].strip():
-                        notes[h][k] = sec[k].strip()[:1200]
+                        merged[k] = sec[k].strip()[:1200]
+                notes[h] = merged
     except Exception as exc:
-        print(f"[framevo] narrator fell back to rule-based notes: "
+        print(f"[framevo] narrator kept rule-based notes: "
               f"{type(exc).__name__}: {exc}", flush=True)
+        return
 
-    for h, sec in notes.items():
-        store.set_narrative(run_id, h, sec["hypothesis"], sec["method"],
-                            sec["result"])
+    from pathlib import Path
+
+    from .dbstore import Store as _Store
+    own = _Store(Path(db_path))  # background thread: own connection
+    try:
+        for h, sec in notes.items():
+            own.set_narrative(run_id, h, sec["hypothesis"], sec["method"],
+                              sec["result"])
+    finally:
+        own.close()

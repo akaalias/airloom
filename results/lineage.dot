@@ -1,20 +1,3 @@
 digraph lineage {
   rankdir=TB; node [shape=circle, style=filled, fontsize=8];
-  "093728116f31" [label="093728\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "0bac173ad845" [label="0bac17\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "3d2f06902112" [label="3d2f06\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "4e66c118fb69" [label="4e66c1\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "5b5c4fbdea2d" [label="5b5c4f\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "77e2cad76ab9" [label="77e2ca\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "7a971b624b61" [label="7a971b\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "93172171089f" [label="931721\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "947e4a9d7b35" [label="947e4a\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "99367eb32465" [label="99367e\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "baac55fb3837" [label="baac55\n8.49", fillcolor="#111111", style="filled", fontcolor=white];
-  "c408b7873a88" [label="c408b7\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "c6b337b3437f" [label="c6b337\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "d2aa23997bc0" [label="d2aa23\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "d5a59fb8c0ea" [label="d5a59f\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  "faf7cf2abe00" [label="faf7cf\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
-  { rank=same; "093728116f31"; "0bac173ad845"; "3d2f06902112"; "4e66c118fb69"; "5b5c4fbdea2d"; "77e2cad76ab9"; "7a971b624b61"; "93172171089f"; "947e4a9d7b35"; "99367eb32465"; "baac55fb3837"; "c408b7873a88"; "c6b337b3437f"; "d2aa23997bc0"; "d5a59fb8c0ea"; "faf7cf2abe00" }
 }

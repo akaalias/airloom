@@ -95,14 +95,7 @@ class EvolutionLoop:
                                                       p.genome.hash) is None]
             entries = self._evaluate_generation(gen, proposals)
             if self.cfg.evolution.narrator.enabled and new_hashes:
-                from .narrator import narrate_generation
-                try:
-                    narrate_generation(self.store, self.run_id, gen,
-                                       new_hashes,
-                                       self.cfg.evolution.narrator.model,
-                                       self.cfg.evolution.narrator.timeout_s)
-                except Exception as exc:
-                    _log(f"narrator skipped: {type(exc).__name__}: {exc}")
+                self._narrate_async(gen, new_hashes)
 
             if cmaes is not None:
                 cmaes.tell([p.genome.normalized for p in proposals],
@@ -121,6 +114,8 @@ class EvolutionLoop:
                  f"valid {len(finite)}/{len(entries)}  "
                  f"({time.time() - t0:5.1f}s)")
 
+        self._join_narrators()  # let pending note-enrichments land
+        self._write_artifacts(ev.generations - 1)
         self.store.finish_run(self.run_id)
         gallery_path = self.results / "gallery.html"
         _log(f"done. gallery: file://{gallery_path}")
@@ -283,6 +278,36 @@ class EvolutionLoop:
             mean_whkm=mean, worst_whkm=worst, f1_hz=f1_hz,
             stl_path=stl_path or (bv or {}).get("stl_path"),
             png_path=(bv or {}).get("png_path")))
+
+    # ------------------------------------------------------------ narrator --
+    def _narrate_async(self, gen: int, new_hashes: list[str]) -> None:
+        """Rule-based notes are written immediately; the headless-Claude
+        enrichment runs on a background thread so it never blocks the next
+        generation."""
+        import threading
+
+        from .narrator import enrich_notes, prepare_candidates, \
+            write_fallback_notes
+        try:
+            cands, best_before = prepare_candidates(self.store, self.run_id,
+                                                    new_hashes)
+            write_fallback_notes(self.store, self.run_id, cands)
+        except Exception as exc:
+            _log(f"narrator skipped: {type(exc).__name__}: {exc}")
+            return
+        nr = self.cfg.evolution.narrator
+        t = threading.Thread(
+            target=enrich_notes,
+            args=(str(self.store.path), self.run_id, gen, cands, best_before,
+                  nr.model, nr.timeout_s),
+            daemon=True, name=f"narrator-g{gen}")
+        t.start()
+        self._narrator_threads = getattr(self, "_narrator_threads", [])
+        self._narrator_threads.append(t)
+
+    def _join_narrators(self, timeout: float = 330.0) -> None:
+        for t in getattr(self, "_narrator_threads", []):
+            t.join(timeout=timeout)
 
     # ------------------------------------------------------------ designer --
     def _designer_round(self, gen: int, proposals: list[Proposal]) -> list[Proposal]:

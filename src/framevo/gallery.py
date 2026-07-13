@@ -116,6 +116,8 @@ table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
   letter-spacing:.07em;background:var(--ink);color:var(--paper);
   padding:3px 9px;margin-left:10px;vertical-align:2px}
 .chip.champ{background:var(--accent)}
+table.dt.hd{margin:10px 0 4px}
+table.dt.hd b{font-size:17px}
 .headline .lab,.note .nlab{font:600 11px var(--serif);
   font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.06em;color:var(--muted)}
@@ -891,23 +893,30 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         elif h in setter_hashes:
             badge = '<span class="chip">new best when evaluated</span>'
         invalid = not math.isfinite(fit)
+        born = f"generation {c['generation_born']} via {c['operator']}"
         if invalid:
-            headline = (
-                f'<div class="headline"><span class="fail">invalid design '
-                f'&mdash; {html.escape(c["failure_reason"] or "unknown")}'
-                f"</span> &middot; never flew the scenarios<br>"
-                f'<span class="num">frame {mass}&thinsp;g{mat} &middot; '
-                f"born generation {c['generation_born']} via "
-                f"{c['operator']}</span></div>")
+            metric_rows = [
+                ("status", '<span style="color:var(--accent);font-style:'
+                           'italic">invalid &mdash; '
+                           f'{html.escape(c["failure_reason"] or "unknown")}'
+                           "</span>"),
+                ("energy score", "&#8734; (never flew the scenarios)"),
+            ]
         else:
-            headline = (
-                f'<div class="headline num">energy score <b>{_fmt(fit)}</b> '
-                f'Wh/km <span class="lab">(mean of the 6 scenarios + 0.5 '
-                f"&times; worst &mdash; lower is better)</span><br>"
-                f"scenario mean {_fmt(c['mean_whkm'])} &middot; worst "
-                f"scenario {_fmt(c['worst_whkm'])} Wh/km &middot; frame "
-                f"{mass}&thinsp;g{mat} &middot; born generation "
-                f"{c['generation_born']} via {c['operator']}</div>")
+            metric_rows = [
+                ("energy score", f"<b>{_fmt(fit)}</b> Wh/km"),
+                ("scenario mean", f"{_fmt(c['mean_whkm'])} Wh/km"),
+                ("worst scenario", f"{_fmt(c['worst_whkm'])} Wh/km"),
+            ]
+        metric_rows += [
+            ("frame mass", f"{mass}&thinsp;g"),
+            ("material", html.escape(c["material"] or "&mdash;")),
+            ("born", born),
+        ]
+        headline = ('<table class="dt hd"><tr><th>metric</th><th>value</th>'
+                    "</tr>" + "".join(
+                        f"<tr><td>{k}</td><td class='num'>{v}</td></tr>"
+                        for k, v in metric_rows) + "</table>")
         notes = ""
         for key, label, cls2 in (("hypothesis", "hypothesis", ""),
                                  ("method", "method", ""),

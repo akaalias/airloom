@@ -144,7 +144,8 @@ class Store:
                 print(f"[framevo] {path} has schema v{version}, expected "
                       f"v{SCHEMA_VERSION} -- archived it as {backup.name}",
                       flush=True)
-        self.conn = sqlite3.connect(path)
+        self.path = path
+        self.conn = sqlite3.connect(path, timeout=15)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
         self.conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
