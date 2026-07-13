@@ -266,7 +266,18 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
   box-shadow:6px 6px 0 rgba(17,17,17,.07);display:none}}
 .ncard img{{width:100%;aspect-ratio:4/3;object-fit:contain;display:block;
   mix-blend-mode:multiply}}
-.ncard .hash{{font:13px var(--mono);color:var(--faint);margin-top:7px;word-break:break-all}}
+.ncard .imgw{{position:relative}}
+/* invalid candidates: same red diagonal cross as the gallery */
+.ncard .imgw.x::after{{content:"";position:absolute;inset:0;
+  pointer-events:none;background:
+  linear-gradient(to top right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px)),
+  linear-gradient(to bottom right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px))}}
+.ncard .dhead{{font:400 16px var(--serif);margin-top:8px}}
+.ncard .dhead .h{{font:13px var(--mono);color:var(--muted);word-break:break-all}}
 .ncard .head{{font-size:14.5px;line-height:1.5;margin-top:3px;
   font-variant-numeric:lining-nums tabular-nums}}
 .ncard .head b{{font-size:18px}}
@@ -281,7 +292,8 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
 .ncard td:first-child{{color:var(--muted)}}
 .ncard .anc{{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}}
 .ncard .nb{{font-size:12.5px;line-height:1.45;margin-top:7px;color:#33312b}}
-.ncard .nb b{{font-feature-settings:"smcp" 1;text-transform:uppercase;
+.ncard .nb b{{display:block;margin-bottom:1px;
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.05em;font-size:10.5px;color:var(--muted)}}
 .ncard .nb.res b{{color:var(--accent)}}
 /* interactive legend (replaces the SVG's baked-in one) */
@@ -358,19 +370,19 @@ function show(h,pin){{
   if(!c){{card.style.display="none";return}}
   var nAnc=Object.keys(set).length-1;
   var head;
-  if(c.fit!=null){{ // same headline as the gallery detail block
-    head='<div class="head">agg <b>'+c.fit.toFixed(3)+"</b>"
+  if(c.fit!=null){{ // same headline language as the gallery detail block
+    head='<div class="head"><b>'+c.fit.toFixed(3)+"</b>&thinsp;Wh/km"
       +(c.mean!=null?" &middot; mean "+c.mean.toFixed(3):"")
       +(c.worst!=null?" &middot; worst "+c.worst.toFixed(3):"")
-      +" Wh/km"
-      +(c.mass?" &middot; frame "+c.mass.toFixed(1)+"&thinsp;g":"")
+      +(c.mass?" &middot; "+c.mass.toFixed(1)+"&thinsp;g":"")
       +(c.mat?" &middot; "+esc(c.mat):"")
       +" &middot; born g"+c.g+" via "+esc(c.op)
       +(c.mut?" (mut "+c.mut+")":"")+"</div>";
   }}else{{
-    head='<div class="head">born g'+c.g+" via "+esc(c.op)
-      +(c.mat?" &middot; "+esc(c.mat):"")+"</div>"
-      +'<div class="fail">'+esc(c.fail||"invalid")+"</div>";
+    head='<div class="fail">invalid &mdash; '+esc(c.fail||"unknown")
+      +" &middot; never flew</div>"
+      +'<div class="head">born g'+c.g+" via "+esc(c.op)
+      +(c.mat?" &middot; "+esc(c.mat):"")+"</div>";
   }}
   var table="";
   if(c.sc&&c.sc.length){{
@@ -386,8 +398,9 @@ function show(h,pin){{
   var notes="";
   if(c.hyp)notes+='<div class="nb"><b>hypothesis</b> '+esc(c.hyp)+"</div>";
   if(c.res)notes+='<div class="nb res"><b>result</b> '+esc(c.res)+"</div>";
-  card.innerHTML=(c.png?'<img src="'+esc(c.png)+'" alt="">':"")
-    +'<div class="hash">'+esc(h)+"</div>"
+  card.innerHTML=(c.png?'<div class="imgw'+(c.fit==null?" x":"")+'">'
+      +'<img src="'+esc(c.png)+'" alt=""></div>':"")
+    +'<div class="dhead">candidate <span class="h">'+esc(h)+"</span></div>"
     +head+notes+table
     +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
       +" highlighted":"seed / immigrant &mdash; no ancestors")

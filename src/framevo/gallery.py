@@ -399,6 +399,23 @@ function makeViewer(canvas,state){
       }
       gl.uniform3f(uT,frame.c[0],frame.c[1],frame.c[2]);
     },
+    // zoom that fits the CURRENT pitch: draw()'s fit factor is anchored
+    // at basePitch so rotation doesn't breathe, so after rotating the
+    // fit button needs this correction ratio
+    fitZoom:function(){
+      if(!models.length||frame.mx===undefined)return null;
+      var w=canvas.clientWidth,h=canvas.clientHeight;
+      if(w<2||h<2)return null;
+      var asp=w>h?[h/w,1]:[1,w/h];
+      function need(p){
+        var ex=frame.mx*asp[0],
+            ey=(Math.abs(Math.sin(p))*frame.my+
+                Math.abs(Math.cos(p))*frame.mz)*asp[1];
+        return Math.max(ex,ey);
+      }
+      var cur=need(state.pitch);
+      return cur>0?need(state.basePitch)/cur:null;
+    },
     draw:function(){
       if(!models.length)return;
       var dpr=window.devicePixelRatio||1;
@@ -562,8 +579,11 @@ ovl.querySelectorAll(".ovl-views button").forEach(function(b){
     var st=activeState(),v=b.dataset.view;
     st.panX=0;st.panY=0;
     if(v==="default"){st.reset();return}
-    if(v==="fit"){st.zoom=1.0}
-    else{st.yaw=VIEWS[v][0];st.pitch=VIEWS[v][1]}
+    if(v==="fit"){
+      var zs=[];
+      st.viewers.forEach(function(vv){var z=vv.fitZoom();if(z)zs.push(z)});
+      st.zoom=zs.length?Math.max(0.3,Math.min(8,Math.min.apply(null,zs))):1.0;
+    }else{st.yaw=VIEWS[v][0];st.pitch=VIEWS[v][1]}
     st.redraw();
   });
 });
@@ -1036,34 +1056,66 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 detail_ids.append(h)
         parts.append("</div>")
 
-    # embedding a mesh blob for every candidate makes long-run galleries
-    # enormous; interactive viewers go to the interesting subset, everyone
-    # else keeps the static render (and the full genome/scenario tables)
-    viewer_hashes: set[str] = set()
+    # embedding a mesh blob for every candidate would make very long runs
+    # enormous, so blobs are embedded by priority -- champion & setters,
+    # recent generations, the strongest hundred, then everything else
+    # (invalid included: the failures are instructive) newest first --
+    # until the size budget is spent. Typical runs fit entirely; only very
+    # long runs shed their oldest, weakest candidates.
+    EMBED_BUDGET = 64 * 1024 * 1024
+    prio: list[str] = []
+    seen_p: set[str] = set()
+
+    def _take(hashes) -> None:
+        for hh in hashes:
+            if hh in cands and hh not in seen_p:
+                seen_p.add(hh)
+                prio.append(hh)
+
+    if best_hash:
+        _take([best_hash])
+    _take(sorted(setter_hashes, key=lambda hh: cands[hh]["generation_born"]))
+    for g in reversed(gens[-3:]):
+        _take(r["hash"] for r in store.population(run_id, g))
     ranked_all = sorted(((h, f) for h, f in
                          ((h, store.fitness_of(r)) for h, r in cands.items())
                          if math.isfinite(f)), key=lambda t: t[1])
-    viewer_hashes.update(h for h, _ in ranked_all[:100])
-    best_sofar = math.inf
-    for c in store.candidates_in_eval_order(run_id):
-        f = store.fitness_of(c)
-        if math.isfinite(f) and f < best_sofar:
-            best_sofar = f
-            viewer_hashes.add(c["hash"])
-    for g in gens[-3:]:
-        viewer_hashes.update(r["hash"] for r in store.population(run_id, g))
-    # the compare tab needs each viewer candidate's lineage root too
-    for h in list(viewer_hashes):
+    _take(h for h, _ in ranked_all[:100])
+    _take(sorted((h for h in cands if h not in seen_p),
+                 key=lambda hh: -(cands[hh]["generation_born"] or 0)))
+
+    blob_texts: dict[str, str] = {}
+    viewer_hashes: set[str] = set()
+    used = 0
+    for h in prio:
+        if h in viewer_hashes:
+            continue
+        blob = _mesh_blob_for(results_dir, cands[h]["png_path"])
+        if blob is None:
+            continue
+        cost = len(blob)
+        # the compare tab needs the candidate's lineage root too
         root = _oldest_ancestor(cands, h)
-        if root:
+        rblob = None
+        if root and root not in viewer_hashes:
+            rblob = _mesh_blob_for(results_dir, cands[root]["png_path"])
+            if rblob is not None:
+                cost += len(rblob)
+        if used + cost > EMBED_BUDGET and viewer_hashes:
+            break
+        blob_texts[h] = blob
+        viewer_hashes.add(h)
+        if root and rblob is not None:
+            blob_texts[root] = rblob
             viewer_hashes.add(root)
+        used += cost
 
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">click a model to '
                  "open it full-screen: tab 1 is the interactive 3D model, "
                  "tab 2 compares it side-by-side with the oldest ancestor of "
-                 "its lineage, rotating in sync (available for the top "
-                 "candidates, improvement-setters and recent generations)</p>")
+                 "its lineage, rotating in sync (very long runs shed the 3D "
+                 "models of their oldest, weakest candidates first)</p>")
     blobs: list[str] = []
     embedded: set[str] = set()
     for h in detail_ids:
@@ -1074,8 +1126,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         # invalid renders get a red diagonal cross drawn over them
         xo, xc = ('<span class="xed">', "</span>") if invalid else ("", "")
         img = _rel(results_dir, c["png_path"])
-        blob = _mesh_blob_for(results_dir, c["png_path"]) \
-            if h in viewer_hashes else None
+        blob = blob_texts.get(h)
         bottom = _bottom_png_for(results_dir, c["png_path"]) or img
         if blob is not None:
             if h not in embedded:
@@ -1084,7 +1135,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             root = _oldest_ancestor(cands, h)
             anc_attr = ""
             if root and root in viewer_hashes and root != h:
-                rblob = _mesh_blob_for(results_dir, cands[root]["png_path"])
+                rblob = blob_texts.get(root)
                 if rblob is not None:
                     if root not in embedded:
                         blobs.append(f'<script type="application/json" '
