@@ -41,7 +41,32 @@ a:hover{border-bottom-color:var(--accent)}
   letter-spacing:.06em;color:var(--muted)}
 """
 
-CSS = TUFTE_TOKENS + """
+NAV_CSS = """
+.topnav{display:flex;gap:28px;justify-content:center;align-items:baseline;
+  border-bottom:1px solid var(--rule);padding:0 0 12px;margin:0 0 34px}
+.topnav .brand{font:italic 14px var(--serif);color:var(--faint)}
+.topnav a{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  border-bottom:2px solid transparent;padding-bottom:3px}
+.topnav a:hover{color:var(--ink);border-bottom-color:transparent}
+.topnav a.on{color:var(--ink);border-bottom-color:var(--ink)}
+"""
+
+_NAV_PAGES = [("gallery.html", "gallery"),
+              ("lineage.html", "family tree"),
+              ("glossary.html", "glossary")]
+
+
+def nav_html(active: str) -> str:
+    """Shared top navigation between the three result pages; `active` is
+    the label of the current page."""
+    links = "".join(
+        f'<a href="{href}"{" class=\"on\"" if label == active else ""}>'
+        f"{label}</a>" for href, label in _NAV_PAGES)
+    return f'<nav class="topnav"><span class="brand">framevo</span>{links}</nav>'
+
+
+CSS = TUFTE_TOKENS + NAV_CSS + """
 .wrap{max-width:92vw;margin:0 auto;padding:40px 0 96px}
 @media(max-width:1100px){.wrap{max-width:none;padding-left:28px;padding-right:28px}}
 h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;
@@ -325,6 +350,14 @@ table.dt.hd b{font-size:17px}
   text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
   padding:10px 18px 0;display:flex;gap:14px;align-items:baseline}
 .ovl-body .pane .cap .hash{font:12px var(--mono);color:var(--faint)}
+/* lineage-walkthrough stepper */
+.ovl-body .cap .wbtn{font:600 10.5px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted);background:var(--paper);
+  border:1px solid var(--rule);padding:3px 12px;cursor:pointer}
+.ovl-body .cap .wbtn:hover:not(:disabled){color:var(--ink);
+  border-color:var(--ink)}
+.ovl-body .cap .wbtn:disabled{opacity:.35;cursor:default}
 .ovl-body canvas{flex:1;width:100%;min-height:0;cursor:grab;touch-action:none}
 .ovl-hint{position:absolute;right:26px;bottom:12px;font:italic 12px var(--serif);
   color:var(--faint);pointer-events:none}
@@ -356,9 +389,10 @@ var VS="attribute vec3 aP;attribute vec3 aN;attribute vec4 aC;"+
   "gl_Position=vec4(p.x*uS*uA.x+uPn.x,p.y*uS*uA.y+uPn.y,-p.z*0.25,1.0);"+
   "vN=uR*aN;vC=aC;}";
 var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
+  "uniform float uF;"+ // per-model fade for cross-fade transitions
   "void main(){vec3 L=normalize(vec3(0.35,0.48,0.85));"+
   "float d=abs(dot(normalize(vN),L));float s=0.45+0.55*d;"+
-  "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a);}";
+  "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a*uF);}";
 
 var DEF_YAW=-0.9,DEF_PITCH=0.8;
 var blobCache={};
@@ -479,7 +513,7 @@ function makeViewer(canvas,state){
   }
   var uR=gl.getUniformLocation(prog,"uR"),uT=gl.getUniformLocation(prog,"uT"),
       uS=gl.getUniformLocation(prog,"uS"),uA=gl.getUniformLocation(prog,"uA"),
-      uPn=gl.getUniformLocation(prog,"uPn");
+      uPn=gl.getUniformLocation(prog,"uPn"),uF=gl.getUniformLocation(prog,"uF");
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(1.0,1.0,0.973,1.0);
   var models=[]; // [{bufs, nf, nOpq}], shared center/scale from first
@@ -487,7 +521,10 @@ function makeViewer(canvas,state){
   var view={
     canvas:canvas,
     loadBlob:function(id){view.load([{id:id}])},
-    load:function(specs){
+    // fixedFrame: an optional pre-computed {c,r,mx,my,mz} shared across
+    // several loads so swapping models never re-centers or re-fits the
+    // camera (the walkthrough uses one frame for its whole chain)
+    load:function(specs,fixedFrame){
       models=[];
       for(var i2=0;i2<specs.length;i2++){
         var sp=specs[i2],d2=decodeBlob(sp.id);
@@ -495,18 +532,23 @@ function makeViewer(canvas,state){
         if(sp.evolved){
           if(!d2.ev)continue;
           models.push({bufs:upload(d2.ev.P,d2.ev.N,sp.ghost?d2.ev.Cg:d2.ev.Ce),
-                       nf:d2.ev.nf,nOpq:sp.ghost?0:d2.ev.nf});
+                       nf:d2.ev.nf,nOpq:sp.ghost?0:d2.ev.nf,
+                       fade:sp.fade==null?1:sp.fade});
         }else{
-          models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nf,nOpq:d2.nOpq});
+          models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nf,nOpq:d2.nOpq,
+                       fade:sp.fade==null?1:sp.fade});
         }
         var ext=sp.evolved?d2.ev:d2;
+        if(fixedFrame)continue;
         if(i2===0){frame={c:d2.c,r:d2.r,mx:ext.mx,my:ext.my,mz:ext.mz}}
         else{frame.mx=Math.max(frame.mx,ext.mx);
              frame.my=Math.max(frame.my,ext.my);
              frame.mz=Math.max(frame.mz,ext.mz)}
       }
+      if(fixedFrame)frame=fixedFrame;
       gl.uniform3f(uT,frame.c[0],frame.c[1],frame.c[2]);
     },
+    setFade:function(i,v){if(models[i])models[i].fade=v},
     // zoom that fits the CURRENT pitch: draw()'s fit factor is anchored
     // at basePitch so rotation doesn't breathe, so after rotating the
     // fit button needs this correction ratio
@@ -552,9 +594,19 @@ function makeViewer(canvas,state){
       gl.uniform1f(uS,0.85*state.zoom*fit/frame.r);
       gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       for(var m2=0;m2<models.length;m2++){
-        var mo=models[m2];
+        var mo=models[m2],fade=mo.fade==null?1:mo.fade;
+        if(fade<=0.004)continue;
         bindBuf(mo.bufs.aP,"aP",3);bindBuf(mo.bufs.aN,"aN",3);
         bindBuf(mo.bufs.aC,"aC",4);
+        gl.uniform1f(uF,fade);
+        if(fade<0.996){ // fading: draw everything blended, no depth writes
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+          gl.depthMask(false);
+          gl.drawArrays(gl.TRIANGLES,0,mo.nf*3);
+          gl.depthMask(true);
+          continue;
+        }
         gl.disable(gl.BLEND);gl.depthMask(true);
         if(mo.nOpq>0)gl.drawArrays(gl.TRIANGLES,0,mo.nOpq*3);
         if(mo.nf>mo.nOpq){
@@ -598,17 +650,113 @@ function makeViewer(canvas,state){
 var ovl=document.getElementById("ovl");
 if(!ovl)return;
 var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
-    diffState=makeState(1.2); // near top-down: plan-shape reads best
-var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,current=null;
+    diffState=makeState(1.2), // near top-down: plan-shape reads best
+    walkState=makeState(1.2);
+var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,walkV=null,
+    current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
   if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
   if(!cmpA)cmpA=makeViewer(document.getElementById("ovl-anc"),cmpState);
   if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
   if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
+  if(!walkV)walkV=makeViewer(document.getElementById("ovl-walk"),walkState);
 }
 function redrawAll(){soloState.redraw();evoState.redraw();
-  cmpState.redraw();diffState.redraw()}
+  cmpState.redraw();diffState.redraw();walkState.redraw()}
+
+// ---- lineage walkthrough: step from the oldest ancestor down the
+// primary-parent chain to this candidate; the current step is solid,
+// its next descendant a gray ghost, and each step cross-fades
+var wmetaEl=document.getElementById("walk-meta");
+var WMETA=wmetaEl?JSON.parse(wmetaEl.textContent):{};
+var walkChain=[],walkIdx=0,walkAnim=null,walkFrame=null;
+// one shared camera frame for the whole chain: common center + union of
+// every member's extents, so stepping never re-centers or re-fits --
+// only the actual geometry differences move
+function chainFrame(){
+  var cyw=Math.cos(DEF_YAW),syw=Math.sin(DEF_YAW);
+  var ents=[],C=[0,0,0];
+  walkChain.forEach(function(h){
+    var e=decodeBlob("m-"+h);
+    if(e&&e.ev)ents.push(e);
+  });
+  if(!ents.length)return null;
+  ents.forEach(function(e){C[0]+=e.c[0];C[1]+=e.c[1];C[2]+=e.c[2]});
+  C[0]/=ents.length;C[1]/=ents.length;C[2]/=ents.length;
+  var mx=0,my=0,mz=0;
+  ents.forEach(function(e){
+    // extents are stored about the blob's own center in the DEF_YAW
+    // frame; shift them by the rotated offset to the common center
+    var dx=e.c[0]-C[0],dy=e.c[1]-C[1],dz=e.c[2]-C[2];
+    var ox=Math.abs(cyw*dx+syw*dy),oy=Math.abs(cyw*dy-syw*dx);
+    mx=Math.max(mx,e.ev.mx+ox);
+    my=Math.max(my,e.ev.my+oy);
+    mz=Math.max(mz,e.ev.mz+Math.abs(dz));
+  });
+  return {c:C,r:ents[0].r,mx:mx,my:my,mz:mz};
+}
+function walkChainFor(h){ // oldest first; only steps with an evolved blob
+  var chain=[],cur=h,seen={};
+  while(cur&&!seen[cur]){
+    seen[cur]=1;
+    var el=document.getElementById("m-"+cur);
+    if(el&&el.textContent.indexOf('"pn"')>=0)chain.push(cur);
+    var m=WMETA[cur];cur=m?m.p:null;
+  }
+  chain.reverse();
+  return chain;
+}
+function walkSpecs(k){
+  var s=[{id:"m-"+walkChain[k],evolved:true}];
+  if(k+1<walkChain.length)
+    s.push({id:"m-"+walkChain[k+1],evolved:true,ghost:true});
+  return s;
+}
+function walkLabel(){
+  var h=walkChain[walkIdx],m=WMETA[h]||{};
+  var t="step "+(walkIdx+1)+" of "+walkChain.length+" · g"+m.g+
+    " · "+h+(m.f?" · "+m.f+" Wh/km":" · invalid");
+  if(walkIdx+1<walkChain.length){
+    var h2=walkChain[walkIdx+1],m2=WMETA[h2]||{};
+    t+="  —  ghost: g"+m2.g+" · "+h2.slice(0,8);
+  }
+  document.getElementById("walk-lab").textContent=t;
+  document.getElementById("walk-prev").disabled=walkIdx===0;
+  document.getElementById("walk-next").disabled=
+    walkIdx>=walkChain.length-1;
+}
+function walkGo(k){
+  if(k<0||k>=walkChain.length||k===walkIdx||!walkV)return;
+  if(walkAnim){cancelAnimationFrame(walkAnim);walkAnim=null}
+  var key=function(s){return s.id+(s.ghost?"|g":"|s")};
+  var oldS=walkSpecs(walkIdx),newS=walkSpecs(k);
+  var oldK={},newK={};
+  oldS.forEach(function(s){oldK[key(s)]=1});
+  newS.forEach(function(s){newK[key(s)]=1});
+  walkIdx=k;
+  // union of both steps' models: leavers fade out, joiners fade in
+  var specs=[],fades=[];
+  oldS.forEach(function(s){
+    if(!newK[key(s)]){specs.push(s);fades.push([1,0])}});
+  newS.forEach(function(s){
+    specs.push(s);fades.push(oldK[key(s)]?[1,1]:[0,1])});
+  walkV.load(specs.map(function(s,i){
+    return {id:s.id,evolved:true,ghost:s.ghost,fade:fades[i][0]}}),
+    walkFrame);
+  walkLabel();
+  var t0=null,DUR=520;
+  function tick(ts){
+    if(t0===null)t0=ts;
+    var t=Math.min(1,(ts-t0)/DUR),e=t*(2-t); // ease-out
+    fades.forEach(function(f,i){walkV.setFade(i,f[0]+(f[1]-f[0])*e)});
+    walkState.redraw();
+    if(t<1){walkAnim=requestAnimationFrame(tick)}
+    else{walkAnim=null;walkV.load(walkSpecs(walkIdx),walkFrame);
+      walkState.redraw()}
+  }
+  walkAnim=requestAnimationFrame(tick);
+}
 function setTab(name){
   ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
@@ -672,6 +820,22 @@ function openOverlay(d){
   }else{
     diffBtn.disabled=true;
   }
+  var walkBtn=ovl.querySelector('button[data-tab="walk"]');
+  var wh=d.mesh.slice(2); // "m-<hash>" -> hash
+  walkChain=walkChainFor(wh);
+  // need >=2 walkable steps AND the chain must reach the candidate itself
+  if(walkV&&walkChain.length>=2&&walkChain[walkChain.length-1]===wh){
+    walkBtn.disabled=false;
+    walkIdx=0;
+    walkFrame=chainFrame();
+    walkV.load(walkSpecs(0),walkFrame);
+    walkState.reset();
+    walkLabel();
+  }else{
+    walkBtn.disabled=true;
+    walkChain=[];
+    walkFrame=null;
+  }
   setTab("solo");
 }
 function closeOverlay(){
@@ -701,8 +865,19 @@ function activeState(){
   var b=ovl.querySelector(".ovl-tabs button.on");
   var t=b?b.dataset.tab:"solo";
   return t==="compare"?cmpState:t==="diff"?diffState:
-         t==="evolved"?evoState:soloState;
+         t==="walk"?walkState:t==="evolved"?evoState:soloState;
 }
+document.getElementById("walk-prev").addEventListener("click",
+  function(){walkGo(walkIdx-1)});
+document.getElementById("walk-next").addEventListener("click",
+  function(){walkGo(walkIdx+1)});
+document.addEventListener("keydown",function(e){
+  if(!ovl.classList.contains("open")||!walkChain.length)return;
+  var b=ovl.querySelector(".ovl-tabs button.on");
+  if(!b||b.dataset.tab!=="walk")return;
+  if(e.key==="ArrowRight"){e.preventDefault();walkGo(walkIdx+1)}
+  if(e.key==="ArrowLeft"){e.preventDefault();walkGo(walkIdx-1)}
+});
 ovl.querySelectorAll(".ovl-views button").forEach(function(b){
   b.addEventListener("click",function(){
     var st=activeState(),v=b.dataset.view;
@@ -1284,11 +1459,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              # auto-refresh is JS-based so an open overlay is never killed
              "<title>framevo gallery</title>",
              '<div class="wrap">',
+             nav_html("gallery"),
              f"<h1>frame evolution &mdash; run <code>{html.escape(run_id)}</code></h1>",
              f'<p class="sub num">{len(gens)} generation(s) &middot; '
              f'{len(cands)} candidates ({n_valid} valid) &middot; '
-             f'<a href="lineage.html">family tree</a> &middot; '
-             f'<a href="glossary.html">glossary</a> &middot; '
              f'<span class="updated">regenerated {time.strftime("%H:%M:%S")}, '
              f'refreshes every 30&thinsp;s</span></p>',
              '<p class="sub intro">every candidate the run has flown, in '
@@ -1403,9 +1577,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts.append('<p class="sub" style="font-style:italic">click a model to '
                  "open it full-screen: the full-kit model, its evolved "
                  "components alone, a side-by-side with the oldest ancestor "
-                 "of its lineage rotating in sync, and the evolution "
-                 "difference overlay (very long runs shed the 3D models of "
-                 "their oldest, weakest candidates first)</p>")
+                 "of its lineage rotating in sync, the evolution difference "
+                 "overlay, and a lineage walkthrough that steps generation "
+                 "by generation from the oldest ancestor to the candidate "
+                 "(very long runs shed the 3D models of their oldest, "
+                 "weakest candidates first)</p>")
     blobs: list[str] = []
     embedded: set[str] = set()
     for h in detail_ids:
@@ -1560,6 +1736,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<button data-tab="evolved">evolved components</button>'
         '<button data-tab="compare">compare with oldest ancestor</button>'
         '<button data-tab="diff">evolution difference</button>'
+        '<button data-tab="walk">lineage walkthrough</button>'
         "</span>"
         '<span class="hash"></span>'
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
@@ -1594,6 +1771,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<canvas id="ovl-diff"></canvas></div>'
         '<div class="ovl-hint">only the parts evolution changes are shown, '
         "superimposed</div></div>"
+        '<div class="ovl-body" data-tab="walk" style="position:relative">'
+        '<div class="pane"><div class="cap">'
+        '<button class="wbtn" id="walk-prev">&#8249; older</button>'
+        '<button class="wbtn" id="walk-next">newer &#8250;</button>'
+        '<span class="hash" id="walk-lab"></span></div>'
+        '<canvas id="ovl-walk"></canvas></div>'
+        '<div class="ovl-hint">solid = current step &middot; gray ghost = '
+        "next in line &middot; &#8592;/&#8594; step &middot; evolved parts "
+        "only</div></div>"
         '<div class="ovl-views">'
         '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
         '<button data-view="front">front</button>'
@@ -1603,6 +1789,16 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<button data-view="right">right</button>'
         '<button data-view="default" title="default view (double-click)">'
         "default</button></div>")
+    # primary-parent map for the overlay's lineage walkthrough: the JS
+    # walks hash -> parent to build each candidate's ancestor chain
+    walk_meta = {}
+    for h, c in cands.items():
+        fit = store.fitness_of(c)
+        walk_meta[h] = {"p": c["parent_a"] or c["parent_b"],
+                        "g": c["generation_born"],
+                        "f": f"{fit:.3f}" if math.isfinite(fit) else None}
+    parts.append('<script type="application/json" id="walk-meta">'
+                 f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
     parts.extend(blobs)
     parts.append(f"<script>{DOVL_JS}</script>")
     parts.append(f"<script>{VIEWER_JS}</script>")

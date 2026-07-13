@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from .dbstore import Store
+from .gallery import NAV_CSS, nav_html
 from .genome import describe_genome
 
 OPERATOR_COLORS = {
@@ -142,20 +143,21 @@ LEGEND_TIPS = {
     "cmaes": "Sampled from CMA-ES's adapted Gaussian (the flag-gated "
              "alternative optimizer). No discrete parents; provenance is "
              "the distribution's mean and sigma.",
-    "shade": "Node fill maps fitness onto a light-to-dark ramp within this "
-             "run: DARKER = lower aggregate Wh/km = better. The scale is "
-             "relative to this run's best and worst valid candidates.",
+    "status": "Performance column only: GRAY nodes are evaluated "
+              "candidates, BLACK nodes set a new best-so-far when "
+              "evaluated -- the gallery chart's exact dot language. The "
+              "breeding column keeps every node neutral on purpose.",
     "size": "Large node = the candidate was BORN in that generation. Small "
             "node = an elite carried over unchanged, shown again in a later "
-            "generation's population.",
-    "hollow": "Invalid design: it violated a hard constraint (tongue "
-              "collision, stack fit, rotor clearance, structural failure...) "
-              "or failed a flight scenario. Fitness = infinity; it is never "
-              "selected as a parent.",
-    "ring": "This candidate set a new best-so-far when it was evaluated -- "
-            "the same improvements the gallery chart labels on its step "
-            "line. A DOUBLE ring is the run champion (the gallery's "
-            "red-outlined card).",
+            "generation's population. Applies in both columns.",
+    "invalid": "Invalid design (performance column): it violated a hard "
+               "constraint (tongue collision, stack fit, rotor clearance, "
+               "structural failure...) or failed a flight scenario -- the "
+               "gallery's red &#215;. Fitness = infinity; never selected "
+               "as a parent.",
+    "ring": "The accent ring is the RUN CHAMPION -- the lowest aggregate "
+            "Wh/km of the whole run, the gallery's red-outlined card "
+            "(performance column).",
     "claude_gen": "A light purple row means a Claude designer round shaped "
                   "this generation -- the same purple band the gallery "
                   "chart shows; the g-label carries a purple &#10022;. The "
@@ -165,29 +167,54 @@ LEGEND_TIPS = {
                  "g-label) marks a pivot generation: patience ran out and "
                  "half the non-elite slots were bred with far parents "
                  "under boosted mutation.",
-    "lens": "The lens buttons restyle this one tree: PERFORMANCE fades "
-            "edges so node status (fitness shade, rings, halos) reads "
-            "clean; BREEDING flattens the fitness shading and boosts edge "
-            "colors so the operators read clean; COMBINED shows both.",
 }
 
 
-def _legend_html() -> str:
-    from .lineage import OPERATOR_COLORS  # self-import safe at call time
+def _legend_html(kind: str) -> str:
+    """Per-column legend: kind='perf' explains the performance column's
+    node language, kind='breed' the breeding column's operator language."""
     items = []
 
     def tip(key, title):
         return (f'<span class="tip"><b>{title}</b><br>'
                 f'{html.escape(LEGEND_TIPS[key])}</span>')
 
+    claude_item = (
+        '<span class="lg"><span class="sw">'
+        '<svg width="18" height="18"><circle cx="9" cy="9" r="4.5" '
+        'fill="#7a766b"/><circle cx="9" cy="9" r="7.5" fill="none" '
+        f'stroke="{CLAUDE}" stroke-width="1.6"/></svg></span>'
+        'claude-designed' + tip("designer", "claude-designed") + "</span>")
+    size_item = (
+        '<span class="lg"><span class="sw">'
+        '<svg width="34" height="16"><circle cx="8" cy="8" r="7" fill="#6b6a60"/>'
+        '<circle cx="24" cy="8" r="4" fill="#6b6a60"/></svg></span>'
+        'node size = born / carried' + tip("size", "node size") + "</span>")
+
+    if kind == "perf":
+        items.append(
+            '<span class="lg"><span class="sw">'
+            '<svg width="34" height="14"><circle cx="7" cy="7" r="5" fill="#b9b6a6"/>'
+            '<circle cx="24" cy="7" r="5" fill="#111111"/></svg></span>'
+            'candidate / best so far' + tip("status", "node status") + "</span>")
+        items.append(
+            '<span class="lg"><span class="sw">'
+            '<svg width="16" height="16"><path d="M3,3 L13,13 M13,3 L3,13" '
+            'stroke="#8c2f1f" stroke-width="1.7"/></svg></span>'
+            'invalid' + tip("invalid", "red &#215;") + "</span>")
+        items.append(
+            '<span class="lg"><span class="sw">'
+            '<svg width="22" height="22"><circle cx="11" cy="11" r="5" '
+            'fill="#111111"/><circle cx="11" cy="11" r="9" fill="none" '
+            'stroke="#8c2f1f" stroke-width="1.5"/></svg></span>'
+            'champion' + tip("ring", "champion ring") + "</span>")
+        items.append(claude_item)
+        items.append(size_item)
+        return '<div class="lgd">' + "".join(items) + "</div>"
+
     for name, col in OPERATOR_COLORS.items():
         if name == "designer":  # no edges: shown as the purple halo
-            items.append(
-                '<span class="lg"><span class="sw">'
-                '<svg width="18" height="18"><circle cx="9" cy="9" r="4.5" '
-                'fill="#7a766b"/><circle cx="9" cy="9" r="7.5" fill="none" '
-                f'stroke="{col}" stroke-width="1.6"/></svg></span>'
-                'claude-designed' + tip(name, "claude-designed") + "</span>")
+            items.append(claude_item)
             continue
         if name == "immigrant":  # no edges: shown as the gold caret
             items.append(
@@ -210,33 +237,7 @@ def _legend_html() -> str:
         '<span class="lg"><span class="sw" style="width:16px;height:0;'
         'border-top:2px dashed #2e6e63"></span>pivot generation'
         + tip("pivot_gen", "pivot generation") + "</span>")
-    items.append(
-        '<span class="lg"><span class="sw">'
-        '<svg width="52" height="12"><circle cx="6" cy="6" r="5" fill="#111111"/>'
-        '<circle cx="22" cy="6" r="5" fill="#7a766b"/>'
-        '<circle cx="38" cy="6" r="5" fill="#d9d5c3"/></svg></span>'
-        'node shade = fitness' + tip("shade", "node shade") + "</span>")
-    items.append(
-        '<span class="lg"><span class="sw">'
-        '<svg width="34" height="16"><circle cx="8" cy="8" r="7" fill="#6b6a60"/>'
-        '<circle cx="24" cy="8" r="4" fill="#6b6a60"/></svg></span>'
-        'node size = born / carried' + tip("size", "node size") + "</span>")
-    items.append(
-        '<span class="lg"><span class="sw">'
-        '<svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" '
-        'stroke="#b9b6a6" stroke-width="1.4"/></svg></span>'
-        'hollow = invalid' + tip("hollow", "hollow node") + "</span>")
-    items.append(
-        '<span class="lg"><span class="sw">'
-        '<svg width="44" height="22"><circle cx="9" cy="11" r="5" fill="#111111"/>'
-        '<circle cx="9" cy="11" r="7.5" fill="none" stroke="#8c2f1f" '
-        'stroke-width="1.4"/>'
-        '<circle cx="32" cy="11" r="5" fill="#111111"/>'
-        '<circle cx="32" cy="11" r="7.5" fill="none" stroke="#8c2f1f" '
-        'stroke-width="1.4"/>'
-        '<circle cx="32" cy="11" r="10" fill="none" stroke="#8c2f1f" '
-        'stroke-width="1.4"/></svg></span>'
-        'best so far / champion' + tip("ring", "best-so-far rings") + "</span>")
+    items.append(size_item)
     return '<div class="lgd">' + "".join(items) + "</div>"
 
 
@@ -252,8 +253,10 @@ def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
     # drop native <title> tooltips: the hover card replaces them here
     # (they stay in the standalone lineage.svg)
     svg = re.sub(r"<title>.*?</title>", "", svg, flags=re.S)
-    m = re.search(r'width="(\d+)"', svg)
-    svg_w = int(m.group(1)) if m else 900  # dock the card beside the tree
+    # the same tree twice: left column speaks the gallery-chart performance
+    # language, right column the breeding/operator language
+    svg_perf = svg.replace("<svg ", '<svg class="lens-perf" ', 1)
+    svg_breed = svg.replace("<svg ", '<svg class="lens-breed" ', 1)
 
     # per-candidate metadata for the hover card + ancestor walk
     meta: dict[str, dict] = {}
@@ -290,26 +293,47 @@ body{{margin:0;background:var(--paper);color:var(--ink);
   font:17px/1.55 var(--serif);font-feature-settings:"onum" 1,"liga" 1;
   -webkit-font-smoothing:antialiased}}
 .wrap{{max-width:92vw;margin:0 auto;padding:40px 0 96px}}
+{NAV_CSS}
 h1{{font-weight:400;font-size:34px;letter-spacing:-.01em;margin:0 0 6px;text-align:center}}
 h1 code{{font:400 26px var(--mono);color:var(--muted)}}
 .sub{{font-size:15px;color:var(--muted);margin:0 auto 22px;max-width:820px;text-align:center}}
 a{{color:var(--accent);text-decoration:none}}
-.tree{{border-top:1px solid var(--rule);padding-top:18px;overflow-x:auto}}
-.tree svg{{display:block;margin:0 auto}}
+.trees{{display:flex;gap:28px;align-items:flex-start;
+  border-top:1px solid var(--rule);padding-top:16px}}
+.tree{{flex:1;min-width:0}}
+.tree svg{{display:block;width:100%;height:auto}}
+.colhead{{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  text-align:center;margin-bottom:10px}}
+@media(max-width:1000px){{.trees{{flex-direction:column;gap:40px}}}}
+/* both columns keep the forest quiet: edges muted at rest, lit on hover */
+.tree svg .ed{{opacity:.12}}
+.tree svg .el{{opacity:.15}}
+/* performance column: the gallery chart's marks, no fitness shading;
+   edges lose their operator colors here -- that story belongs to the
+   breeding column */
+svg.lens-perf .ed{{stroke:#a8a598}}
+svg.lens-perf .nd{{fill:#b9b6a6;stroke:none}}
+svg.lens-perf .nd.st-set{{fill:#111111}}
+svg.lens-perf .nd.inv{{display:none}}
+svg.lens-perf .bs{{display:none}}
+svg.lens-perf .im{{display:none}}
+/* breeding column: operators & provenance only, no outcomes */
+svg.lens-breed .nd{{fill:#e7e4d6;stroke:#c9c5b4}}
+svg.lens-breed .bs,svg.lens-breed .ch,svg.lens-breed .xm{{display:none}}
 .note{{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}}
 /* hover interactivity: dim everything outside the hovered ancestry */
-.nd,.ed,.el,.bs,.cl,.im{{transition:opacity .12s ease}}
+.nd,.ed,.el,.bs,.ch,.cl,.im,.xm{{transition:opacity .12s ease}}
 .hit{{cursor:pointer}}
 svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit),
-svg.focus .bs:not(.lit),svg.focus .cl:not(.lit),
-svg.focus .im:not(.lit){{opacity:.12}}
+svg.focus .bs:not(.lit),svg.focus .ch:not(.lit),svg.focus .cl:not(.lit),
+svg.focus .im:not(.lit),svg.focus .xm:not(.lit){{opacity:.12}}
 svg.focus .ed.lit{{stroke-width:2;opacity:1}}
 svg.focus .el.lit{{stroke-width:2;opacity:1}}
 svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
-/* the candidate card (matches the gallery detail block), docked just to
-   the right of the tree so it never covers the highlighted ancestry */
-.ncard{{position:fixed;top:50%;transform:translateY(-50%);
-  left:min(calc(50% + {svg_w // 2 + 26}px),calc(100vw - 372px));
+/* the candidate card (matches the gallery detail block), always docked at
+   the right edge of the screen */
+.ncard{{position:fixed;top:50%;transform:translateY(-50%);right:18px;
   z-index:10;width:340px;max-height:calc(100vh - 32px);overflow:hidden;
   background:var(--paper);border:1px solid var(--ink);
   padding:14px 16px 14px;pointer-events:none;
@@ -364,54 +388,36 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
 .lg:nth-last-child(-n+3) .tip{{left:auto;right:calc(100% + 12px)}}
 .lg .tip b{{font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.05em;font-size:11.5px;color:var(--muted)}}
-/* lens switcher: one tree, three emphases */
-.lens{{display:flex;gap:2px;justify-content:center;align-items:center;
-  margin:0 0 16px}}
-.lens .llab{{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
-  margin-right:12px;cursor:help;position:relative}}
-.lens .llab .tip{{display:none;position:absolute;left:0;top:calc(100% + 8px);
-  width:320px;z-index:30;background:var(--paper);border:1px solid var(--ink);
-  padding:10px 13px;font:normal 13.5px/1.5 var(--serif);color:var(--ink);
-  box-shadow:6px 6px 0 rgba(17,17,17,.07);text-transform:none;
-  letter-spacing:0}}
-.lens .llab:hover .tip{{display:block}}
-.lens button{{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
-  background:none;border:1px solid var(--rule);padding:6px 15px;
-  cursor:pointer}}
-.lens button.on{{color:var(--ink);border-color:var(--ink);
-  border-bottom:2px solid var(--ink)}}
-/* performance lens: candidate status forward, breeding recedes */
-svg.lens-perf .ed,svg.lens-perf .el{{opacity:.1}}
-/* breeding lens: operators forward, fitness shading recedes */
-svg.lens-breed .nd{{fill:#e7e4d6}}
-svg.lens-breed .nd.inv{{fill:none}}
-svg.lens-breed .ed{{stroke-width:2.2;opacity:1}}
-svg.lens-breed .el{{stroke-width:1.8;opacity:.95}}
-svg.lens-breed .bs{{opacity:.18}}
+/* per-column legends sit under their tree */
+.tree .lgd{{margin:16px auto 0;padding-top:12px;
+  border-top:1px solid var(--rule-soft);font-size:13px;max-width:none}}
+/* the right column's tips open leftward so they stay on screen */
+.tree:last-child .lg .tip{{left:auto;right:calc(100% + 12px)}}
 </style>
 <meta charset="utf-8">
 <title>framevo family tree</title>
 <div class="wrap">
+{nav_html("family tree")}
 <h1>family tree &mdash; run <code>{run_id}</code></h1>
-<p class="sub">one row per generation, candidates ordered best&#8594;worst.
-Nodes carry the candidate language: shaded dark&thinsp;=&thinsp;better
-fitness, hollow&thinsp;=&thinsp;invalid, small&thinsp;=&thinsp;elite carried
-over, rust ring&thinsp;=&thinsp;best-so-far (double&thinsp;=&thinsp;the run
-champion), <span style="color:#6a4a8a">purple halo&thinsp;=&thinsp;
-claude-designed</span>. Edges carry the breeding language: color names the
-operator, a gold caret is an immigrant injection, a purple row is a claude
-designer round, a teal dashed rule is a pivot generation. Hover any node to
-see the candidate and its full ancestry; click to pin (esc releases).
-&middot; <a href="gallery.html">back to the gallery</a></p>
-{_legend_html()}
-<div class="lens"><span class="llab">lens<span class="tip">
-{html.escape(LEGEND_TIPS["lens"])}</span></span>
-<button data-lens="" class="on">combined</button>
-<button data-lens="lens-perf">performance</button>
-<button data-lens="lens-breed">breeding</button></div>
-<div class="tree">{svg}</div>
+<p class="sub">the same family tree twice, one row per generation,
+candidates ordered best&#8594;worst. The LEFT column speaks the gallery
+chart&rsquo;s performance language: gray&thinsp;=&thinsp;candidate,
+black&thinsp;=&thinsp;best-so-far, red&thinsp;&#215;&thinsp;=&thinsp;invalid,
+accent ring&thinsp;=&thinsp;the run champion, <span style="color:#6a4a8a">
+purple halo&thinsp;=&thinsp;claude-designed</span>. The RIGHT column speaks
+the breeding language: neutral nodes, operator-colored edges, a gold caret
+for immigrant injections, purple rows for claude designer rounds, teal
+dashed rules for pivot generations. Edges rest muted in both columns
+&mdash; hover any node on either side to light its full ancestry in both,
+click to pin (esc releases). Node size everywhere:
+large&thinsp;=&thinsp;born that generation,
+small&thinsp;=&thinsp;elite carried over.</p>
+<div class="trees">
+<div class="tree"><div class="colhead">performance &mdash; who&rsquo;s good
+</div>{svg_perf}{_legend_html("perf")}</div>
+<div class="tree"><div class="colhead">breeding &mdash; how they were made
+</div>{svg_breed}{_legend_html("breed")}</div>
+</div>
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
 (<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
@@ -422,8 +428,8 @@ see the candidate and its full ancestry; click to pin (esc releases).
 (function(){{
 "use strict";
 var META=JSON.parse(document.getElementById("cand-meta").textContent);
-var svg=document.querySelector(".tree svg");
-if(!svg)return;
+var svgs=[].slice.call(document.querySelectorAll(".tree svg"));
+if(!svgs.length)return;
 var card=document.createElement("div");
 card.className="ncard";
 document.body.appendChild(card);
@@ -439,16 +445,22 @@ function ancestors(h){{ // hovered candidate + every ancestor, via parent walk
   return seen;
 }}
 var pinned=null;
-function show(h,pin){{
+function show(h,pin,hovg){{
   var c=META[h];
   var set=ancestors(h);
-  svg.classList.add("focus");
-  svg.querySelectorAll(".nd,.bs,.cl,.im").forEach(function(n){{
-    n.classList.toggle("lit",!!set[n.dataset.h])}});
-  svg.querySelectorAll(".ed").forEach(function(e){{
-    e.classList.toggle("lit",!!set[e.dataset.c])}});
-  svg.querySelectorAll(".el").forEach(function(e){{
-    e.classList.toggle("lit",!!set[e.dataset.h])}});
+  // only light history: marks at or before the hovered row -- never the
+  // hovered lineage's LATER carry-over copies or trails
+  function back(n){{
+    return !!set[n.dataset.h]&&
+      (n.dataset.g===undefined||+n.dataset.g<=hovg);
+  }}
+  svgs.forEach(function(svg){{ // both columns light the same ancestry
+    svg.classList.add("focus");
+    svg.querySelectorAll(".nd,.bs,.ch,.cl,.im,.xm,.el").forEach(function(n){{
+      n.classList.toggle("lit",back(n))}});
+    svg.querySelectorAll(".ed").forEach(function(e){{
+      e.classList.toggle("lit",!!set[e.dataset.c])}});
+  }});
   if(!c){{card.style.display="none";return}}
   var nAnc=Object.keys(set).length-1;
   var head;
@@ -491,37 +503,28 @@ function show(h,pin){{
   card.style.display="block";
 }}
 function clear(){{
-  svg.classList.remove("focus");
+  svgs.forEach(function(svg){{svg.classList.remove("focus")}});
   card.style.display="none";
 }}
 function unpin(){{
   if(pinned){{pinned=null;clear()}}
 }}
-svg.querySelectorAll(".hit").forEach(function(hit){{
-  hit.addEventListener("mouseenter",function(){{
-    if(!pinned)show(hit.dataset.h,false)}});
-  hit.addEventListener("mouseleave",function(){{
-    if(!pinned)clear()}});
-  hit.addEventListener("click",function(ev){{
-    ev.stopPropagation();
-    if(pinned===hit.dataset.h){{unpin()}}
-    else{{pinned=hit.dataset.h;show(pinned,true)}}
+svgs.forEach(function(svg){{
+  svg.querySelectorAll(".hit").forEach(function(hit){{
+    hit.addEventListener("mouseenter",function(){{
+      if(!pinned)show(hit.dataset.h,false,+hit.dataset.g)}});
+    hit.addEventListener("mouseleave",function(){{
+      if(!pinned)clear()}});
+    hit.addEventListener("click",function(ev){{
+      ev.stopPropagation();
+      if(pinned===hit.dataset.h){{unpin()}}
+      else{{pinned=hit.dataset.h;show(pinned,true,+hit.dataset.g)}}
+    }});
   }});
 }});
 document.addEventListener("click",unpin);
 document.addEventListener("keydown",function(ev){{
   if(ev.key==="Escape")unpin()}});
-// lens switcher: restyle the same tree; survives the 30s auto-refresh
-var lensBtns=document.querySelectorAll(".lens button");
-function setLens(v){{
-  svg.classList.remove("lens-perf","lens-breed");
-  if(v)svg.classList.add(v);
-  lensBtns.forEach(function(b){{b.classList.toggle("on",(b.dataset.lens||"")===v)}});
-  try{{localStorage.setItem("framevo-lens",v)}}catch(e){{}}
-}}
-lensBtns.forEach(function(b){{b.addEventListener("click",function(ev){{
-  ev.stopPropagation();setLens(b.dataset.lens||"")}})}});
-try{{setLens(localStorage.getItem("framevo-lens")||"")}}catch(e){{}}
 // auto-refresh (was a meta tag): hold off while a lineage is pinned
 setInterval(function(){{if(!pinned)location.reload()}},30000);
 }})();
@@ -577,7 +580,8 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                 birth_pos[row["hash"]] = (x, y)
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}"'
-           f' height="{height}" font-family="Helvetica,Arial,sans-serif">',
+           f' height="{height}" viewBox="0 0 {width} {height}"'
+           f' font-family="Helvetica,Arial,sans-serif">',
            '<rect width="100%" height="100%" fill="#fffff8"/>']
 
     # generation bands behind everything: light purple = claude designer
@@ -621,7 +625,7 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                                f' opacity="0.75"/>')
             elif (g - 1, h) in pos:  # elite pass-through
                 px, py = pos[(g - 1, h)]
-                svg.append(f'<line class="el" data-h="{h}"'
+                svg.append(f'<line class="el" data-h="{h}" data-g="{g}"'
                            f' x1="{px:.0f}" y1="{py + r_node:.0f}"'
                            f' x2="{x1:.0f}" y2="{y1 - r_node:.0f}"'
                            f' stroke="#999188" stroke-dasharray="3,3"'
@@ -636,14 +640,18 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
             fit = fits.get(h, math.inf)
             is_birth = cand is not None and cand["generation_born"] == g
             rr = r_node if is_birth else r_node * 0.55
+            # status classes let the two-column page restyle the same svg:
+            # inv = invalid, st-set = best-so-far setter (+ champion ring)
             icls = ""
+            if h in best_hashes:
+                icls += " st-set"
             if math.isfinite(fit):
                 fill = _fitness_color(fit, lo, hi)
                 stroke = "#6b6a60"
             else:
                 fill = "none"  # hollow = invalid
                 stroke = "#b9b6a6"
-                icls = " inv"
+                icls += " inv"
             head = (f"{h} gen{cand['generation_born'] if cand else g} "
                     f"{cand['operator'] if cand else ''} "
                     + (f"{fit:.3f}" if math.isfinite(fit)
@@ -653,36 +661,44 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                                         cand["material"])
                 head += "\n" + "\n".join(f"{lab}: {val}" for lab, val in genes)
             title = html.escape(head)
-            svg.append(f'<circle class="nd{icls}" data-h="{h}"'
+            svg.append(f'<circle class="nd{icls}" data-h="{h}" data-g="{g}"'
                        f' cx="{x:.0f}" cy="{y:.0f}" r="{rr:.1f}"'
                        f' fill="{fill}" stroke="{stroke}" stroke-width="1.2">'
                        f'<title>{title}</title></circle>')
+            if not math.isfinite(fit):  # red x over invalids (gallery mark)
+                a = rr * 0.75
+                svg.append(f'<path class="xm" data-h="{h}"'
+                           f' d="M{x - a:.1f},{y - a:.1f} L{x + a:.1f},'
+                           f'{y + a:.1f} M{x + a:.1f},{y - a:.1f}'
+                           f' L{x - a:.1f},{y + a:.1f}"'
+                           f' stroke="#8c2f1f" stroke-width="1.6"'
+                           f' fill="none"/>')
             rad = rr + 3.5  # rings stack outward: setter, champion, claude
             if is_birth and h in best_hashes:  # rust ring = best-so-far
                 svg.append(f'<circle class="bs" data-h="{h}"'
                            f' cx="{x:.0f}" cy="{y:.0f}" r="{rad:.1f}"'
                            f' fill="none" stroke="#8c2f1f" stroke-width="1.3"/>')
                 rad += 3.0
-                if h == champion:  # double rust ring = the run champion
-                    svg.append(f'<circle class="bs" data-h="{h}"'
+                if h == champion:  # accent ring = the run champion
+                    svg.append(f'<circle class="ch" data-h="{h}"'
                                f' cx="{x:.0f}" cy="{y:.0f}" r="{rad:.1f}"'
                                f' fill="none" stroke="#8c2f1f"'
-                               f' stroke-width="1.3"/>')
+                               f' stroke-width="1.6"/>')
                     rad += 3.0
             if cand is not None and cand["operator"] == "designer":
                 # claude-designed: purple halo (also on carried-over copies)
-                svg.append(f'<circle class="cl" data-h="{h}"'
+                svg.append(f'<circle class="cl" data-h="{h}" data-g="{g}"'
                            f' cx="{x:.0f}" cy="{y:.0f}" r="{rad:.1f}"'
                            f' fill="none" stroke="{CLAUDE}"'
                            f' stroke-width="{1.7 if is_birth else 1.1}"/>')
             if is_birth and cand is not None \
                     and cand["operator"] == "immigrant":
                 # gold caret = random immigrant injected from outside
-                svg.append(f'<path class="im" data-h="{h}"'
+                svg.append(f'<path class="im" data-h="{h}" data-g="{g}"'
                            f' d="M{x - 4:.0f},{y - rr - 10:.0f} l4,6 l4,-6 z"'
                            f' fill="#8a6a1e"/>')
             # generous invisible hit target for hover on the html page
-            svg.append(f'<circle class="hit" data-h="{h}"'
+            svg.append(f'<circle class="hit" data-h="{h}" data-g="{g}"'
                        f' cx="{x:.0f}" cy="{y:.0f}" r="{max(rr + 5, 14):.1f}"'
                        f' fill="transparent" stroke="none"/>')
         # generation label
