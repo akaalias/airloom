@@ -161,10 +161,27 @@ class Store:
         return self.conn.execute("SELECT * FROM runs WHERE run_id=?",
                                  (run_id,)).fetchone()
 
+    def run_genome_compatible(self, run_id: str) -> bool:
+        """True if the run's stored genomes use the current gene set (a
+        genome-spec change makes old runs non-resumable)."""
+        from .genome import GENE_NAMES
+        row = self.conn.execute(
+            "SELECT genome_json FROM candidates WHERE run_id=? LIMIT 1",
+            (run_id,)).fetchone()
+        if row is None:
+            return True
+        return set(json.loads(row["genome_json"]).keys()) == set(GENE_NAMES)
+
     def latest_run_id(self) -> str | None:
         row = self.conn.execute(
             "SELECT run_id FROM runs ORDER BY created_utc DESC LIMIT 1").fetchone()
         return row["run_id"] if row else None
+
+    def update_generations_target(self, run_id: str, generations: int) -> None:
+        self.conn.execute(
+            "UPDATE runs SET generations_target=?, status='running'"
+            " WHERE run_id=?", (generations, run_id))
+        self.conn.commit()
 
     def mark_generation_done(self, run_id: str, generation: int) -> None:
         self.conn.execute(

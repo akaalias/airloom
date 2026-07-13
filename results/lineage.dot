@@ -275,6 +275,47 @@ digraph lineage {
   "e5d654345ce6" [label="e5d654\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
   "df45a4f6e78e" -> "e5d654345ce6" [label="crossover", color="#4a6fa5", fontsize=7];
   "e4894632243d" -> "e5d654345ce6" [label="crossover", color="#4a6fa5", fontsize=7];
+  "02331ff5d67b" [label="02331f\n8.85", fillcolor="#56544e", style="filled", fontcolor=white];
+  "2fa2ac4c5406" -> "02331ff5d67b" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e4894632243d" -> "02331ff5d67b" [label="crossover", color="#4a6fa5", fontsize=7];
+  "23bc24325b76" [label="23bc24\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "2cbed495032c" -> "23bc24325b76" [label="crossover", color="#4a6fa5", fontsize=7];
+  "4fc3e4d79b29" -> "23bc24325b76" [label="crossover", color="#4a6fa5", fontsize=7];
+  "38ebd54d2109" [label="38ebd5\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "e4894632243d" -> "38ebd54d2109" [label="crossover", color="#4a6fa5", fontsize=7];
+  "1b1c9ac18a27" -> "38ebd54d2109" [label="crossover", color="#4a6fa5", fontsize=7];
+  "3a48eb8fcb6c" [label="3a48eb\n8.34", fillcolor="#222220", style="filled", fontcolor=white];
+  "1b1c9ac18a27" -> "3a48eb8fcb6c" [label="mutation", color="#8c2f1f", fontsize=7];
+  "41e8efb6bcba" [label="41e8ef\n8.56", fillcolor="#383834", style="filled", fontcolor=white];
+  "1b1c9ac18a27" -> "41e8efb6bcba" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e4894632243d" -> "41e8efb6bcba" [label="crossover", color="#4a6fa5", fontsize=7];
+  "4e54b643adfe" [label="4e54b6\n8.31", fillcolor="#1f1f1d", style="filled", fontcolor=white];
+  "1b1c9ac18a27" -> "4e54b643adfe" [label="crossover", color="#4a6fa5", fontsize=7];
+  "4fc3e4d79b29" -> "4e54b643adfe" [label="crossover", color="#4a6fa5", fontsize=7];
+  "703855513605" [label="703855\n8.75", fillcolor="#4c4a45", style="filled", fontcolor=white];
+  "52c0ccf7baef" -> "703855513605" [label="crossover", color="#4a6fa5", fontsize=7];
+  "1b1c9ac18a27" -> "703855513605" [label="crossover", color="#4a6fa5", fontsize=7];
+  "99c2d9e4ffdc" [label="99c2d9\n8.53", fillcolor="#353431", style="filled", fontcolor=white];
+  "1b1c9ac18a27" -> "99c2d9e4ffdc" [label="crossover", color="#4a6fa5", fontsize=7];
+  "1b1c9ac18a27" -> "99c2d9e4ffdc" [label="crossover", color="#4a6fa5", fontsize=7];
+  "a57843280a5a" [label="a57843\n8.58", fillcolor="#3a3935", style="filled", fontcolor=white];
+  "52c0ccf7baef" -> "a57843280a5a" [label="crossover", color="#4a6fa5", fontsize=7];
+  "2cbed495032c" -> "a57843280a5a" [label="crossover", color="#4a6fa5", fontsize=7];
+  "c15e5f0cc1ab" [label="c15e5f\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "52c0ccf7baef" -> "c15e5f0cc1ab" [label="crossover", color="#4a6fa5", fontsize=7];
+  "2cbed495032c" -> "c15e5f0cc1ab" [label="crossover", color="#4a6fa5", fontsize=7];
+  "c489642af1ea" [label="c48964\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "dbbfe4dae049" -> "c489642af1ea" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e4894632243d" -> "c489642af1ea" [label="crossover", color="#4a6fa5", fontsize=7];
+  "d192c8219bcd" [label="d192c8\n8.26", fillcolor="#1a1a19", style="filled", fontcolor=white];
+  "1b1c9ac18a27" -> "d192c8219bcd" [label="crossover", color="#4a6fa5", fontsize=7];
+  "9ec9c97bfc69" -> "d192c8219bcd" [label="crossover", color="#4a6fa5", fontsize=7];
+  "d9484ba95ca8" [label="d9484b\ninv", fillcolor="#ffffff", style="solid", fontcolor=black];
+  "1b1c9ac18a27" -> "d9484ba95ca8" [label="crossover", color="#4a6fa5", fontsize=7];
+  "e4894632243d" -> "d9484ba95ca8" [label="crossover", color="#4a6fa5", fontsize=7];
+  "f40d2f5392a2" [label="f40d2f\n8.72", fillcolor="#484742", style="filled", fontcolor=white];
+  "e4894632243d" -> "f40d2f5392a2" [label="crossover", color="#4a6fa5", fontsize=7];
+  "52c0ccf7baef" -> "f40d2f5392a2" [label="crossover", color="#4a6fa5", fontsize=7];
   { rank=same; "093728116f31"; "0bac173ad845"; "3d2f06902112"; "4e66c118fb69"; "5b5c4fbdea2d"; "77e2cad76ab9"; "7a971b624b61"; "93172171089f"; "947e4a9d7b35"; "99367eb32465"; "baac55fb3837"; "c408b7873a88"; "c6b337b3437f"; "d2aa23997bc0"; "d5a59fb8c0ea"; "faf7cf2abe00" }
   { rank=same; "01bf07948972"; "0e4b2c6bd446"; "1e70d868ed1a"; "1f89fa48dbe9"; "2897107dc1ec"; "344a9d5a2dbb"; "4446ceab1505"; "53e87de76ab7"; "8ae42b378064"; "8f274f05cbb0"; "b87c4288cbdb"; "c85c1b09c472"; "e2d0bfe694b7"; "e47d0bb0b63d" }
   { rank=same; "01dc642892a7"; "07494ce24571"; "34f2f6c50186"; "37ce6c808b00"; "3c5001e5712d"; "3e41a12039c8"; "68dac209c215"; "7a60bd00dbf5"; "a0153bd28ec0"; "a0d4029e6ed1"; "a8129df56c7e"; "c185750268f0"; "d3503fac5ac5"; "f736cf26772e" }
@@ -283,6 +324,7 @@ digraph lineage {
   { rank=same; "01b9e30a9724"; "021a9f41fd14"; "1b1acfb311ae"; "1b1c9ac18a27"; "63de9bd678ad"; "64ffcaf63770"; "6ebaefac7da5"; "74bb9826bf09"; "8bf14971f976"; "d4708bfc86c2"; "d48a0b200cb0"; "d98a87021770"; "e2126b922f5a"; "ebfcfff37210" }
   { rank=same; "1fcf9f392a3c"; "3077e8b94f35"; "39b6386d7b14"; "415450ed8941"; "42844a77c68d"; "6e6533c51629"; "7cd4977db67d"; "964da1bb8e06"; "9acc1869b86d"; "9d3a172b1dca"; "d3e9caef03d1"; "df45a4f6e78e"; "e36230f81a63"; "e4894632243d" }
   { rank=same; "02213d032222"; "2cbed495032c"; "2fa2ac4c5406"; "4fc3e4d79b29"; "52c0ccf7baef"; "9b24e2c96fc5"; "9ec9c97bfc69"; "a006efac03fc"; "a56598ba4249"; "a784cddd3fa2"; "b77280f57a63"; "d00b0fa877b1"; "dbbfe4dae049"; "e5d654345ce6" }
+  { rank=same; "02331ff5d67b"; "23bc24325b76"; "38ebd54d2109"; "3a48eb8fcb6c"; "41e8efb6bcba"; "4e54b643adfe"; "703855513605"; "99c2d9e4ffdc"; "a57843280a5a"; "c15e5f0cc1ab"; "c489642af1ea"; "d192c8219bcd"; "d9484ba95ca8"; "f40d2f5392a2" }
   "baac55fb3837" -> "baac55fb3837" [style=dotted, color="#999188", label="elite"];
   "5b5c4fbdea2d" -> "5b5c4fbdea2d" [style=dotted, color="#999188", label="elite"];
   "baac55fb3837" -> "baac55fb3837" [style=dotted, color="#999188", label="elite"];
@@ -297,4 +339,6 @@ digraph lineage {
   "01b9e30a9724" -> "01b9e30a9724" [style=dotted, color="#999188", label="elite"];
   "1b1c9ac18a27" -> "1b1c9ac18a27" [style=dotted, color="#999188", label="elite"];
   "e4894632243d" -> "e4894632243d" [style=dotted, color="#999188", label="elite"];
+  "1b1c9ac18a27" -> "1b1c9ac18a27" [style=dotted, color="#999188", label="elite"];
+  "4fc3e4d79b29" -> "4fc3e4d79b29" [style=dotted, color="#999188", label="elite"];
 }

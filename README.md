@@ -10,8 +10,9 @@ it ever evaluated.
 ```
 make demo        # 3 generations x population 8, ~2-4 min on 8 cores
 make test        # pytest suite
-.venv/bin/framevo run --generations 40             # a real run
-.venv/bin/framevo run --run-id myrun --resume      # continue after a crash
+.venv/bin/framevo run --generations 100            # starts, or RESUMES the
+                                                   #  latest run by default
+.venv/bin/framevo run --generations 100 --fresh    # force a brand-new run
 .venv/bin/framevo lineage <genome_hash>            # ancestor chain w/ fitness
 .venv/bin/framevo gallery                          # rebuild artifacts from db
 ```

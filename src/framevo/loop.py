@@ -60,7 +60,9 @@ class EvolutionLoop:
         elif resume:
             done = self.store.generations_with_population(run_id)
             self.start_gen = (max(done) + 1) if done else 0
-            _log(f"resuming run '{run_id}' at generation {self.start_gen}")
+            self.store.update_generations_target(run_id, ev.generations)
+            _log(f"resuming run '{run_id}' at generation {self.start_gen}"
+                 f" (target {ev.generations})")
         else:
             raise SystemExit(
                 f"run '{run_id}' already exists in {self.results / 'run.db'};"

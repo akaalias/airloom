@@ -20,9 +20,33 @@ def cmd_run(args: argparse.Namespace) -> int:
                       generations=args.generations, seed=args.seed,
                       optimizer=args.optimizer, workers=args.workers,
                       results_dir=args.results)
+    from .dbstore import Store
     from .loop import EvolutionLoop
-    run_id = args.run_id or time.strftime("run_%Y%m%d_%H%M%S")
-    loop = EvolutionLoop(cfg, run_id, resume=args.resume)
+
+    # default behavior: pick up where the last run left off. A new run is
+    # started when --fresh is passed, no prior run exists, or the latest
+    # run's genomes predate the current genome spec.
+    store = Store(cfg.evolution.results_dir / "run.db")
+    run_id, resume = args.run_id, args.resume
+    if run_id is None and not args.fresh:
+        latest = store.latest_run_id()
+        if latest is not None:
+            done = store.get_run(latest)["generations_done"]
+            if not store.run_genome_compatible(latest):
+                print(f"latest run '{latest}' uses an older genome spec --"
+                      " starting a fresh run")
+            elif done >= cfg.evolution.generations:
+                print(f"latest run '{latest}' already has {done} generations"
+                      f" (>= --generations {cfg.evolution.generations});"
+                      " raise --generations to continue it or use --fresh")
+                return 0
+            else:
+                run_id, resume = latest, True
+    elif run_id is not None and store.get_run(run_id) is not None:
+        resume = True  # explicit --run-id of an existing run always resumes
+    store.close()
+    run_id = run_id or time.strftime("run_%Y%m%d_%H%M%S")
+    loop = EvolutionLoop(cfg, run_id, resume=resume)
     loop.run()
     lb = cfg.evolution.results_dir / "leaderboard.md"
     if lb.exists():
@@ -87,7 +111,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--workers", type=int, default=None)
     p.add_argument("--run-id", default=None)
     p.add_argument("--resume", action="store_true",
-                   help="continue an interrupted run (same --run-id)")
+                   help="(default behavior) continue the latest/named run")
+    p.add_argument("--fresh", action="store_true",
+                   help="force a brand-new run instead of resuming the latest")
     p.set_defaults(fn=cmd_run)
 
     p = sub.add_parser("lineage", help="print a candidate's ancestor chain")
