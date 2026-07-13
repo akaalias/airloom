@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Evolutionary optimization of quadcopter frame geometry for Wh/km across adverse-weather scenarios"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "GPL-3.0-or-later" }
 dependencies = [
     "numpy>=1.26",
     "scipy>=1.11",

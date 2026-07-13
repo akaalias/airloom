@@ -104,7 +104,7 @@ class EvolutionLoop:
         self._join_narrators()  # let pending note-enrichments land
         self._write_artifacts(ev.generations - 1)
         self.store.finish_run(self.run_id)
-        gallery_path = self.results / "gallery.html"
+        gallery_path = self.results / "index.html"
         _log(f"done. gallery: file://{gallery_path}")
 
     def _run_generations(self, ev, cmaes) -> None:
@@ -442,6 +442,9 @@ class EvolutionLoop:
             lineage_mod.write_dot(self.store, self.run_id, self.results)
             lineage_mod.write_svg(self.store, self.run_id, self.results)
             lineage_mod.write_lineage_page(self.store, self.run_id, self.results)
+        # docs/ is the standing publish target (the GitHub Pages root):
+        # every artifact refresh mirrors the report there
+        gallery_mod.publish_docs(self.results, self.cfg.root / "docs")
         self._copy_best_stl(gen)
 
     def _copy_best_stl(self, gen: int) -> None:

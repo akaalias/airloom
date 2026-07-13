@@ -36,8 +36,10 @@ Restore any past state with `git -C results log` +
 
 ## What it produces (in `results/`)
 
-- `gallery.html` — static, self-refreshing (30 s meta-refresh), no frameworks,
-  no server, open with `file://`. Tufte-styled (cream paper, ink, one rust
+- `index.html` — the gallery: static, no frameworks, no server, open with
+  `file://` (auto-reloads every 30 s while a run is live — locally only);
+  also mirrored into `docs/`, the GitHub Pages root, on every refresh.
+  Tufte-styled (cream paper, ink, one rust
   accent, hairlines). At the top: a **progress chart** of every candidate in
   evaluation order — gray dots, a best-so-far step line with labeled
   improvements, invalid candidates as rust ×, generation ticks, and two
@@ -249,3 +251,10 @@ tests/           frame validity (baseline reproduces the real V6), kit
                  energy, hover sanity anchors
 results/         everything a run produces (see above)
 ```
+
+## License
+
+framevo is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE) for the full text.

@@ -1,7 +1,8 @@
 """Static result artifacts regenerated after every generation:
 
-- gallery.html    self-refreshing, framework-free, opens via file://
-                  (Tufte-style: cream paper, ink, one rust accent, hairlines)
+- index.html      the gallery: self-refreshing, framework-free, opens via
+                  file:// (Tufte-style: cream paper, ink, rust accent) --
+                  also mirrored into docs/ (the GitHub Pages root)
 - leaderboard.md  top 10 with all metrics
 - convergence.png matplotlib fitness-vs-generation plot
 
@@ -52,7 +53,7 @@ NAV_CSS = """
 .topnav a.on{color:var(--ink);border-bottom-color:var(--ink)}
 """
 
-_NAV_PAGES = [("gallery.html", "gallery"),
+_NAV_PAGES = [("index.html", "gallery"),
               ("lineage.html", "family tree"),
               ("glossary.html", "glossary")]
 
@@ -1025,10 +1026,15 @@ ovl.querySelectorAll(".ovl-views button").forEach(function(b){
 window.addEventListener("resize",function(){
   if(ovl.classList.contains("open"))redrawAll();
 });
-// auto-refresh while the run is live -- but never kill an open overlay
-setInterval(function(){
-  if(!ovl.classList.contains("open"))location.reload();
-},30000);
+// auto-refresh while the run is live -- but never kill an open overlay.
+// Only when viewed locally (file:// or localhost): the published GitHub
+// Pages copy is a frozen report where nothing new can fly in.
+if(location.protocol==="file:"||location.hostname==="localhost"||
+   location.hostname==="127.0.0.1"){
+  setInterval(function(){
+    if(!ovl.classList.contains("open"))location.reload();
+  },30000);
+}
 // progress chart: click any marker to jump to that candidate's detail card
 document.querySelectorAll(".chart-card [data-h]").forEach(function(el){
   el.addEventListener("click",function(){
@@ -1630,8 +1636,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              f"<h1>frame evolution &mdash; run <code>{html.escape(run_id)}</code></h1>",
              f'<p class="sub num">{len(gens)} generation(s) &middot; '
              f'{len(cands)} candidates ({n_valid} valid) &middot; '
-             f'<span class="updated">regenerated {time.strftime("%H:%M:%S")}, '
-             f'refreshes every 30&thinsp;s</span></p>',
+             f'<span class="updated">regenerated {time.strftime("%H:%M:%S")}'
+             f'</span></p>',
              '<p class="sub intro">every candidate the run has flown, in '
              "evaluation order. Gray dots are evaluated designs &mdash; "
              "height is the aggregate energy score in Wh/km across all "
@@ -1984,9 +1990,41 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
 
-    out = results_dir / "gallery.html"
+    out = results_dir / "index.html"
     out.write_text("\n".join(parts))
+    # a run may leave a stale pre-rename gallery.html behind: remove it so
+    # the directory has exactly one gallery page
+    legacy = results_dir / "gallery.html"
+    if legacy.exists():
+        legacy.unlink()
     return out
+
+
+def publish_docs(results_dir: Path, docs_dir: Path) -> None:
+    """Mirror the report into docs/ -- the GitHub Pages root -- so the
+    published site always tracks the latest generated pages. Copies the
+    HTML pages, charts and tables, plus the render stills they reference;
+    mesh blobs stay out (they are embedded in the HTML)."""
+    import shutil
+
+    if not (results_dir / "index.html").exists():
+        return
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    for name in ("index.html", "lineage.html", "lineage.svg", "lineage.dot",
+                 "glossary.html", "convergence.png", "leaderboard.md",
+                 "designer_log.md"):
+        src = results_dir / name
+        if src.exists():
+            shutil.copyfile(src, docs_dir / name)
+    src_frames = results_dir / "frames"
+    dst_frames = docs_dir / "frames"
+    if dst_frames.exists():  # drop stills of previous runs' candidates
+        shutil.rmtree(dst_frames)
+    if src_frames.exists():
+        for png in sorted(src_frames.rglob("*.png")):
+            dst = docs_dir / png.relative_to(results_dir)
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(png, dst)
 
 
 def write_leaderboard(store: Store, run_id: str, results_dir: Path,

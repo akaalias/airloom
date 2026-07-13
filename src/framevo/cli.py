@@ -148,7 +148,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     if lb.exists():
         print()
         print(lb.read_text())
-    print(f"gallery: file://{cfg.evolution.results_dir / 'gallery.html'}")
+    print(f"gallery: file://{cfg.evolution.results_dir / 'index.html'}")
     return 0
 
 
@@ -189,7 +189,9 @@ def cmd_gallery(args: argparse.Namespace) -> int:
         lineage.write_dot(store, run_id, results)
         lineage.write_svg(store, run_id, results)
         lineage.write_lineage_page(store, run_id, results)
-    print(f"gallery: file://{results / 'gallery.html'}")
+    gallery.publish_docs(results, cfg.root / "docs")
+    print(f"gallery: file://{results / 'index.html'}")
+    print(f"published: {cfg.root / 'docs' / 'index.html'}")
     return 0
 
 
