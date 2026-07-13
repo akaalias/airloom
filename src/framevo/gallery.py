@@ -44,19 +44,34 @@ a:hover{border-bottom-color:var(--accent)}
 CSS = TUFTE_TOKENS + """
 .wrap{max-width:92vw;margin:0 auto;padding:40px 0 96px}
 @media(max-width:1100px){.wrap{max-width:none;padding-left:28px;padding-right:28px}}
-h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;margin:0 0 6px}
+h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;
+  margin:0 0 6px;text-align:center}
 h1 code{font:400 26px var(--mono);color:var(--muted)}
-.sub{font-size:15px;color:var(--muted);margin:0 0 4px}
+.sub{font-size:15px;color:var(--muted);margin:0 auto 4px;text-align:center}
 .sub .updated{color:var(--faint);font-style:italic}
+.sub.intro{max-width:820px;margin:12px auto 16px;line-height:1.55}
 h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
-.legend{display:flex;flex-wrap:wrap;gap:18px;align-items:center;
-  font-size:13.5px;color:var(--muted);margin:10px 0 0}
-.legend .k{display:inline-flex;align-items:center;gap:7px}
-.legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
-.legend .bar{width:16px;height:0;border-top:2px solid var(--ink);display:inline-block}
-.legend .x{color:var(--accent);font-weight:700}
+/* chart legend, same visual language as the lineage page's */
+.lgd{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
+  align-items:center;font-size:13.5px;color:var(--muted);
+  max-width:1080px;margin:0 auto}
+.lgd+.lgd{margin-top:6px}
+.lg{position:relative;display:inline-flex;align-items:center;gap:7px;padding:2px 0}
+.lg:has(.tip){cursor:help}
+.lg:hover{color:var(--ink)}
+.lg .sw{display:inline-flex;align-items:center}
+.lg .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.lg .tip{display:none;position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
+  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
+  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07)}
+.lg:hover .tip{display:block}
+.lg:nth-last-child(-n+2) .tip{left:auto;right:calc(100% + 12px)}
+.lg .tip b{font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}
+.lg.gl{color:var(--ink);font-weight:700}
 .chart-card{border-top:1px solid var(--rule);padding:14px 0 0;margin-top:14px}
 .chart-card svg{width:100%;height:auto;display:block}
 .row{display:flex;flex-wrap:wrap;gap:14px}
@@ -611,7 +626,7 @@ def progress_chart_svg(store: Store, run_id: str,
         y_max = 1.0
 
     W, H = 1180, 400
-    ml, mr, mt, mb = 64, 24, 40, 42
+    ml, mr, mt, mb = 64, 24, 46, 42
     pw, ph = W - ml - mr, H - mt - mb
     n = len(cands)
 
@@ -674,8 +689,11 @@ def progress_chart_svg(store: Store, run_id: str,
             s.append(f'<text x="{x + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
                      f'fill="#9b998c">g{g}</text>')
 
-    # invalid strip (design fails)
-    y_inv = mt - 12
+    # invalid strip (design fails): floated well clear of the finite scale,
+    # with its own infinity label on the y axis
+    y_inv = mt - 26
+    s.append(f'<text x="{ml - 10}" y="{y_inv + 5}" text-anchor="end" '
+             f'font-size="15" fill="#8c2f1f">&#8734;</text>')
     # discarded dots + invalid marks; both shrink as the run grows so a
     # 100-generation chart stays legible. Past ~400 candidates the invalid
     # strip switches from x glyphs to a barcode of thin ticks.
@@ -756,6 +774,65 @@ def progress_chart_svg(store: Store, run_id: str,
     return "".join(s)
 
 
+def _chart_legend_html() -> str:
+    """Two centered legend rows with hover explanations, matching the
+    lineage page's legend language."""
+    def item(sw: str, label: str, tip: str | None = None,
+             cls: str = "lg") -> str:
+        t = (f'<span class="tip"><b>{html.escape(label)}</b><br>'
+             f"{tip}</span>") if tip else ""
+        sw_html = f'<span class="sw">{sw}</span>' if sw else ""
+        return f'<span class="{cls}">{sw_html}{label}{t}</span>'
+
+    def dot(col: str) -> str:
+        return f'<span class="dot" style="background:{col}"></span>'
+
+    row1 = [
+        item(dot("#b9b6a6"), "candidate",
+             "One evaluated design, drawn at its aggregate energy score "
+             "across all scenarios. Lower is better."),
+        item('<svg width="12" height="12"><circle cx="6" cy="6" r="4.5" '
+             'fill="none" stroke="#b9b6a6" stroke-width="1.4"/></svg>',
+             "off scale",
+             "A valid but far-off candidate above the 95th-percentile cap, "
+             "drawn hollow at the top edge so one terrible design does not "
+             "squash the interesting region."),
+        item('<span style="display:inline-block;width:16px;'
+             'border-top:2px solid #111111"></span>', "best so far",
+             "Step line tracking the lowest energy score reached so far; "
+             "each black dot is an improvement. Click one to jump to that "
+             "candidate&rsquo;s detail card."),
+        item('<span style="color:#8c2f1f;font-weight:700">&#215;</span>',
+             "invalid (design fail)",
+             "Failed a structural or geometric check and never flew the "
+             "scenarios, so it has no finite score &mdash; plotted on the "
+             "&#8734; row."),
+        item('<span style="color:#2e6e63;font-weight:700">g&#8202;&#10227;'
+             "</span>", "pivot generation",
+             "Patience ran out on a plateau: this generation was bred from "
+             "far-apart parents to re-diversify the pool."),
+    ]
+    fixed_tip = ("Fixed kit, identical on every candidate &mdash; drawn in "
+                 "the 3D model for context only; evolution never changes it.")
+    row2 = [
+        item("", "evolved:", cls="lg gl"),
+        item(dot("#8c2f1f"), "arms",
+             "Evolved part: the four arms &mdash; length, width, waist, "
+             "thickness and sweep genes reshape them."),
+        item(dot("#34322e"), "deck plates + standoffs",
+             "Evolved part: the stacked deck plates and standoffs &mdash; "
+             "plate size, thickness and deck gap genes reshape them."),
+        item("", "fixed kit:", cls="lg gl"),
+        item(dot("#4a6fa5"), "battery", fixed_tip),
+        item(dot("#5a7a52"), "FC/ESC stack", fixed_tip),
+        item(dot("#8a6a1e"), "wiring/XT60", fixed_tip),
+        item(dot("#55534c"), "motors", fixed_tip),
+        item(dot("#d8d5c8"), "prop disks", fixed_tip),
+    ]
+    return ('<div class="lgd">' + "".join(row1) + "</div>"
+            '<div class="lgd">' + "".join(row2) + "</div>")
+
+
 # -------------------------------------------------------------- the gallery --
 def write_gallery(store: Store, run_id: str, results_dir: Path,
                   target_whkm: float | None = None,
@@ -790,25 +867,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              f'<a href="glossary.html">glossary</a> &middot; '
              f'<span class="updated">regenerated {time.strftime("%H:%M:%S")}, '
              f'refreshes every 30&thinsp;s</span></p>',
-             '<div class="legend">'
-             '<span class="k"><span class="dot" style="background:#b9b6a6"></span>candidate</span>'
-             '<span class="k"><span class="bar"></span>best so far</span>'
-             '<span class="k"><span class="x">&#215;</span>invalid (design fail)</span>'
-             '<span class="k"><span style="color:#2e6e63;font-weight:700">'
-             "g&#8202;&#10227;</span>pivot generation (patience exhausted)</span>"
-             '<span class="k num" style="color:#9b998c">aggregate Wh/km, lower is better</span>'
-             "</div>",
-             '<div class="legend" style="margin-top:6px">'
-             '<span class="k" style="color:#111;font-weight:700">evolved:</span>'
-             '<span class="k"><span class="dot" style="background:#8c2f1f"></span>arms</span>'
-             '<span class="k"><span class="dot" style="background:#34322e"></span>deck plates + standoffs</span>'
-             '<span class="k" style="color:#111;font-weight:700;margin-left:10px">fixed kit:</span>'
-             '<span class="k"><span class="dot" style="background:#4a6fa5"></span>battery</span>'
-             '<span class="k"><span class="dot" style="background:#5a7a52"></span>FC/ESC stack</span>'
-             '<span class="k"><span class="dot" style="background:#8a6a1e"></span>wiring/XT60</span>'
-             '<span class="k"><span class="dot" style="background:#55534c"></span>motors</span>'
-             '<span class="k"><span class="dot" style="background:#d8d5c8"></span>prop disks</span>'
-             "</div>",
+             '<p class="sub intro">every candidate the run has flown, in '
+             "evaluation order. Gray dots are evaluated designs &mdash; "
+             "height is the aggregate energy score in Wh/km across all "
+             "scenarios, lower is better. The black step line tracks the "
+             "best so far, stepping down at each labeled improvement. Red "
+             "&#215;&rsquo;s on the &#8734; row are invalid designs that "
+             "failed a check and never flew. Click any black improvement "
+             "dot to jump to that candidate&rsquo;s detail card below.</p>",
+             _chart_legend_html(),
              f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>']
 
     detail_ids: list[str] = []
