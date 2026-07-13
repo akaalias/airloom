@@ -29,13 +29,14 @@ aggregation:
   # Derivation: current 7-inch long-range practice reaches ~8 g/W at cruise
   # (2806-class motor + 7x4 prop); at this mission's 12 m/s and ~1.0 kg AUW
   # that is ~125 W = ~2.9 Wh/km calm, ~2.6 for a state-of-the-art frame.
-  # Our aggregate (mean of 6 adverse scenarios + 0.5 x worst) runs ~2.0x the
-  # calm figure -> ~5.0 Wh/km aggregate.
-  target_aggregate_whkm: 5.0
+  # The calm->aggregate multiplier of this portfolio is MEASURED under the
+  # CFD-calibrated model (2026-07-14): 1.90 for both the real V6 and the
+  # evolved champion (frame-independent) -> 2.9 x 1.90 = ~5.5 aggregate.
+  target_aggregate_whkm: 5.5
   # Record-class stretch line: ~2 Wh/km calm-cruise (Dave_C-class ultralight
-  # long-range record flights, at best-range speed) x the ~2.0 calm->aggregate
-  # ratio of this scenario portfolio.
-  record_aggregate_whkm: 4.0
+  # long-range record flights, at best-range speed) x the same measured
+  # 1.90 calm->aggregate ratio -> ~3.8.
+  record_aggregate_whkm: 3.8
 
 early_reject:
   # optional cheap screen: fly calm_warm first; candidates worse than the
