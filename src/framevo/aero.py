@@ -103,21 +103,34 @@ class DragTable:
         return float(cx * c2 + cy * (1.0 - c2))
 
 
-def build_drag_table(frame: "FrameModel", platform: Platform) -> DragTable:
-    cd_a = CD_ARM
+@dataclass
+class AreaTable:
+    """Raw projected areas per component class -- the expensive rasterized
+    half of the drag buildup, independent of any Cd assumption. Lets the
+    robustness sweep re-price drag under perturbed Cds without re-measuring."""
+    tilt_deg: np.ndarray
+    arm_x: np.ndarray          # arm silhouette [m^2], flow along body x
+    arm_y: np.ndarray
+    body_x: np.ndarray
+    body_y: np.ndarray
+    a_top: float
+    wash_area: float           # arm planform under the rotor disks
+
+
+def measure_areas(frame: "FrameModel", platform: Platform) -> AreaTable:
     arms, body = frame.arms_mesh, frame.body_mesh
 
-    cda_x, cda_y = [], []
+    arm_x, arm_y, body_x, body_y = [], [], [], []
     for tilt_deg in TILT_GRID_DEG:
         t = math.radians(tilt_deg)
         # vehicle tilts nose-down into the flow: relative wind in body axes
         # gains an upward component
         d_x = np.array([math.cos(t), 0.0, math.sin(t)])
         d_y = np.array([0.0, math.cos(t), math.sin(t)])
-        ax_ = projected_area(arms, d_x) * cd_a + projected_area(body, d_x) * CD_BODY
-        ay_ = projected_area(arms, d_y) * cd_a + projected_area(body, d_y) * CD_BODY
-        cda_x.append(ax_)
-        cda_y.append(ay_)
+        arm_x.append(projected_area(arms, d_x))
+        arm_y.append(projected_area(arms, d_y))
+        body_x.append(projected_area(body, d_x))
+        body_y.append(projected_area(body, d_y))
 
     a_top = projected_area(arms, [0, 0, 1]) + projected_area(body, [0, 0, 1])
 
@@ -127,6 +140,21 @@ def build_drag_table(frame: "FrameModel", platform: Platform) -> DragTable:
     assert frame.arm is not None
     span = min(r, frame.arm.length)
     wash_area = 4.0 * span * frame.arm.planform_width_mean
-    return DragTable(tilt_deg=TILT_GRID_DEG.copy(),
-                     cda_x=np.array(cda_x), cda_y=np.array(cda_y),
-                     a_top=a_top, wash_cda=wash_area * cd_a)
+    return AreaTable(tilt_deg=TILT_GRID_DEG.copy(),
+                     arm_x=np.array(arm_x), arm_y=np.array(arm_y),
+                     body_x=np.array(body_x), body_y=np.array(body_y),
+                     a_top=a_top, wash_area=wash_area)
+
+
+def drag_table_from_areas(areas: AreaTable, cd_arm: float = CD_ARM,
+                          cd_body: float = CD_BODY,
+                          wash_scale: float = 1.0) -> DragTable:
+    return DragTable(tilt_deg=areas.tilt_deg.copy(),
+                     cda_x=areas.arm_x * cd_arm + areas.body_x * cd_body,
+                     cda_y=areas.arm_y * cd_arm + areas.body_y * cd_body,
+                     a_top=areas.a_top,
+                     wash_cda=areas.wash_area * cd_arm * wash_scale)
+
+
+def build_drag_table(frame: "FrameModel", platform: Platform) -> DragTable:
+    return drag_table_from_areas(measure_areas(frame, platform))

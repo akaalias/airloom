@@ -25,7 +25,7 @@ import math
 from dataclasses import dataclass
 
 from .aero import DragTable
-from .config import Mission, RainModel, Scenario
+from .config import Battery, Mission, RainModel, Scenario
 from .dryden import dryden_gusts
 from .rotor_model import RotorModel
 
@@ -33,7 +33,15 @@ G = 9.80665
 KP_VEL = 2.0          # velocity-loop gain, 1/s
 KP_ALT = 1.0          # altitude-loop gain, 1/s
 CLIMB_LIMIT = 3.0     # m/s
-SAT_TIME_LIMIT = 0.5  # cumulative seconds of saturated rotors -> invalid
+
+
+def _limiter_reason(sat_rpm: float, sat_motor_w: float,
+                    sat_pack: float) -> str:
+    if sat_pack >= max(sat_rpm, sat_motor_w):
+        return "battery pack cannot deliver demanded power"
+    if sat_motor_w > sat_rpm:
+        return "motor power limit exceeded"
+    return "rotor saturation (cannot hold commanded speed)"
 
 
 @dataclass(frozen=True)
@@ -48,17 +56,21 @@ class ScenarioResult:
     peak_rotor_thrust_n: float
     max_tilt_deg: float
     sat_time_s: float
+    peak_pack_power_w: float = 0.0
+    min_pack_voltage_v: float = 0.0
 
 
 def _fail(name: str, reason: str, energy_wh: float = math.inf,
-          peak: float = 0.0) -> ScenarioResult:
+          peak: float = 0.0, peak_pack_w: float = 0.0,
+          min_v: float = 0.0) -> ScenarioResult:
     return ScenarioResult(name, False, reason, math.inf, energy_wh, math.inf,
-                          math.inf, peak, 90.0, math.inf)
+                          math.inf, peak, 90.0, math.inf, peak_pack_w, min_v)
 
 
 def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
                       scenario: Scenario, mission: Mission,
-                      rain_model: RainModel) -> ScenarioResult:
+                      rain_model: RainModel,
+                      battery: Battery | None = None) -> ScenarioResult:
     dt = 1.0 / mission.sim_rate_hz
     vc = mission.cruise_speed_ms
     rho = scenario.air_density
@@ -67,6 +79,9 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
 
     nominal_t = sum(abs(x) for x in mission.legs_m) / vc
     max_steps = int((nominal_t * mission.time_factor_limit + 30.0) / dt)
+    # thrust limiting CLAMPS (gust transients cost tracking + energy, like
+    # real flight); only SUSTAINED limiting fails the scenario
+    sat_limit = mission.saturation_frac_limit * nominal_t
 
     # -- steady wind + frozen per-scenario gust history (NED, z up)
     wind_n, wind_e = scenario.wind_ne
@@ -86,6 +101,21 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
     m_eff = total_mass + (rain_model.film_mass_kg_m2 * drag.a_top if raining else 0.0)
     f_rain_z = rho_rain * rain_model.drop_terminal_velocity_ms ** 2 * drag.a_top
     weight = m_eff * G
+
+    # -- battery pack sag model: V = V0 - I*R, I solved from demanded motor
+    #    power each step (V*I = P_motors -> quadratic in I). The pack can
+    #    deliver at most V0^2/(4R); demanding more, or exceeding the cell
+    #    current rating, counts against the same saturation clock as the
+    #    rotors. Energy is integrated at the PACK terminals (motor power +
+    #    I^2 R loss = V0 * I).
+    v0 = battery.voltage_nominal if battery is not None else 0.0
+    r_pack = battery.internal_resistance_ohm if battery is not None else 0.0
+    i_max = battery.max_current_a if battery is not None else math.inf
+    pack_on = v0 > 0.0 and r_pack > 0.0
+    v_term = v0  # previous-step terminal voltage; scales the RPM ceiling
+    min_v = v0 if pack_on else 0.0
+    peak_pack_w = 0.0
+    sat_rpm = sat_motor_w = sat_pack = 0.0
 
     # -- mission legs along the north axis
     legs = []
@@ -183,15 +213,45 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
             v_axial = 0.0
         n = rotor.solve_n(t_per, v_axial, rho, ct_scale=ct_scale, n_guess=n_rotor)
 
-        saturated = n > rotor.max_rps
+        # RPM ceiling sags with pack terminal voltage (KV * V); v_term is
+        # last step's solution -- a one-step lag, conservative when clamping
+        max_rps_eff = rotor.max_rps * (v_term / v0) if pack_on else rotor.max_rps
+        saturated = n > max_rps_eff
         if saturated:
-            n = rotor.max_rps
-            sat_time += dt
+            # if only the SAGGED ceiling binds (nominal-voltage RPM would
+            # have sufficed), the true limiter is the pack, not the rotor
+            if pack_on and n <= rotor.max_rps:
+                sat_pack += dt
+            else:
+                sat_rpm += dt
+            n = max_rps_eff
         n_rotor = n
         p_one = rotor.electrical_power(n, v_axial, rho)
-        if p_one > rotor.max_motor_power_w and not saturated:
-            sat_time += dt
-        energy_j += 4.0 * p_one * dt
+        motor_limited = p_one > rotor.max_motor_power_w
+        if motor_limited and not saturated:
+            sat_motor_w += dt
+
+        if pack_on:
+            p_motors = 4.0 * p_one
+            disc = v0 * v0 - 4.0 * r_pack * p_motors
+            if disc <= 0.0:  # demanded more than the pack can deliver
+                i_pack = v0 / (2.0 * r_pack)
+                if not (saturated or motor_limited):
+                    sat_pack += dt
+            else:
+                i_pack = (v0 - math.sqrt(disc)) / (2.0 * r_pack)
+                if i_pack > i_max and not (saturated or motor_limited):
+                    sat_pack += dt
+            v_term = v0 - i_pack * r_pack
+            if v_term < min_v:
+                min_v = v_term
+            p_pack = v0 * i_pack  # = motor power + I^2 R pack loss
+            if p_pack > peak_pack_w:
+                peak_pack_w = p_pack
+            energy_j += p_pack * dt
+        else:
+            energy_j += 4.0 * p_one * dt
+        sat_time = sat_rpm + sat_motor_w + sat_pack
 
         j_adv = v_axial / (n * diam)
         t_act_per = rho * n * n * diam ** 4 * rotor.ct(j_adv) * ct_scale
@@ -206,17 +266,22 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
         vx += axx * dt; vy += ayy * dt; vz += azz * dt
         x += vx * dt; y += vy * dt; z += vz * dt
 
-        if sat_time > SAT_TIME_LIMIT:
-            return _fail(scenario.name, "rotor saturation (cannot hold commanded speed)",
-                         energy_j / 3600.0, peak_thrust)
+        if sat_time > sat_limit:
+            return _fail(scenario.name,
+                         _limiter_reason(sat_rpm, sat_motor_w, sat_pack),
+                         energy_j / 3600.0, peak_thrust, peak_pack_w, min_v)
         if abs(y) > 50.0 or abs(z - mission.altitude_m) > 20.0:
-            return _fail(scenario.name, "control divergence", energy_j / 3600.0,
-                         peak_thrust)
+            reason = "control divergence"
+            elapsed = (step + 1) * dt
+            if sat_time > 0.3 * elapsed:  # diverged BECAUSE thrust-limited
+                reason += f" ({_limiter_reason(sat_rpm, sat_motor_w, sat_pack)})"
+            return _fail(scenario.name, reason, energy_j / 3600.0,
+                         peak_thrust, peak_pack_w, min_v)
         step += 1
 
     if leg_i < len(legs):
         return _fail(scenario.name, "mission not completed in time (speed not held)",
-                     energy_j / 3600.0, peak_thrust)
+                     energy_j / 3600.0, peak_thrust, peak_pack_w, min_v)
 
     t_total = step * dt
     energy_wh = energy_j / 3600.0
@@ -225,4 +290,5 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
         wh_per_km=energy_wh / mission.total_km, energy_wh=energy_wh,
         avg_power_w=energy_j / t_total, flight_time_s=t_total,
         peak_rotor_thrust_n=peak_thrust, max_tilt_deg=math.degrees(max_tilt),
-        sat_time_s=sat_time)
+        sat_time_s=sat_time, peak_pack_power_w=peak_pack_w,
+        min_pack_voltage_v=min_v)

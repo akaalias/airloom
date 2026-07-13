@@ -105,6 +105,15 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
   border-radius:2px;color:var(--muted);margin:0 6px 8px 0;line-height:1.5}
 .badge.pivot{color:#2e6e63;border-color:#2e6e63}
 .badge.claude{color:#6a4a8a;border-color:#b9a6cf}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:4px 40px;margin:2px 0 8px}
+.board h3{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
+  margin:14px 0 2px}
+.board p.note{font-size:12.5px;font-style:italic;line-height:1.65;
+  color:var(--faint);margin:6px 0 0}
+.board ul{margin:4px 0 0;padding-left:16px}
+.board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
 .knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
 .knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
   font-size:13px}
@@ -1605,10 +1614,104 @@ def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
     return "".join(out)
 
 
+def _gameboard_html(cfg) -> str:
+    """The rules of the game, right under the progress chart: what is
+    bolted down (the kit + hard constraints), what the search may move
+    (the 12 genes), and what every candidate must fly through (the
+    scenario portfolio)."""
+    if cfg is None:
+        return ""
+    from .genome import BASELINE, GENE_FORMAT, GENOME_SPEC
+
+    plat = cfg.platform
+    b, pr = plat.battery, plat.propulsion
+    p_ceiling = (b.voltage_nominal ** 2 / (4.0 * b.internal_resistance_ohm)
+                 if b.internal_resistance_ohm > 0 else None)
+
+    def row(k: str, v: str) -> str:
+        return f"<tr><td>{k}</td><td>{v}</td></tr>"
+
+    fixed = ['<div><h3>bolted down &mdash; the fixed kit</h3>',
+             '<table class="dt">',
+             row("motors", f"4&times; 2806-class, &le;{pr.max_rpm:,.0f} rpm, "
+                 f"&le;{pr.max_motor_power_w:.0f} W each"),
+             row("props", "7&times;4 3-blade (MA GF 7&times;4 measured tables)"),
+             row("battery", f"6S1P 21700 Li-Ion, {b.capacity_mah / 1000:.1f} Ah, "
+                 f"{b.mass_kg * 1000:.0f} g"),
+             ]
+    if p_ceiling:
+        fixed.append(row("pack limits",
+                         f"{b.internal_resistance_ohm:.2f} &Omega; sag, "
+                         f"&le;{b.max_current_a:.0f} A "
+                         f"(&asymp;{p_ceiling:.0f} W ceiling)"))
+    fixed += [row("electronics", f"30.5 mm FC/ESC stack "
+                  f"(needs &ge;{plat.fc_stack_height_m * 1000:.0f} mm gap), "
+                  "camera, VTX, ELRS, GPS"),
+              row("non-frame mass", f"{plat.fixed_mass_kg * 1000:.0f} g"),
+              "</table>",
+              "<h3>hard constraints (fitness = &#8734;, no flight)</h3>",
+              "<ul>",
+              "<li>FC/ESC stack must fit the deck gap</li>",
+              "<li>arm root tongues may not collide on the main plate</li>",
+              "<li>each tongue&rsquo;s bolt pair must land on plate material</li>",
+              f"<li>rotor&ndash;rotor / rotor&ndash;frame clearance &ge; "
+              f"{plat.rotor_tip_clearance_m * 1000:.0f} mm, prop disks vs "
+              "deck &amp; battery checked in 3D</li>",
+              "<li>arm stress, tip deflection &amp; 1P resonance "
+              f"(&times;{plat.safety_factor:g} safety)</li>",
+              f"<li>&le;{cfg.mission.saturation_frac_limit:.0%} of the "
+              "mission thrust-limited (rotor, motor or pack)</li>",
+              "</ul></div>"]
+
+    unit_fmt = {u: f for u, f in (
+        ("x", lambda v: f"&times;{v:.2f}"), ("mm", lambda v: f"{v * 1000:.0f}"),
+        ("deg", lambda v: f"{v:.0f}&deg;"), ("", lambda v: f"{v:.2f}"))}
+    lo_hi = {name: (lo, hi) for name, lo, hi in GENOME_SPEC}
+    levers = ['<div><h3>the levers &mdash; 12 genes</h3>',
+              '<table class="dt"><tr><th></th><th>min</th><th>seed</th>'
+              '<th>max</th></tr>']
+    for gene, label, unit in GENE_FORMAT:
+        lo, hi = lo_hi[gene]
+        if gene == "material":
+            names = f"{plat.materials[0].name} &hellip; {plat.materials[-1].name}"
+            levers.append(f"<tr><td>{label}</td><td colspan=3>{names} "
+                          f"({len(plat.materials)} materials)</td></tr>")
+            continue
+        f = unit_fmt[unit]
+        seed = f(BASELINE[gene])
+        levers.append(f"<tr><td>{label}{' (mm)' if unit == 'mm' else ''}</td>"
+                      f"<td>{f(lo)}</td><td>{seed}</td><td>{f(hi)}</td></tr>")
+    levers += ["</table>",
+               '<p class="note">&times;1.00 on every scale gene = the real '
+               "Source One V6 7in DC, measured from the official plate "
+               "drawings; the search deforms those real outlines, never "
+               "free-form shapes.</p></div>"]
+
+    mi = cfg.mission
+    dist = sum(abs(x) for x in mi.legs_m) / 1000.0
+    weather = ['<div><h3>the weather &mdash; every candidate flies all of it</h3>',
+               '<table class="dt">']
+    for s in cfg.scenarios:
+        weather.append(row(s.name.replace("_", " "),
+                           html.escape(s.description or "")))
+    weather += ["</table>",
+                f'<p class="note">one mission: {dist:g} km out-and-back at '
+                f"{mi.cruise_speed_ms:g} m/s, {mi.altitude_m:g} m AGL. "
+                "Fixed gust seeds &mdash; every candidate flies identical "
+                "turbulence, so score differences are frame differences. "
+                "Fitness = mean Wh/km + "
+                f"{cfg.aggregation.lambda_worst:g} &times; worst scenario."
+                "</p></div>"]
+
+    return ("<h2>the game board</h2>"
+            '<div class="board">' + "".join(fixed) + "".join(levers)
+            + "".join(weather) + "</div>")
+
+
 def write_gallery(store: Store, run_id: str, results_dir: Path,
                   target_whkm: float | None = None,
                   record_whkm: float | None = None,
-                  evolution=None) -> Path:
+                  evolution=None, cfg=None) -> Path:
     cands = {r["hash"]: r for r in store.candidates_for_run(run_id)}
     gens = store.generations_with_population(run_id)
     scen_cache: dict[str, list] = {}
@@ -1648,7 +1751,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              "dot to jump to that candidate&rsquo;s detail card below.</p>",
              _inspiration_html(store, run_id),
              _chart_legend_html(),
-             f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>']
+             f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>',
+             _gameboard_html(cfg)]
 
     claude_gens = {r["generation"] for r in store.designer_rounds_for(run_id)}
     detail_ids: list[str] = []

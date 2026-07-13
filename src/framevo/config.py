@@ -33,6 +33,10 @@ class Battery:
     size_m: tuple[float, float, float]
     fit_clearance_m: float
     support_frac: float
+    # pack electrical limits: V = V0 - I*R sag model + a cell current rating.
+    # 0 / inf disable the pack model (old configs keep working).
+    internal_resistance_ohm: float = 0.0
+    max_current_a: float = math.inf
 
 
 @dataclass(frozen=True)
@@ -62,6 +66,9 @@ class Material:
     # thinnest deck plate the process can produce reliably (0 = no floor);
     # FDM-printed plates need more meat than CNC carbon laminate
     min_plate_thickness_m: float = 0.0
+    # fraction of datasheet tensile strength delivered as-built (bending,
+    # perimeter seams, layer adhesion); champion verification only
+    as_built_strength_frac: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -106,6 +113,9 @@ class Mission:
     accel_limit_ms2: float
     sim_rate_hz: float
     time_factor_limit: float
+    # cumulative thrust-limited time (RPM/motor/pack) allowed before the
+    # scenario fails, as a fraction of the nominal mission time
+    saturation_frac_limit: float = 0.10
 
     @property
     def total_km(self) -> float:
@@ -265,6 +275,8 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         size_m=tuple(float(x) for x in b["size_m"]),  # type: ignore[arg-type]
         fit_clearance_m=float(b["fit_clearance_m"]),
         support_frac=float(b["support_frac"]),
+        internal_resistance_ohm=float(b.get("internal_resistance_ohm", 0.0)),
+        max_current_a=float(b.get("max_current_a", math.inf)),
     )
     p = plat["propulsion"]
     propulsion = Propulsion(
@@ -283,7 +295,8 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         Material(name=str(m["name"]), density_kg_m3=float(m["density_kg_m3"]),
                  tensile_strength_pa=float(m["tensile_strength_pa"]),
                  youngs_modulus_pa=float(m["youngs_modulus_pa"]),
-                 min_plate_thickness_m=float(m.get("min_plate_thickness_m", 0.0)))
+                 min_plate_thickness_m=float(m.get("min_plate_thickness_m", 0.0)),
+                 as_built_strength_frac=float(m.get("as_built_strength_frac", 1.0)))
         for m in plat["materials"])
     fc, st, ge = plat["flight_controller"], plat["structure"], plat["geometry"]
     platform = Platform(
@@ -313,6 +326,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         accel_limit_ms2=float(mi["accel_limit_ms2"]),
         sim_rate_hz=float(mi["sim_rate_hz"]),
         time_factor_limit=float(mi["time_factor_limit"]),
+        saturation_frac_limit=float(mi.get("saturation_frac_limit", 0.10)),
     )
     scenarios = tuple(
         Scenario(

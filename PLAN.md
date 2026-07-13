@@ -201,4 +201,28 @@ gallery/narrator polish) ahead of the first "real" long run. Phase B
 (OpenFOAM) remains out of scope; the per-candidate `DragTable`
 (CdA vs tilt/azimuth) is the seam where CFD results would slot in
 (snappyHexMesh + k-ω SST RANS, 3 angles × 2 speeds, top-N per generation,
-cached by genome hash).
+cached by genome hash). The `DragTable` is now derived from a raw
+`AreaTable`, so CFD-calibrated Cds can be re-priced without re-rasterizing.
+
+Pre-Phase-B verification layer (built 2026-07-13):
+
+- **Battery pack model** in the simulator: V = V0 − I·R sag, deliverable
+  power ceiling (~820 W for the 6S1P), 45 A cell limit, I²R losses in the
+  energy integral, RPM ceiling scaled by sagged voltage. Thrust limiting
+  now CLAMPS (transients cost energy/tracking); failure = sustained
+  limiting > `mission.saturation_frac_limit` (10 %) of nominal time,
+  blamed on the dominant limiter. Finding: no frame — including the real
+  V6 — can hold 12 m/s through `storm` on this pack without clamping;
+  ~12 s of saturation and a higher Wh/km is the physical outcome.
+- **`framevo robustness`**: re-flies the top archived candidates under
+  perturbed model knobs; rank correlation + champion identity vs baseline
+  → STABLE/MODERATE/FRAGILE verdict in `results/robustness.md`. First
+  sweep: FRAGILE — ordering among the near-tied top 12 hinges on the ARM
+  drag coefficient (Spearman 0.59 at cd_arm+30 %); everything else ≥0.9.
+  Phase B should therefore start with arm-drag fidelity.
+- **`framevo verify-champions`**: station-wise variable-section bending
+  along the real morphed arm outline, Peterson net-section Kt at
+  holes/cutouts, per-material as-built strength knockdowns
+  (`as_built_strength_frac`), refined deflection, print-and-test protocol
+  → `results/champion_check.md`. Deliberately not FEM; a CalculiX pass
+  would consume the same per-station geometry.

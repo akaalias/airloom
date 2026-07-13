@@ -17,6 +17,14 @@ battery:
   capacity_mah: 4200
   voltage_nominal: 22.2    # V
   mass_kg: 0.470           # 6 cells + nickel strip, BEC board, XT60, wrap
+  # Pack electrical limits (the "can the pack actually deliver this" model):
+  # terminal voltage sags as V = V0 - I*R; the sim solves pack current from
+  # demanded motor power each step. P42A-class DC IR ~22 mOhm/cell warm,
+  # plus nickel strip / XT60 / wiring -> ~0.15 Ohm for the 6S1P pack.
+  # Max deliverable power = V0^2/(4R) ~ 820 W; at the 45 A cell rating the
+  # pack sags to ~15.5 V (~2.6 V/cell), consistent with P42A discharge curves.
+  internal_resistance_ohm: 0.15
+  max_current_a: 45.0
   # rigid rectangular block, meters (L x W x H)
   size_m: [0.070, 0.066, 0.044]
   fit_clearance_m: 0.001
@@ -60,37 +68,47 @@ flight_controller:
 # datasheet/XY-direction numbers; printed parts are weaker across layers
 # (see README limitations). Ordered stiffest -> softest so neighboring gene
 # values mean similar materials.
+# as_built_strength_frac: what fraction of the datasheet tensile strength an
+# as-printed/as-cut part actually delivers in bending (perimeter seams, layer
+# adhesion, moisture, print defects). Used only by the champion verification
+# report (framevo verify-champions), NOT by the in-loop constraint.
 materials:
   - name: cf_plate        # CNC-cut quasi-isotropic carbon laminate (not printed)
     density_kg_m3: 1600.0
     tensile_strength_pa: 600.0e6
     youngs_modulus_pa: 70.0e9
     min_plate_thickness_m: 0.0012
+    as_built_strength_frac: 1.0
   - name: pa12_cf         # carbon-fiber nylon (PA12-CF / PAHT-CF class)
     density_kg_m3: 1170.0
     tensile_strength_pa: 110.0e6
     youngs_modulus_pa: 7.6e9
     min_plate_thickness_m: 0.0016
+    as_built_strength_frac: 0.65
   - name: pet_cf          # carbon-fiber PET
     density_kg_m3: 1310.0
     tensile_strength_pa: 90.0e6
     youngs_modulus_pa: 6.2e9
     min_plate_thickness_m: 0.0016
+    as_built_strength_frac: 0.65
   - name: pla_plus
     density_kg_m3: 1240.0
     tensile_strength_pa: 60.0e6
     youngs_modulus_pa: 3.6e9
     min_plate_thickness_m: 0.0016
+    as_built_strength_frac: 0.60
   - name: petg
     density_kg_m3: 1270.0
     tensile_strength_pa: 50.0e6
     youngs_modulus_pa: 2.1e9
     min_plate_thickness_m: 0.0016
+    as_built_strength_frac: 0.60
   - name: asa
     density_kg_m3: 1070.0
     tensile_strength_pa: 40.0e6
     youngs_modulus_pa: 2.0e9
     min_plate_thickness_m: 0.0016
+    as_built_strength_frac: 0.60
 
 structure:
   safety_factor: 1.5

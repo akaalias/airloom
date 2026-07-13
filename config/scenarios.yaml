@@ -15,6 +15,12 @@ mission:
   accel_limit_ms2: 4.0
   sim_rate_hz: 100
   time_factor_limit: 1.6        # > 1.6x nominal leg time -> "did not complete"
+  # Saturated rotors (RPM ceiling incl. battery sag, motor power, pack
+  # deliverable power) CLAMP thrust rather than instantly failing: brief
+  # gust transients cost tracking and energy, like real flight. Sustained
+  # saturation beyond this fraction of the nominal mission time fails the
+  # scenario, blamed on the dominant limiter.
+  saturation_frac_limit: 0.10
 
 aggregation:
   mode: mean_plus_worst          # or: minimax

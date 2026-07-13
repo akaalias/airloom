@@ -160,8 +160,49 @@ def scenario_task(root: str, total_mass: float, drag_fields: dict[str, Any],
     cfg, rotor = _context(root)
     drag = DragTable(**drag_fields)
     result = simulate_scenario(total_mass, drag, rotor, cfg.scenario(scenario_name),
-                               cfg.mission, cfg.rain)
+                               cfg.mission, cfg.rain,
+                               battery=cfg.platform.battery)
     return dataclasses.asdict(result)
+
+
+def robustness_task(root: str, genome_dict: dict[str, float],
+                    knob_sets: list[dict[str, Any]],
+                    scenario_names: list[str] | None = None) -> dict[str, Any]:
+    """Re-fly one archived candidate under every knob set (robustness sweep).
+    Geometry is built once, projected areas rasterized once; each knob set
+    re-prices the drag table and perturbs rotor/rain, then flies the full
+    scenario portfolio. Returns per-knob-set aggregate fitness."""
+    from .aero import drag_table_from_areas, measure_areas
+    from .frame_gen import build_frame
+    from .robustness import apply_knobs
+
+    cfg, rotor = _context(root)
+    genome = Genome.from_dict(genome_dict)
+    frame = build_frame(genome, cfg.platform)
+    if not frame.valid:
+        return {"hash": genome.hash, "valid": False,
+                "failure_reason": frame.failure_reason, "results": None}
+    areas = measure_areas(frame, cfg.platform)
+    scens = [cfg.scenario(n) for n in scenario_names] if scenario_names \
+        else list(cfg.scenarios)
+
+    out: dict[str, Any] = {"hash": genome.hash, "valid": True, "results": {}}
+    for ks in knob_sets:
+        cd_arm, cd_body, wash, rot, rain = apply_knobs(cfg, rotor, ks)
+        drag = drag_table_from_areas(areas, cd_arm=cd_arm, cd_body=cd_body,
+                                     wash_scale=wash)
+        rs = [simulate_scenario(frame.total_mass, drag, rot, s, cfg.mission,
+                                rain, battery=cfg.platform.battery)
+              for s in scens]
+        fit, mean, worst = aggregate_fitness(rs, cfg.aggregation.mode,
+                                             cfg.aggregation.lambda_worst)
+        out["results"][ks["name"]] = {
+            "fitness": fit if math.isfinite(fit) else None,
+            "mean": mean if math.isfinite(mean) else None,
+            "worst": worst if math.isfinite(worst) else None,
+            "n_failed": sum(1 for r in rs if not r.valid),
+        }
+    return out
 
 
 def structural_check(root: str, arm_fields: dict[str, Any], total_mass: float,

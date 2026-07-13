@@ -16,6 +16,11 @@ make test        # pytest suite
                                                    #  then a brand-new run
 .venv/bin/framevo lineage <genome_hash>            # ancestor chain w/ fitness
 .venv/bin/framevo gallery                          # rebuild artifacts from db
+.venv/bin/framevo robustness                       # is the RANKING an artifact
+                                                   #  of the model knobs?
+.venv/bin/framevo verify-champions                 # refined structural check of
+                                                   #  the top frames + print-
+                                                   #  and-test protocol
 ```
 
 While a run is live, type `quit` + enter (or ctrl-c) to stop gracefully — the
@@ -68,6 +73,19 @@ Restore any past state with `git -C results log` +
   `gen_XXXX_best_parts/` — the same frame as separate flat, printable pieces.
 - `designer_log.md` — the designer rounds' proposals with their one-line
   rationales (see below).
+- `robustness.md` (on demand, `framevo robustness`) — the top candidates
+  re-flown under perturbed model knobs (±30 % handbook Cds, ±10 % rotor
+  tables, rain knobs, wash term): rank correlation, top-5 overlap and
+  champion identity vs the baseline ordering, with a STABLE / MODERATE /
+  FRAGILE verdict. Answers "is the leaderboard a frame property or a model
+  artifact?" and names the knob where Phase B fidelity would matter first.
+- `champion_check.md` (on demand, `framevo verify-champions`) — the top
+  frames re-analyzed with a station-by-station variable-section bending
+  model along the real morphed arm outline: net-section stress
+  concentration at holes/cutouts (Peterson Kt) and as-built strength
+  knockdowns for printed materials — the two optimisms the in-loop beam
+  constraint cannot see — plus a bench print-and-test protocol with hold
+  and predicted-failure loads.
 - `run.db` — SQLite: genomes, lineage (self-referencing, `WITH RECURSIVE`
   ancestry), per-scenario metrics, populations, lab-notebook notes, config
   snapshot, git hash. Written by an older schema? It gets archived
@@ -170,8 +188,14 @@ persists. Derived from persisted history, so it survives `--resume`;
 configured under `ga.patience` in `config/evolution.yaml`.
 
 Fitness = mean Wh/km + λ·worst Wh/km (λ = 0.5), or pure worst-case with
-`aggregation: minimax`. Any scenario failure (rotor saturation, mission not
-completed, structural) ⇒ invalid. An optional early-reject screen
+`aggregation: minimax`. Thrust limiting (rotor RPM ceiling incl. battery
+sag, per-motor power, pack deliverable power) **clamps** rather than
+instantly failing — a gust transient costs tracking and energy, like real
+flight. A scenario fails on *sustained* infeasibility: thrust-limited
+beyond 10 % of the nominal mission time (blamed on the dominant limiter),
+altitude/track divergence, mission not completed within 1.6× nominal time,
+or the structural check. Any scenario failure ⇒ invalid. An optional
+early-reject screen
 (`early_reject.enabled`) flies `calm_warm` first and gives clearly-losing
 candidates a finite penalized fitness without flying the other five.
 
@@ -184,6 +208,7 @@ candidates a finite penalized fitness without flying the other five.
 | turbulence | Dryden, MIL-F-8785C low-altitude forms, spectral synthesis, fixed seeds | variance unit-tested against σ² spec |
 | rain | (a) water-film added mass ∝ top area, (b) momentum drag via equivalent suspended-water density + vertical impact force, (c) 15 % thrust-coefficient penalty | empirical knobs, see NASA TP-2671 (Dunham et al.) heavy-rain research; all in config |
 | flight | 100 Hz point-mass 3-DOF sim; quasi-static attitude (the quad tilts into the relative wind), P velocity loop with accel limits; rotor speeds solved each step from the CT tables; electrical energy integrated | zero-wind mission unit-tested against a quasi-static analytic power balance (±6 %) |
+| battery | quasi-static pack model: V = V0 − I·R, current solved from demanded motor power each step; energy integrated at the pack terminals (incl. I²R loss); RPM ceiling scales with sagged voltage; deliverable-power (V0²/4R ≈ 820 W) and cell-current (45 A) limits feed the saturation clock | P42A-class DC IR + discharge-curve sag; unit-tested (quadratic solve, IR-loss share, storm clamp behavior) |
 | structure | Euler–Bernoulli cantilever arm: worst-case per-rotor thrust across all scenarios × 1.5 safety factor; stress ≤ material strength, tip deflection ≤ 5 % L, first bending mode outside ±15 % of hover 1P — all with the genome-selected material's properties | stress/deflection unit-tested against hand calculations |
 
 Sanity anchors (unit-tested): the original spec anchor — a 5-inch quad at
@@ -211,10 +236,19 @@ the MA GF 7×4 data.
   flies 3-blade 7×4s and hovers near 9k RPM. CT/CP are treated as
   Re-independent and blade-count effects are absorbed into the tables.
 - **Print-material properties are XY/datasheet values.** FDM parts are
-  weaker across layer lines (often 40–60 % in Z); the 1.5 safety factor is
-  the only allowance for anisotropy, print quality, or temperature.
+  weaker across layer lines (often 40–60 % in Z); in the LOOP the 1.5
+  safety factor is the only allowance for anisotropy, print quality, or
+  temperature. `framevo verify-champions` re-checks the top frames with
+  per-material as-built strength knockdowns and hole/cutout stress
+  concentrations, and emits a bench print-and-test protocol.
 - Structural model checks the arms only (root stress, tip deflection,
   resonance); the deck is assumed rigid and the standoffs ideal.
+- **The battery model is quasi-static.** Constant open-circuit voltage at
+  the nominal 3.7 V/cell (no state-of-charge curve — conservative for a
+  short mission that only uses ~15 % of the pack), constant DC internal
+  resistance (no temperature or transient effects), no thermal limits for
+  pack or motors. It exists to catch physically undeliverable power
+  demands, not to predict voltage traces.
 - **Printability is enforced by real-outline geometry constraints, not full
   DFM.** Parts are the actual (morphed) V6 outlines with their holes and
   cutouts, exported as separate flat pieces; but tongue bolt holes are
@@ -227,10 +261,14 @@ the MA GF 7×4 data.
 
 ## Phase B (CFD) — not built yet, seam prepared
 
-The drag interface is a per-candidate `DragTable` (CdA vs tilt/azimuth).
-A Phase-B OpenFOAM pipeline (snappyHexMesh + k-ω SST RANS at 3 angles ×
-2 speeds, top-N candidates per generation, cached by genome hash) would
-replace that table and nothing else.
+The drag interface is a per-candidate `DragTable` (CdA vs tilt/azimuth),
+now built from a raw `AreaTable` (rasterized projected areas per component
+class) so drag can be re-priced under different Cd assumptions without
+re-measuring geometry. A Phase-B OpenFOAM pipeline (snappyHexMesh + k-ω
+SST RANS at 3 angles × 2 speeds, top-N candidates per generation, cached
+by genome hash) would replace that table and nothing else. Run
+`framevo robustness` first: it names the knob (so far: the arm drag
+coefficient) where CFD fidelity would actually change decisions.
 
 ## Layout
 

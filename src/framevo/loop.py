@@ -434,7 +434,7 @@ class EvolutionLoop:
         gallery_mod.write_gallery(self.store, self.run_id, self.results,
                                   self.cfg.aggregation.target_whkm,
                                   self.cfg.aggregation.record_whkm,
-                                  self.cfg.evolution)
+                                  self.cfg.evolution, cfg=self.cfg)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
         gallery_mod.write_convergence(self.store, self.run_id, self.results)

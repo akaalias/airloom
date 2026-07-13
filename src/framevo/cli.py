@@ -180,7 +180,7 @@ def cmd_gallery(args: argparse.Namespace) -> int:
         import shutil
         shutil.copyfile(glossary, results / "glossary.html")
     gallery.write_gallery(store, run_id, results, cfg.aggregation.target_whkm,
-                          cfg.aggregation.record_whkm, cfg.evolution)
+                          cfg.aggregation.record_whkm, cfg.evolution, cfg=cfg)
     gallery.write_leaderboard(store, run_id, results,
                               [s.name for s in cfg.scenarios])
     gallery.write_convergence(store, run_id, results)
@@ -193,6 +193,21 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     print(f"gallery: file://{results / 'index.html'}")
     print(f"published: {cfg.root / 'docs' / 'index.html'}")
     return 0
+
+
+def cmd_verify_champions(args: argparse.Namespace) -> int:
+    from .champion import verify_champions
+    cfg = load_config(args.root, results_dir=args.results)
+    summary = verify_champions(cfg, run_id=args.run_id, top=args.top)
+    return 0 if summary["n_overstressed"] == 0 else 2
+
+
+def cmd_robustness(args: argparse.Namespace) -> int:
+    from .robustness import run_robustness
+    cfg = load_config(args.root, results_dir=args.results,
+                      workers=args.workers)
+    summary = run_robustness(cfg, run_id=args.run_id, top=args.top)
+    return 0 if summary["verdict"] != "FRAGILE" else 2
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -252,6 +267,28 @@ def main(argv: list[str] | None = None) -> int:
     _add_common(p)
     p.add_argument("--run-id", default=None)
     p.set_defaults(fn=cmd_gallery)
+
+    p = sub.add_parser("robustness",
+                       help="re-fly top candidates under perturbed model"
+                            " knobs; is the ranking a frame property or a"
+                            " model artifact? (writes results/robustness.md)")
+    _add_common(p)
+    p.add_argument("--run-id", default=None)
+    p.add_argument("--top", type=int, default=20,
+                   help="how many of the best candidates to sweep")
+    p.add_argument("--workers", type=int, default=None)
+    p.set_defaults(fn=cmd_robustness)
+
+    p = sub.add_parser("verify-champions",
+                       help="refined structural check of the top frames:"
+                            " bolt-hole/cutout stress concentration +"
+                            " as-built strength knockdown + a print-and-test"
+                            " protocol (writes results/champion_check.md)")
+    _add_common(p)
+    p.add_argument("--run-id", default=None)
+    p.add_argument("--top", type=int, default=5,
+                   help="how many of the best frames to verify")
+    p.set_defaults(fn=cmd_verify_champions)
 
     args = ap.parse_args(argv)
     return args.fn(args)
