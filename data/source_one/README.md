@@ -6,8 +6,11 @@ repository (GPLv3):
 
     https://github.com/tbs-trappy/source_one
 
-It is cached here because framevo's generation-0 baseline genome is
-**measured from this file** (see `src/framevo/genome.py`):
+It is cached here because this drawing is framevo's **genome substrate**:
+`src/framevo/realgeo.py` parses the plate outlines straight from the DXF —
+arcs, cutouts and every bolt hole — and the genes morph those outlines
+(`frame_gen.py`). The generation-0 baseline genome is **measured from this
+file** (see `src/framevo/genome.py`):
 
 | measured from the DXF | value |
 |---|---|
@@ -18,5 +21,8 @@ It is cached here because framevo's generation-0 baseline genome is
 | arm width: root tongue / waist / motor end | ~21.8 / ~12.5 / ~21.6 mm |
 | deck standoffs (BOM) | M3 × 30 mm × 4 |
 
-The parametric baseline approximates this geometry (symmetric X instead of
-DeadCat sweep; the flared motor end is covered by the motor pad).
+Every scale gene at ×1.00 reproduces the real V6 part exactly; the baseline
+frame mass comes out at 144 g against the real frame's ~145 g. The front
+arm anchors are exact bolt-pattern registrations from this drawing (stock
+sweep 31.4°); the rear anchor is a best-fit clamp registration (stock
+36.0°). The DC arms keep their true left/right mirrored chirality.

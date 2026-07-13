@@ -1,5 +1,13 @@
 # Prompt for Claude Code: Quadcopter Frame Auto-Research Loop
 
+> **Historical document** — the original brief, kept verbatim for
+> provenance. The implementation has since evolved past it in places: the
+> genome now morphs the real Source One V6 plate drawings instead of
+> parametric primitives, the platform is the DroneAid 7-inch kit (6S Li-Ion,
+> 2806 motors, 7×4 props) rather than the 5-inch 4S example below, and
+> headless-Claude designer rounds and a lab-notebook narrator were added.
+> `README.md` and `PLAN.md` describe the current state.
+
 Build a fully automated, headless research loop that evolves quadcopter **frame geometry** to minimize **energy per distance (watt-hours per kilometer, Wh/km)** flown through a specified adverse environment. Everything except the frame is fixed. The system must run unattended on a Linux server, be resumable, and produce a ranked archive of all evaluated frames.
 
 ---

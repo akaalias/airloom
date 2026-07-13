@@ -64,9 +64,9 @@ caching, resuming and lineage queries trivial.</dd>
 
 <dt>Generation</dt>
 <dd>One full cycle: propose a population &rarr; evaluate every candidate in all
-scenarios &rarr; select who breeds. Generation 0 is <em>seeded</em>: one
-conventional 7-inch plate-deck baseline (TBS-Source-One-like proportions)
-plus random genomes.</dd>
+scenarios &rarr; select who breeds. Generation 0 is <em>seeded</em>: the real
+Source One V6 7-inch DC itself (every scale gene at &times;1.00, measured from
+the official drawing) plus random design-space probes.</dd>
 
 <dt>Fitness</dt>
 <dd>The single scalar being minimized. Here: <span class="fm">mean Wh/km across
@@ -93,7 +93,8 @@ recorded <em>mutation magnitude</em> is the RMS of the normalized perturbation.<
 
 <dt>Operator</dt>
 <dd>How a candidate came to exist: <code>seed</code>, <code>crossover</code>,
-<code>mutation</code>, <code>immigrant</code>, <code>elite</code> (or <code>cmaes</code>).
+<code>mutation</code>, <code>immigrant</code>, <code>elite</code>, <code>pivot</code>,
+<code>designer</code> (or <code>cmaes</code>).
 Stored per candidate and shown as edge colors in the family tree.</dd>
 
 <dt>Elitism / elite carry-over</dt>
@@ -118,6 +119,16 @@ genome vectors as reasoned design hypotheses (operator
 <code>designer</code>, violet edges in the family tree; rationales in
 <code>results/designer_log.md</code>). Complements the GA's local operators
 with non-local, physics-informed jumps.</dd>
+
+<dt>Lab notebook (narrator)</dt>
+<dd>After each generation, one headless-Claude call writes three short notes
+per new candidate &mdash; <em>hypothesis</em> (the pre-flight &ldquo;why&rdquo;: what the
+search had observed and what bet this design makes), <em>method</em> (what
+concretely changed vs. the parents), <em>result</em> (outcome vs. parents and
+best-so-far, or the constraint that killed it, plus an idea worth testing
+next). Rule-based fallback notes are written instantly; the enrichment runs
+off the loop's critical path. Shown in the gallery detail blocks and the
+family-tree hover cards.</dd>
 
 <dt>Patience / pivot</dt>
 <dd>Plateau escape. If the best-so-far fails to improve by &ge;0.5&thinsp;% for
@@ -148,8 +159,10 @@ instead, and the family tree is skipped.</dd>
 
 <dt>Determinism / resume</dt>
 <dd>Per-generation RNG seeds and fixed per-scenario turbulence seeds make
-evaluations reproducible; after a crash, <code>--resume</code> continues from the last
-completed generation, re-using every already-evaluated genome via its hash.</dd>
+evaluations reproducible; after a crash or a graceful stop,
+<code>framevo run</code> resumes the latest run by default (<code>--fresh</code>
+forces a new one), continuing from the last completed generation and
+re-using every already-evaluated genome via its hash.</dd>
 </dl>
 
 <h2>the domain</h2>
@@ -201,6 +214,13 @@ quantity being minimized. Computed per scenario over the fixed 4&thinsp;km missi
 then aggregated (see <em>Fitness</em>). Typical values here for the 7-inch
 class: &asymp; 3.5 Wh/km calm, &asymp; 5&ndash;6 Wh/km in storm conditions.</dd>
 
+<dt>Target &amp; record lines</dt>
+<dd>The two horizontal benchmarks on the gallery progress chart:
+&asymp;&thinsp;5.0 Wh/km aggregate &mdash; what current 7-inch long-range practice
+(~8&thinsp;g/W at cruise) works out to on this scenario portfolio &mdash; and
+&asymp;&thinsp;4.0 as a record-class stretch (ultralight record builds at
+~2&thinsp;Wh/km calm cruise). Both set in <code>config/scenarios.yaml</code>.</dd>
+
 <dt>Mission</dt>
 <dd>Identical in every scenario: 2&thinsp;km north, then 2&thinsp;km south, at 12&thinsp;m/s
 commanded <em>ground speed</em>, 30&thinsp;m altitude. Flying both directions keeps
@@ -223,17 +243,25 @@ Master Airscrew GF 7&times;4 data.</dd>
 
 <h3>constraints (fitness = &infin; when violated)</h3>
 <dl>
-<dt>Battery support</dt>
-<dd>The top plate must be large enough to carry the strapped battery pack
-(at least 55&thinsp;% of the pack footprint in each direction).</dd>
+<dt>Deck gap vs. FC/ESC stack</dt>
+<dd>The standoff gap between the plates must fit the FC/ESC stack (the
+30.5&thinsp;mm hole pattern itself stays pinned exactly in every morph).</dd>
 
-<dt>Flight-controller mount</dt>
-<dd>A 36&thinsp;mm flat square must exist on the plates for the standard
-30.5 &times; 30.5&thinsp;mm hole pattern, and the deck gap must fit the 20&thinsp;mm
-FC/ESC stack.</dd>
+<dt>Arm tongue interlock</dt>
+<dd>The placed arm outlines must not overlap on the main plate &mdash; the real
+V6's notch interlock is not redesigned, so colliding tongues invalidate the
+design. Tends to bite when both sweeps sit near their minimums with wide
+arms.</dd>
+
+<dt>Tongue bolts on plate</dt>
+<dd>Each arm tongue's bolt pair must land on main-plate material. Sweeps far
+from stock need the plate scales to grow with them, or the bolts walk off
+the plate.</dd>
 
 <dt>Rotor clearance</dt>
-<dd>Rotor disks need &ge; 5&thinsp;mm from each other and from the deck/battery.
+<dd>Rotor disks need &ge; 5&thinsp;mm from each other, and the prop disks are
+checked against the deck/battery <em>in 3D</em> (the real V6's rear props sweep
+below the top-plate corners; the deck gap trades that margin).
 Violations are still meshed and archived (<code>_INVALID</code> STLs) &mdash; the
 failures are instructive &mdash; but never simulated.</dd>
 
@@ -244,8 +272,9 @@ cumulative, the candidate fails that scenario.</dd>
 
 <dt>Arm stress / deflection</dt>
 <dd>Euler&ndash;Bernoulli cantilever check under the worst per-rotor thrust seen in
-<em>any</em> scenario, times a 1.5 safety factor: root bending stress &le; 600&thinsp;MPa
-(carbon fiber) and tip deflection &le; 5&thinsp;% of arm length.</dd>
+<em>any</em> scenario, times a 1.5 safety factor: root bending stress &le; the
+genome-selected material's tensile strength, and tip deflection &le; 5&thinsp;% of
+arm length.</dd>
 
 <dt>Resonance (1P)</dt>
 <dd>The arm&rsquo;s first bending natural frequency must sit outside &plusmn;15&thinsp;% of the

@@ -12,14 +12,27 @@ make demo        # 3 generations x population 8, ~2-4 min on 8 cores
 make test        # pytest suite
 .venv/bin/framevo run --generations 100            # starts, or RESUMES the
                                                    #  latest run by default
-.venv/bin/framevo run --generations 100 --fresh    # force a brand-new run
+.venv/bin/framevo run --generations 100 --fresh    # snapshot + CLEAR results,
+                                                   #  then a brand-new run
 .venv/bin/framevo lineage <genome_hash>            # ancestor chain w/ fitness
 .venv/bin/framevo gallery                          # rebuild artifacts from db
 ```
 
+While a run is live, type `quit` + enter (or ctrl-c) to stop gracefully — the
+tasks in flight finish and the run stays resumable. If the latest run's
+genomes predate the current genome spec, `framevo run` starts a fresh run
+automatically; a `run.db` written by an older schema is archived (never
+deleted) and recreated.
+
 Local-first: plain `pip install -e .` on macOS (Apple Silicon) or Linux x86,
 CPU-only, no Docker/GPU/EGL. Thumbnails render through headless matplotlib.
 Worker count auto-scales to the core count.
+
+Every `framevo run` first **commits a snapshot of `results/` into its own
+nested repo** (`results/.git` — separate from the project repo, so big run
+artifacts never bloat it). `--fresh` then actually clears the folder.
+Restore any past state with `git -C results log` +
+`git -C results checkout <hash> -- .`
 
 ## What it produces (in `results/`)
 
@@ -27,14 +40,19 @@ Worker count auto-scales to the core count.
   no server, open with `file://`. Tufte-styled (cream paper, ink, one rust
   accent, hairlines). At the top: a **progress chart** of every candidate in
   evaluation order — gray dots, a best-so-far step line with labeled
-  improvements, invalid candidates as rust ×, generation ticks — so you can
-  see what moved the needle and where the search plateaued. Below: one row
+  improvements, invalid candidates as rust ×, generation ticks, and two
+  horizontal benchmark lines (≈5.0 Wh/km aggregate = current 7-inch
+  long-range practice, ≈4.0 = record-class stretch; both set in
+  `scenarios.yaml`) — so you can see what moved the needle and where the
+  search plateaued. Below: one row
   per generation sorted by fitness, then detail blocks showing a
   **from-below still** of each candidate — click it to open a full-screen
   overlay with two tabs: the interactive 3D model (depth-buffered WebGL,
   drag/scroll/double-click), and a **side-by-side comparison with the
   oldest ancestor of its lineage whose rotation and zoom stay in sync**.
-  Metrics, genome table and parent thumbnails sit beside each still. Parts are colored by role: rust arms and
+  A metric/value table, the genome table, parent thumbnails and the
+  candidate's **lab-notebook notes** (hypothesis / method / result — see
+  the narrator below) sit beside each still. Parts are colored by role: rust arms and
   near-black deck plates are the **evolved** geometry; the blue Li-Ion pack,
   gray motor cans and pale translucent prop disks are the **fixed** kit.
 - `leaderboard.md` — top 10 with all metrics and per-scenario columns.
@@ -46,8 +64,12 @@ Worker count auto-scales to the core count.
   invalid ones (`_INVALID` suffix; the failures are instructive).
 - `gen_XXXX_best.stl` — the generation's champion (fused), plus
   `gen_XXXX_best_parts/` — the same frame as separate flat, printable pieces.
+- `designer_log.md` — the designer rounds' proposals with their one-line
+  rationales (see below).
 - `run.db` — SQLite: genomes, lineage (self-referencing, `WITH RECURSIVE`
-  ancestry), per-scenario metrics, populations, config snapshot, git hash.
+  ancestry), per-scenario metrics, populations, lab-notebook notes, config
+  snapshot, git hash. Written by an older schema? It gets archived
+  automatically (never deleted) and recreated.
 - `glossary.html` (copied from `docs/glossary.html`, linked from the gallery)
   — definitions of both the evolutionary-algorithm terms and the domain terms
   (genes, Wh/km, constraints, physics vocabulary).
@@ -123,8 +145,20 @@ gust histories — fitness differences are frame differences, never gust luck.
 elite genomes with per-scenario results and the invalid-design histogram,
 and proposes new genome vectors as design hypotheses — injected as operator
 `designer` (violet in the family tree), rationales appended to
-`results/designer_log.md`. Fail-soft: if the CLI is unavailable the round
-is skipped.
+`results/designer_log.md`. The brief includes the known constraint couplings
+(deck gap vs. FC stack, sweep vs. tongue collisions and bolt registration).
+Fail-soft: if the CLI is unavailable the round is skipped.
+
+**Lab-notebook narrator (headless Claude):** after each generation, ONE
+`claude -p` call writes three short notes for every new candidate —
+*hypothesis* (the pre-flight "why": what the search had observed and what
+bet this design makes), *method* (what concretely changed vs. the parents),
+*result* (outcome vs. parents and best-so-far, or the constraint that killed
+it, plus one idea worth testing next). Rule-based fallback notes are written
+instantly; the Claude enrichment runs on a background thread **off the
+loop's critical path** and upgrades them in place. The notes appear in the
+gallery detail blocks and the family-tree hover cards. Config: `narrator`
+in `evolution.yaml`; fail-soft like the designer.
 
 **Patience:** if the best-so-far stalls for 6 generations (no ≥0.5 %
 improvement), the loop pivots — it crosses tournament winners with *far
@@ -199,12 +233,19 @@ replace that table and nothing else.
 ## Layout
 
 ```
-config/          platform.yaml (fixed hardware), scenarios.yaml, evolution.yaml
+config/          platform.yaml (fixed hardware), scenarios.yaml (mission,
+                 portfolio, aggregation + benchmark lines), evolution.yaml
+                 (GA, patience, designer, narrator, execution)
 data/uiuc/       cached UIUC propeller measurements (scripts/fetch_uiuc.py refreshes)
-src/framevo/     genome, frame_gen, rotor_model, aero, dryden, simulator,
-                 structures, evaluate, parallel, evolution, loop, dbstore,
-                 lineage, gallery, render, cli
-tests/           frame validity, UIUC points, beam hand-calc, Dryden variance,
-                 zero-wind energy, hover sanity anchor
+data/source_one/ official Source One V6 7in DC plate DXF + provenance notes
+docs/            glossary.html (copied into results/ next to the gallery)
+src/framevo/     config, genome, realgeo (DXF outline parsing), frame_gen,
+                 components, meshutil, rotor_model, aero, dryden, simulator,
+                 structures, evaluate, parallel, evolution, designer,
+                 narrator, loop, dbstore, lineage, gallery, render, cli
+tests/           frame validity (baseline reproduces the real V6), kit
+                 components, materials, designer parsing, patience/pivot,
+                 UIUC points, beam hand-calc, Dryden variance, zero-wind
+                 energy, hover sanity anchors
 results/         everything a run produces (see above)
 ```

@@ -15,6 +15,53 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--results", default=None, help="results directory override")
 
 
+def _snapshot_results(results, note: str) -> None:
+    """Commit the current results folder into its own nested git repo
+    (results/.git -- invisible to the main repo, which ignores results/)
+    before a run clears or extends it."""
+    import subprocess
+
+    results = Path(results)
+    if not results.exists() or not any(
+            p.name != ".git" for p in results.iterdir()):
+        return
+
+    def git(*a: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(results),
+                               "-c", "user.name=framevo",
+                               "-c", "user.email=framevo@local",
+                               *a], capture_output=True, text=True)
+
+    try:
+        if not (results / ".git").exists():
+            git("init", "-q")
+        git("add", "-A")
+        done = git("commit", "-q", "-m", f"snapshot {note}")
+        if done.returncode == 0:
+            head = git("rev-parse", "--short", "HEAD").stdout.strip()
+            print(f"[framevo] results snapshot committed "
+                  f"(results/.git @ {head})", flush=True)
+        # nonzero = nothing changed since the last snapshot: fine
+    except FileNotFoundError:
+        print("[framevo] git not available -- results snapshot skipped",
+              flush=True)
+
+
+def _clear_results(results) -> None:
+    """--fresh: empty the results folder (the snapshot repo survives)."""
+    import shutil
+
+    results = Path(results)
+    if not results.exists():
+        return
+    for p in results.iterdir():
+        if p.name == ".git":
+            continue
+        shutil.rmtree(p) if p.is_dir() else p.unlink()
+    print("[framevo] results folder cleared for the fresh run "
+          "(history in results/.git)", flush=True)
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     cfg = load_config(args.root, population=args.population,
                       generations=args.generations, seed=args.seed,
@@ -22,6 +69,13 @@ def cmd_run(args: argparse.Namespace) -> int:
                       results_dir=args.results)
     from .dbstore import Store
     from .loop import EvolutionLoop
+
+    # every run start (fresh or continuing) snapshots results/ first
+    _snapshot_results(cfg.evolution.results_dir,
+                      f"before {'fresh' if args.fresh else 'continuing'} run "
+                      + time.strftime("%Y-%m-%d %H:%M:%S"))
+    if args.fresh:
+        _clear_results(cfg.evolution.results_dir)
 
     # default behavior: pick up where the last run left off. A new run is
     # started when --fresh is passed, no prior run exists, or the latest
