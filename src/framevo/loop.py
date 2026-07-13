@@ -90,7 +90,19 @@ class EvolutionLoop:
                                          pivot=pivot, far_parents=far)
                 proposals = self._designer_round(gen, proposals)
 
+            new_hashes = [p.genome.hash for p in proposals
+                          if self.store.get_candidate(self.run_id,
+                                                      p.genome.hash) is None]
             entries = self._evaluate_generation(gen, proposals)
+            if self.cfg.evolution.narrator.enabled and new_hashes:
+                from .narrator import narrate_generation
+                try:
+                    narrate_generation(self.store, self.run_id, gen,
+                                       new_hashes,
+                                       self.cfg.evolution.narrator.model,
+                                       self.cfg.evolution.narrator.timeout_s)
+                except Exception as exc:
+                    _log(f"narrator skipped: {type(exc).__name__}: {exc}")
 
             if cmaes is not None:
                 cmaes.tell([p.genome.normalized for p in proposals],
@@ -342,6 +354,14 @@ class EvolutionLoop:
         return CmaEs(Genome.baseline().normalized, ev.cmaes_sigma0, ev.population)
 
     def _write_artifacts(self, gen: int) -> None:
+        # pick up gallery/lineage code changes made while a long run is
+        # alive: artifacts always render with the newest module versions
+        import importlib
+        try:
+            importlib.reload(gallery_mod)
+            importlib.reload(lineage_mod)
+        except Exception:
+            pass
         glossary = self.cfg.root / "docs" / "glossary.html"
         if glossary.exists():  # keep the gallery's glossary link file://-local
             shutil.copyfile(glossary, self.results / "glossary.html")

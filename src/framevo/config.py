@@ -194,6 +194,13 @@ class Designer:
 
 
 @dataclass(frozen=True)
+class Narrator:
+    enabled: bool
+    model: str
+    timeout_s: float
+
+
+@dataclass(frozen=True)
 class Evolution:
     optimizer: str
     population: int
@@ -202,6 +209,7 @@ class Evolution:
     ga: GAParams
     cmaes_sigma0: float
     designer: Designer
+    narrator: Narrator
     workers: int
     task_timeout_s: float
     results_dir: Path
@@ -358,6 +366,12 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
     results_dir = Path(overrides.get("results_dir") or ex["results_dir"])
     if not results_dir.is_absolute():
         results_dir = root / results_dir
+    nr = evo.get("narrator", {})
+    narrator = Narrator(
+        enabled=bool(nr.get("enabled", False)),
+        model=str(nr.get("model", "") or ""),
+        timeout_s=float(nr.get("timeout_s", 300)),
+    )
     dz = evo.get("designer", {})
     designer = Designer(
         enabled=bool(dz.get("enabled", False)),
@@ -374,6 +388,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         ga=ga_params,
         cmaes_sigma0=float(evo["cmaes"]["sigma0"]),
         designer=designer,
+        narrator=narrator,
         workers=int(workers),
         task_timeout_s=float(ex["task_timeout_s"]),
         results_dir=results_dir,

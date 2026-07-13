@@ -221,6 +221,8 @@ def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
             "mass": round(r["frame_mass"] * 1e3, 1) if r["frame_mass"] else None,
             "mut": round(r["mutation_mag"], 3) if r["mutation_mag"] else None,
             "fail": r["failure_reason"],
+            "hyp": (r["hypothesis"] or "")[:260] if "hypothesis" in r.keys() else "",
+            "res": (r["result_note"] or "")[:260] if "result_note" in r.keys() else "",
             "sc": [{"n": s["scenario"], "ok": bool(s["valid"]),
                     "w": round(s["wh_per_km"], 3) if s["wh_per_km"] is not None else None,
                     "p": round(s["avg_power_w"], 1) if s["avg_power_w"] is not None else None,
@@ -278,6 +280,10 @@ svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
   color:var(--ink)}}
 .ncard td:first-child{{color:var(--muted)}}
 .ncard .anc{{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}}
+.ncard .nb{{font-size:12.5px;line-height:1.45;margin-top:7px;color:#33312b}}
+.ncard .nb b{{font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:10.5px;color:var(--muted)}}
+.ncard .nb.res b{{color:var(--accent)}}
 /* interactive legend (replaces the SVG's baked-in one) */
 .tree svg .svg-legend{{display:none}}
 .lgd{{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
@@ -377,9 +383,12 @@ function show(h,pin){{
           +"<td>"+(s.ok&&s.t!=null?s.t.toFixed(1)+"&deg;":"&mdash;")+"</td></tr>";
       }}).join("")+"</table>";
   }}
+  var notes="";
+  if(c.hyp)notes+='<div class="nb"><b>hypothesis</b> '+esc(c.hyp)+"</div>";
+  if(c.res)notes+='<div class="nb res"><b>result</b> '+esc(c.res)+"</div>";
   card.innerHTML=(c.png?'<img src="'+esc(c.png)+'" alt="">':"")
     +'<div class="hash">'+esc(h)+"</div>"
-    +head+table
+    +head+notes+table
     +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
       +" highlighted":"seed / immigrant &mdash; no ancestors")
     +(pin?" &middot; pinned &mdash; click again or press esc to release":"")

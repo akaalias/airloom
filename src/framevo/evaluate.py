@@ -48,7 +48,7 @@ def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
     except ImportError:
         fast_simplification = None
 
-    verts_list, faces_list, fc_list, palette = [], [], [], []
+    verts_list, faces_list, fc_list, palette, part_names = [], [], [], [], []
     offset = 0
     for name in DRAW_ORDER:
         mesh = parts.get(name)
@@ -58,6 +58,7 @@ def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
         pi = len(palette)
         palette.append([int(color[1:3], 16), int(color[3:5], 16),
                         int(color[5:7], 16), round(alpha, 2)])
+        part_names.append(name)
         v = np.asarray(mesh.vertices, dtype=np.float32)
         f = np.asarray(mesh.faces, dtype=np.int64)
         cap = budget.get(name, 1500)
@@ -84,6 +85,7 @@ def _write_mesh_blob(parts: dict[str, Any], path: Path) -> None:
         "i": "u16" if idx_dtype is np.uint16 else "u32",
         "fc": base64.b64encode(fc.tobytes()).decode(),
         "p": palette,
+        "pn": part_names,
         "c": [float(x) for x in verts.mean(axis=0)],
         "r": float(np.linalg.norm(verts - verts.mean(axis=0), axis=1).max()),
     }

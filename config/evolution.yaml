@@ -45,6 +45,15 @@ designer:
   model: ""                    # empty = the claude CLI's default model
   timeout_s: 300
 
+narrator:
+  # Lab-notebook notes: after each generation, ONE headless-Claude call
+  # writes a human-readable hypothesis / method / result for every new
+  # candidate (rule-based fallback if the CLI is unavailable). Shown in the
+  # gallery detail blocks and the family-tree hover cards.
+  enabled: true
+  model: ""                    # empty = the claude CLI's default model
+  timeout_s: 300
+
 execution:
   workers: auto                # auto = os.cpu_count()
   task_timeout_s: 180          # per subprocess (build or scenario task)

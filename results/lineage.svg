@@ -3987,6 +3987,7 @@ material: cf_plate</title></circle>
 <text x="16" y="1156" font-size="11" fill="#9b998c">g13</text>
 <text x="16" y="1240" font-size="11" fill="#9b998c">g14</text>
 <text x="16" y="1324" font-size="11" fill="#9b998c">g15</text>
+<g class="svg-legend">
 <line x1="60" y1="24" x2="76" y2="24" stroke="#4a6fa5" stroke-width="2"/>
 <text x="80" y="28" font-size="10" fill="#6b6a60">crossover</text>
 <line x1="153" y1="24" x2="169" y2="24" stroke="#2e6e63" stroke-width="2"/>
@@ -4005,4 +4006,5 @@ material: cf_plate</title></circle>
 <text x="703" y="28" font-size="10" fill="#6b6a60">cmaes</text>
 <circle cx="756" cy="24" r="5.5" fill="none" stroke="#8c2f1f" stroke-width="1.3"/>
 <text x="768" y="28" font-size="10" fill="#6b6a60">best so far</text>
+</g>
 </svg>

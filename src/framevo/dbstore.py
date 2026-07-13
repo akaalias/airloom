@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS candidates (
     f1_hz REAL,
     stl_path TEXT,
     png_path TEXT,
+    hypothesis TEXT,
+    method TEXT,
+    result_note TEXT,
     PRIMARY KEY (run_id, hash)
 );
 CREATE TABLE IF NOT EXISTS scenario_results (
@@ -145,7 +148,15 @@ class Store:
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
         self.conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        self._migrate_columns()
         self.conn.commit()
+
+    def _migrate_columns(self) -> None:
+        """Additive migrations (new nullable columns) never reset the db."""
+        have = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
+        for col in ("hypothesis", "method", "result_note"):
+            if col not in have:
+                self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
 
     # -- runs ---------------------------------------------------------------
     def create_run(self, run_id: str, seed: int, optimizer: str, population: int,
@@ -223,6 +234,14 @@ class Store:
         args += [run_id, h]
         self.conn.execute(f"UPDATE candidates SET {sets} WHERE run_id=? AND hash=?",
                           args)
+        self.conn.commit()
+
+    def set_narrative(self, run_id: str, h: str, hypothesis: str,
+                      method: str, result_note: str) -> None:
+        self.conn.execute(
+            "UPDATE candidates SET hypothesis=?, method=?, result_note=?"
+            " WHERE run_id=? AND hash=?",
+            (hypothesis, method, result_note, run_id, h))
         self.conn.commit()
 
     def get_candidate(self, run_id: str, h: str) -> sqlite3.Row | None:

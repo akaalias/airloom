@@ -101,6 +101,28 @@ table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
 .parents img{width:100%;mix-blend-mode:multiply}
 .parents figcaption{font:12px var(--mono);color:var(--faint)}
 .viewer img.peek{cursor:zoom-in}
+.chart-card svg [data-h]{cursor:pointer}
+.chart-card svg circle[data-h]:hover{stroke:#111111;stroke-width:2.5}
+.chart-card svg text[data-h]:hover{font-size:16px}
+.card.setter{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.card.setter .hash{color:#b9b6a6}
+.card.setter .agg .unit{color:#b9b6a6}
+.card.setter table.sc td{color:#b9b6a6}
+.card.setter table.sc td:last-child{color:var(--paper)}
+.card.setter img{mix-blend-mode:normal}
+.card.champion{outline:2px solid var(--accent);outline-offset:-1px}
+.chip{display:inline-block;font:600 10.5px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.07em;background:var(--ink);color:var(--paper);
+  padding:3px 9px;margin-left:10px;vertical-align:2px}
+.chip.champ{background:var(--accent)}
+.headline .lab,.note .nlab{font:600 11px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted)}
+.headline .fail{color:var(--accent);font-style:italic}
+.note{max-width:660px;font-size:14.5px;line-height:1.55;margin:7px 0}
+.note .nlab{display:inline-block;width:86px}
+.note.res .nlab{color:var(--accent)}
 #ovl{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;
   flex-direction:column}
 #ovl.open{display:flex}
@@ -177,8 +199,36 @@ function decodeBlob(id){
       C[co]=pc[0]/255;C[co+1]=pc[1]/255;C[co+2]=pc[2]/255;C[co+3]=pc[3];
     }
   }
-  blobCache[id]={P:P,N:N,C:C,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3};
-  return blobCache[id];
+  var entry={P:P,N:N,C:C,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3,ev:null};
+  if(d.pn){ // evolved-parts subset (deck + arms) for the diff view
+    var evIdx={};
+    d.pn.forEach(function(nm,i){if(nm==="deck"||nm==="arms")evIdx[i]=1});
+    var keep=[];
+    for(var f4=0;f4<nf;f4++)if(evIdx[FC[f4]])keep.push(f4);
+    if(keep.length){
+      var Pe=new Float32Array(keep.length*9),Ne=new Float32Array(keep.length*9),
+          Ce=new Float32Array(keep.length*12),Cg=new Float32Array(keep.length*12);
+      for(var k2=0;k2<keep.length;k2++){
+        var ff=keep[k2],aa=F[3*ff],bb=F[3*ff+1],cc=F[3*ff+2];
+        var pc2=PAL[FC[ff]]||PAL[0];
+        var g1x=V[3*bb]-V[3*aa],g1y=V[3*bb+1]-V[3*aa+1],g1z=V[3*bb+2]-V[3*aa+2];
+        var g2x=V[3*cc]-V[3*aa],g2y=V[3*cc+1]-V[3*aa+1],g2z=V[3*cc+2]-V[3*aa+2];
+        var mx=g1y*g2z-g1z*g2y,my=g1z*g2x-g1x*g2z,mz=g1x*g2y-g1y*g2x;
+        var ind=[aa,bb,cc];
+        for(var v2=0;v2<3;v2++){
+          var o2=9*k2+3*v2,vj=ind[v2];
+          Pe[o2]=V[3*vj];Pe[o2+1]=V[3*vj+1];Pe[o2+2]=V[3*vj+2];
+          Ne[o2]=mx;Ne[o2+1]=my;Ne[o2+2]=mz;
+          var co2=12*k2+4*v2;
+          Ce[co2]=pc2[0]/255;Ce[co2+1]=pc2[1]/255;Ce[co2+2]=pc2[2]/255;Ce[co2+3]=1.0;
+          Cg[co2]=0.44;Cg[co2+1]=0.43;Cg[co2+2]=0.40;Cg[co2+3]=0.40;
+        }
+      }
+      entry.ev={P:Pe,N:Ne,Ce:Ce,Cg:Cg,nf:keep.length};
+    }
+  }
+  blobCache[id]=entry;
+  return entry;
 }
 
 // one GL viewer per canvas, created once; loadBlob swaps model data;
@@ -199,40 +249,52 @@ function makeViewer(canvas,state){
   gl.attachShader(prog,shader(gl.VERTEX_SHADER,VS));
   gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,FS));
   gl.linkProgram(prog);gl.useProgram(prog);
-  var bufs={aP:gl.createBuffer(),aN:gl.createBuffer(),aC:gl.createBuffer()};
-  function bind(attr,size){
-    gl.bindBuffer(gl.ARRAY_BUFFER,bufs[attr]);
+  function bindBuf(buf,attr,size){
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf);
     var loc=gl.getAttribLocation(prog,attr);
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0);
+  }
+  function upload(P,N,C){
+    var b={aP:gl.createBuffer(),aN:gl.createBuffer(),aC:gl.createBuffer()};
+    gl.bindBuffer(gl.ARRAY_BUFFER,b.aP);gl.bufferData(gl.ARRAY_BUFFER,P,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,b.aN);gl.bufferData(gl.ARRAY_BUFFER,N,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,b.aC);gl.bufferData(gl.ARRAY_BUFFER,C,gl.STATIC_DRAW);
+    return b;
   }
   var uR=gl.getUniformLocation(prog,"uR"),uT=gl.getUniformLocation(prog,"uT"),
       uS=gl.getUniformLocation(prog,"uS"),uA=gl.getUniformLocation(prog,"uA");
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(1.0,1.0,0.973,1.0);
-  var model=null;
+  var models=[]; // [{bufs, nf, nOpq}], shared center/scale from first
+  var frame={c:[0,0,0],r:0.3};
   var view={
     canvas:canvas,
-    loadBlob:function(id){
-      model=decodeBlob(id);
-      if(!model)return;
-      gl.bindBuffer(gl.ARRAY_BUFFER,bufs.aP);
-      gl.bufferData(gl.ARRAY_BUFFER,model.P,gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER,bufs.aN);
-      gl.bufferData(gl.ARRAY_BUFFER,model.N,gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER,bufs.aC);
-      gl.bufferData(gl.ARRAY_BUFFER,model.C,gl.STATIC_DRAW);
-      gl.uniform3f(uT,model.c[0],model.c[1],model.c[2]);
+    loadBlob:function(id){view.load([{id:id}])},
+    load:function(specs){
+      models=[];
+      for(var i2=0;i2<specs.length;i2++){
+        var sp=specs[i2],d2=decodeBlob(sp.id);
+        if(!d2)continue;
+        if(sp.evolved){
+          if(!d2.ev)continue;
+          models.push({bufs:upload(d2.ev.P,d2.ev.N,sp.ghost?d2.ev.Cg:d2.ev.Ce),
+                       nf:d2.ev.nf,nOpq:sp.ghost?0:d2.ev.nf});
+        }else{
+          models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nf,nOpq:d2.nOpq});
+        }
+        if(i2===0){frame={c:d2.c,r:d2.r}}
+      }
+      gl.uniform3f(uT,frame.c[0],frame.c[1],frame.c[2]);
     },
     draw:function(){
-      if(!model)return;
+      if(!models.length)return;
       var dpr=window.devicePixelRatio||1;
       var w=canvas.clientWidth,h=canvas.clientHeight;
       if(w<2||h<2)return;
       if(canvas.width!==Math.round(w*dpr)){
         canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
       gl.viewport(0,0,canvas.width,canvas.height);
-      bind("aP",3);bind("aN",3);bind("aC",4);
       var cy2=Math.cos(state.yaw),sy=Math.sin(state.yaw),
           cp=Math.cos(state.pitch),sp=Math.sin(state.pitch);
       gl.uniformMatrix3fv(uR,false,[cy2,-sy*sp,sy*cp,
@@ -240,16 +302,21 @@ function makeViewer(canvas,state){
                                     0,cp,sp]);
       var asp=w>h?[h/w,1]:[1,w/h];
       gl.uniform2f(uA,asp[0],asp[1]);
-      gl.uniform1f(uS,0.85*state.zoom/model.r);
+      gl.uniform1f(uS,0.85*state.zoom/frame.r);
       gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-      gl.disable(gl.BLEND);gl.depthMask(true);
-      gl.drawArrays(gl.TRIANGLES,0,model.nOpq*3);
-      if(model.nf>model.nOpq){
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-        gl.depthMask(false);
-        gl.drawArrays(gl.TRIANGLES,model.nOpq*3,(model.nf-model.nOpq)*3);
-        gl.depthMask(true);
+      for(var m2=0;m2<models.length;m2++){
+        var mo=models[m2];
+        bindBuf(mo.bufs.aP,"aP",3);bindBuf(mo.bufs.aN,"aN",3);
+        bindBuf(mo.bufs.aC,"aC",4);
+        gl.disable(gl.BLEND);gl.depthMask(true);
+        if(mo.nOpq>0)gl.drawArrays(gl.TRIANGLES,0,mo.nOpq*3);
+        if(mo.nf>mo.nOpq){
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+          gl.depthMask(false);
+          gl.drawArrays(gl.TRIANGLES,mo.nOpq*3,(mo.nf-mo.nOpq)*3);
+          gl.depthMask(true);
+        }
       }
     }
   };
@@ -276,20 +343,24 @@ function makeViewer(canvas,state){
 // ---- overlay: tab 1 = solo model, tab 2 = ancestor vs candidate (synced)
 var ovl=document.getElementById("ovl");
 if(!ovl)return;
-var soloState=makeState(),cmpState=makeState();
-var soloV=null,cmpA=null,cmpB=null,current=null;
+var soloState=makeState(),cmpState=makeState(),diffState=makeState();
+var soloV=null,cmpA=null,cmpB=null,diffV=null,current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
   if(!cmpA)cmpA=makeViewer(document.getElementById("ovl-anc"),cmpState);
   if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
+  if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
 }
+function redrawAll(){soloState.redraw();cmpState.redraw();diffState.redraw()}
 function setTab(name){
   ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
   ovl.querySelectorAll(".ovl-body").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
-  requestAnimationFrame(function(){soloState.redraw();cmpState.redraw()});
-  setTimeout(function(){soloState.redraw();cmpState.redraw()},50);
+  // the freshly shown canvas needs layout to settle before it has a size
+  requestAnimationFrame(redrawAll);
+  setTimeout(redrawAll,60);
+  setTimeout(redrawAll,200);
 }
 function openOverlay(d){
   current=d;
@@ -301,7 +372,9 @@ function openOverlay(d){
   soloV.loadBlob(d.mesh);
   soloState.reset();
   var cmpBtn=ovl.querySelector('button[data-tab="compare"]');
-  if(d.ancestor&&document.getElementById(d.ancestor)&&d.ancestor!==d.mesh){
+  var diffBtn=ovl.querySelector('button[data-tab="diff"]');
+  var hasAnc=d.ancestor&&document.getElementById(d.ancestor)&&d.ancestor!==d.mesh;
+  if(hasAnc){
     cmpBtn.disabled=false;
     cmpA.loadBlob(d.ancestor);cmpB.loadBlob(d.mesh);
     document.getElementById("anc-hash").textContent=d.anctitle||"";
@@ -309,6 +382,19 @@ function openOverlay(d){
     cmpState.reset();
   }else{
     cmpBtn.disabled=true;
+  }
+  var meshEv=decodeBlob(d.mesh),ancEv=hasAnc?decodeBlob(d.ancestor):null;
+  if(hasAnc&&meshEv&&meshEv.ev&&ancEv&&ancEv.ev){
+    diffBtn.disabled=false;
+    diffV.load([{id:d.mesh,evolved:true},
+                {id:d.ancestor,evolved:true,ghost:true}]);
+    document.getElementById("diff-hash").textContent=(d.title||"")+
+      "  vs  "+(d.anctitle||"");
+    diffState.reset();
+    diffState.pitch=1.2; // start near top-down: plan-shape reads best
+    diffState.redraw();
+  }else{
+    diffBtn.disabled=true;
   }
   setTab("solo");
 }
@@ -329,7 +415,20 @@ document.querySelectorAll("img.peek").forEach(function(img){
   });
 });
 window.addEventListener("resize",function(){
-  if(ovl.classList.contains("open")){soloState.redraw();cmpState.redraw()}
+  if(ovl.classList.contains("open")){soloState.redraw();cmpState.redraw();
+    diffState.redraw()}
+});
+// auto-refresh while the run is live -- but never kill an open overlay
+setInterval(function(){
+  if(!ovl.classList.contains("open"))location.reload();
+},30000);
+// progress chart: click any marker to jump to that candidate's detail card
+document.querySelectorAll(".chart-card [data-h]").forEach(function(el){
+  el.addEventListener("click",function(){
+    var t=document.getElementById("d-"+el.dataset.h);
+    if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
+    location.hash="d-"+el.dataset.h;
+  });
 });
 })();
 """
@@ -565,7 +664,8 @@ def progress_chart_svg(store: Store, run_id: str,
         else:
             path.append(f"H{x:.1f}")
             path.append(f"V{y:.1f}")
-        labels.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.4" fill="#111111">'
+        labels.append(f'<circle data-h="{c["hash"]}" cx="{x:.1f}" cy="{y:.1f}" '
+                      f'r="4.4" fill="#111111">'
                       f'<title>{html.escape(c["hash"])} &#8594; {f:.3f}</title></circle>')
         if x - last_label_x >= 56:
             dy = -9 if not flip else 18
@@ -614,10 +714,18 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
               if math.isfinite(store.fitness_of(r))]
     best_hash = min(finite, key=lambda t: t[1])[0] if finite else None
     n_valid = len(finite)
+    # best-so-far setters: same visual language as the chart's black dots
+    setter_hashes: set[str] = set()
+    _rb = math.inf
+    for _c in store.candidates_in_eval_order(run_id):
+        _f = store.fitness_of(_c)
+        if math.isfinite(_f) and _f < _rb:
+            _rb = _f
+            setter_hashes.add(_c["hash"])
 
     parts = [f"<style>{CSS}</style>",
              '<meta charset="utf-8">',
-             '<meta http-equiv="refresh" content="30">',
+             # auto-refresh is JS-based so an open overlay is never killed
              "<title>framevo gallery</title>",
              '<div class="wrap">',
              f"<h1>frame evolution &mdash; run <code>{html.escape(run_id)}</code></h1>",
@@ -661,7 +769,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 continue
             fit = store.fitness_of(c)
             invalid = not math.isfinite(fit)
-            cls = "card" + (" best" if h == best_hash else "") + \
+            cls = "card" + (" setter" if h in setter_hashes else "") + \
+                (" champion" if h == best_hash else "") + \
                 (" invalid" if invalid else "")
             img = _rel(results_dir, c["png_path"])
             if h not in scen_cache:
@@ -776,14 +885,45 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         gene_rows = "".join(
             f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td></tr>"
             for lab, val in genes)
+        badge = ""
+        if h == best_hash:
+            badge = '<span class="chip champ">run champion</span>'
+        elif h in setter_hashes:
+            badge = '<span class="chip">new best when evaluated</span>'
+        invalid = not math.isfinite(fit)
+        if invalid:
+            headline = (
+                f'<div class="headline"><span class="fail">invalid design '
+                f'&mdash; {html.escape(c["failure_reason"] or "unknown")}'
+                f"</span> &middot; never flew the scenarios<br>"
+                f'<span class="num">frame {mass}&thinsp;g{mat} &middot; '
+                f"born generation {c['generation_born']} via "
+                f"{c['operator']}</span></div>")
+        else:
+            headline = (
+                f'<div class="headline num">energy score <b>{_fmt(fit)}</b> '
+                f'Wh/km <span class="lab">(mean of the 6 scenarios + 0.5 '
+                f"&times; worst &mdash; lower is better)</span><br>"
+                f"scenario mean {_fmt(c['mean_whkm'])} &middot; worst "
+                f"scenario {_fmt(c['worst_whkm'])} Wh/km &middot; frame "
+                f"{mass}&thinsp;g{mat} &middot; born generation "
+                f"{c['generation_born']} via {c['operator']}</div>")
+        notes = ""
+        for key, label, cls2 in (("hypothesis", "hypothesis", ""),
+                                 ("method", "method", ""),
+                                 ("result_note", "result", " res")):
+            try:
+                text = c[key]
+            except (KeyError, IndexError):
+                text = None
+            if text:
+                notes += (f'<div class="note{cls2}"><span class="nlab">'
+                          f"{label}</span> {html.escape(text)}</div>")
         parts.append(
             f'<div class="detail" id="d-{h}">'
             f"{viewer}"
-            f'<div class="dmeta"><div class="hash">{h}</div>'
-            f'<div class="headline num">agg <b>{_fmt(fit)}</b> &middot; '
-            f"mean {_fmt(c['mean_whkm'])} &middot; worst {_fmt(c['worst_whkm'])} Wh/km"
-            f" &middot; frame {mass}&thinsp;g{mat}"
-            f" &middot; born g{c['generation_born']} via {c['operator']}</div>"
+            f'<div class="dmeta"><div class="hash">{h}{badge}</div>'
+            f"{headline}{notes}"
             f'<div class="tables">'
             f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
             f"<th>avg power, w</th><th>max tilt</th><th></th></tr>{sc_rows}</table>"
@@ -797,6 +937,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="ovl-tabs">'
         '<button data-tab="solo" class="on">3d model</button>'
         '<button data-tab="compare">compare with oldest ancestor</button>'
+        '<button data-tab="diff">changed parts</button>'
         "</span>"
         '<span class="hash"></span>'
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
@@ -813,7 +954,17 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="hash" id="cur-hash"></span></div>'
         '<canvas id="ovl-cur"></canvas></div>'
         '<div class="ovl-hint">the two models rotate and zoom in sync</div>'
-        "</div></div>")
+        "</div>"
+        '<div class="ovl-body" data-tab="diff" style="position:relative">'
+        '<div class="pane"><div class="cap">evolved frame diff '
+        '<span class="hash" id="diff-hash"></span>'
+        '<span style="font-style:italic;text-transform:none;'
+        'letter-spacing:0;font-weight:400">solid color = this candidate '
+        "&middot; gray ghost = oldest ancestor &middot; fixed kit hidden"
+        "</span></div>"
+        '<canvas id="ovl-diff"></canvas></div>'
+        '<div class="ovl-hint">only the parts evolution changes are shown, '
+        "superimposed</div></div>")
     parts.extend(blobs)
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
