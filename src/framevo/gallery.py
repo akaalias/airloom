@@ -625,8 +625,10 @@ def progress_chart_svg(store: Store, run_id: str,
     if y_max <= 0:
         y_max = 1.0
 
-    W, H = 1180, 400
-    ml, mr, mt, mb = 64, 24, 46, 42
+    W, H = 1180, 470
+    # tall top margin: the invalid strip lives ~100px above the finite
+    # scale, in its own tinted band (a different value space)
+    ml, mr, mt, mb = 64, 24, 116, 42
     pw, ph = W - ml - mr, H - mt - mb
     n = len(cands)
 
@@ -690,9 +692,12 @@ def progress_chart_svg(store: Store, run_id: str,
                      f'fill="#9b998c">g{g}</text>')
 
     # invalid strip (design fails): floated well clear of the finite scale,
-    # with its own infinity label on the y axis
-    y_inv = mt - 26
-    s.append(f'<text x="{ml - 10}" y="{y_inv + 5}" text-anchor="end" '
+    # with its own infinity label on the y axis and a faint band behind it
+    y_inv = 20
+    s.append(f'<rect x="{ml}" y="{y_inv - 16}" width="{pw}" '
+             f'height="{mt - 10 - (y_inv - 16)}" fill="#8c2f1f" '
+             f'opacity="0.05"/>')
+    s.append(f'<text x="{ml - 10}" y="{y_inv + 1}" text-anchor="end" '
              f'font-size="15" fill="#8c2f1f">&#8734;</text>')
     # discarded dots + invalid marks; both shrink as the run grows so a
     # 100-generation chart stays legible. Past ~400 candidates the invalid
