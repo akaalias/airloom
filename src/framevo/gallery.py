@@ -141,10 +141,17 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 .dprompt pre{flex:1;overflow-y:auto;white-space:pre-wrap;
   font:12px/1.6 var(--mono);margin:0;border-left:2px solid #b9a6cf;
   padding:2px 0 2px 14px;color:var(--muted)}
-.dprops ul{flex:1;overflow-y:auto;margin:0;padding-left:20px;
+.dprops ul{flex:1;overflow-y:auto;margin:0;padding:0;list-style:none;
   font-size:14.5px;line-height:1.55;color:var(--muted)}
-.dprops li{margin-bottom:14px}
+.dprops li{margin-bottom:16px;display:flex;gap:14px;align-items:flex-start}
 .dprops li.rej{color:#8c2f1f;opacity:.85}
+.dprops .pbody{min-width:0}
+.dprops .pthumbw{position:relative;flex:none;display:block;width:104px;
+  border:1px solid var(--rule);background:var(--paper)}
+.dprops .pthumb{display:block;width:100%;aspect-ratio:4/3;
+  object-fit:contain;mix-blend-mode:multiply}
+.dprops li.rej .pthumb{opacity:.75}
+.dprops li.none{font-style:italic;color:var(--faint)}
 .dprops .fate{display:block;font-size:12.5px;font-style:italic;
   color:var(--faint);margin-top:2px}
 .dprops .fate.bad{color:#8c2f1f}
@@ -176,9 +183,9 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
   border-bottom-color:#54406e}
 #ovl.claude.inv .ovl-bar .hash .h,#ovl.claude.inv .ovl-tabs button,
 #ovl.claude.inv #ovl-close,#ovl.claude.inv .ovl-lgd .lgd{color:#c9b9de}
-#ovl.claude.inv .ovl-tabs button{border-color:#54406e}
-#ovl.claude.inv .ovl-tabs button.on{color:var(--paper);
-  border-color:var(--paper)}
+#ovl.claude.inv .ovl-tabs button:hover:not(:disabled),
+#ovl.claude.inv .ovl-tabs button.on{color:var(--paper)}
+#ovl.claude.inv .ovl-tabs button.on{border-bottom-color:var(--paper)}
 h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
@@ -309,29 +316,33 @@ table.dt.hd b{font-size:17px}
 #ovl{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;
   flex-direction:column}
 #ovl.open{display:flex}
-.ovl-bar{display:flex;align-items:center;gap:22px;padding:14px 26px;
+.ovl-bar{display:flex;align-items:baseline;gap:30px;padding:11px 26px 9px;
   border-bottom:1px solid var(--rule)}
-.ovl-bar .hash{font:17px var(--serif);color:var(--ink)}
-.ovl-bar .hash .h{font:15px var(--mono);color:var(--muted)}
+.ovl-bar .hash{font:16px var(--serif);color:var(--ink);white-space:nowrap}
+.ovl-bar .hash .h{font:14px var(--mono);color:var(--muted)}
 .ovl-bar .hash .num{font-weight:700}
-.ovl-tabs{display:flex;gap:2px}
+.ovl-tabs{display:flex;gap:22px}
 .ovl-tabs button{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
-  background:none;border:1px solid var(--rule);padding:7px 16px;cursor:pointer}
-.ovl-tabs button.on{color:var(--ink);border-color:var(--ink);
-  border-bottom:2px solid var(--ink)}
-.ovl-tabs button:disabled{opacity:.35;cursor:default}
+  background:none;border:none;border-bottom:2px solid transparent;
+  padding:2px 0 4px;cursor:pointer;white-space:nowrap}
+.ovl-tabs button:hover:not(:disabled){color:var(--ink)}
+.ovl-tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.ovl-tabs button:disabled{opacity:.3;cursor:default}
 #ovl-close{margin-left:auto;font:26px/1 var(--serif);background:none;
   border:none;color:var(--muted);cursor:pointer;padding:0 6px}
 #ovl-close:hover{color:var(--ink)}
-.ovl-lgd{border-bottom:1px solid var(--rule);padding:7px 16px;flex-shrink:0}
+.ovl-lgd{border-bottom:1px solid var(--rule);padding:5px 16px;flex-shrink:0}
+.ovl-lgd .lgd{font-size:12.5px}
 /* improvement setters / the champion keep their inverted bar in the overlay */
 #ovl.inv .ovl-bar,#ovl.inv .ovl-lgd{background:var(--ink);
   border-bottom-color:#3a382f}
 #ovl.inv .ovl-bar .hash{color:var(--paper)}
 #ovl.inv .ovl-bar .hash .h{color:var(--disc)}
-#ovl.inv .ovl-tabs button{color:var(--disc);border-color:#3a382f}
-#ovl.inv .ovl-tabs button.on{color:var(--paper);border-color:var(--paper)}
+#ovl.inv .ovl-tabs button{color:var(--disc)}
+#ovl.inv .ovl-tabs button:hover:not(:disabled){color:var(--paper)}
+#ovl.inv .ovl-tabs button.on{color:var(--paper);
+  border-bottom-color:var(--paper)}
 #ovl.inv #ovl-close{color:var(--disc)}
 #ovl.inv #ovl-close:hover{color:var(--paper)}
 #ovl.inv .ovl-lgd .lgd{color:var(--disc)}
@@ -364,6 +375,11 @@ table.dt.hd b{font-size:17px}
 """
 
 DOVL_JS = r"""
+// the overlays are authored inside each generation's sticky sidebar, whose
+// stacking context traps their z-index UNDER later sections (thumbnails
+// and invalid cross-outs bled through) -- reparent them to <body>
+document.querySelectorAll(".dovl").forEach(function(d){
+  document.body.appendChild(d)});
 function dovlOpen(id){var d=document.getElementById(id);
   if(d){d.classList.add("open");document.body.style.overflow="hidden"}}
 function dovlClose(el){
@@ -651,9 +667,9 @@ var ovl=document.getElementById("ovl");
 if(!ovl)return;
 var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
     diffState=makeState(1.2), // near top-down: plan-shape reads best
-    walkState=makeState(1.2);
+    walkState=makeState(1.2),fullState=makeState(1.2);
 var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,walkV=null,
-    current=null;
+    fullV=null,current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
   if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
@@ -661,9 +677,11 @@ function ensureViewers(){
   if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
   if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
   if(!walkV)walkV=makeViewer(document.getElementById("ovl-walk"),walkState);
+  if(!fullV)fullV=makeViewer(document.getElementById("ovl-full"),fullState);
 }
 function redrawAll(){soloState.redraw();evoState.redraw();
-  cmpState.redraw();diffState.redraw();walkState.redraw()}
+  cmpState.redraw();diffState.redraw();walkState.redraw();
+  fullState.redraw()}
 
 // ---- lineage walkthrough: step from the oldest ancestor down the
 // primary-parent chain to this candidate; the current step is solid,
@@ -821,6 +839,7 @@ function openOverlay(d){
     diffBtn.disabled=true;
   }
   var walkBtn=ovl.querySelector('button[data-tab="walk"]');
+  var fullBtn=ovl.querySelector('button[data-tab="fulldiff"]');
   var wh=d.mesh.slice(2); // "m-<hash>" -> hash
   walkChain=walkChainFor(wh);
   // need >=2 walkable steps AND the chain must reach the candidate itself
@@ -831,8 +850,25 @@ function openOverlay(d){
     walkV.load(walkSpecs(0),walkFrame);
     walkState.reset();
     walkLabel();
+    // full difference: the candidate solid, EVERY ancestor a ghost --
+    // depth-graded so the nearest parent is strongest, the oldest
+    // faintest (a motion trail of the whole lineage)
+    fullBtn.disabled=false;
+    var n=walkChain.length;
+    // ghosts first (oldest to nearest), the candidate solid LAST so it
+    // stays crisp on top instead of being washed out by stacked ghosts
+    var fspecs=[];
+    for(var fi=0;fi<n-1;fi++)
+      fspecs.push({id:"m-"+walkChain[fi],evolved:true,ghost:true,
+                   fade:n>2?0.35+0.65*fi/(n-2):1});
+    fspecs.push({id:"m-"+walkChain[n-1],evolved:true});
+    fullV.load(fspecs,walkFrame);
+    document.getElementById("full-hash").textContent=(d.title||"")+
+      (d.fit?" · "+d.fit:"")+"  vs  "+(n-1)+" ancestor"+(n>2?"s":"");
+    fullState.reset();
   }else{
     walkBtn.disabled=true;
+    fullBtn.disabled=true;
     walkChain=[];
     walkFrame=null;
   }
@@ -865,7 +901,8 @@ function activeState(){
   var b=ovl.querySelector(".ovl-tabs button.on");
   var t=b?b.dataset.tab:"solo";
   return t==="compare"?cmpState:t==="diff"?diffState:
-         t==="walk"?walkState:t==="evolved"?evoState:soloState;
+         t==="walk"?walkState:t==="fulldiff"?fullState:
+         t==="evolved"?evoState:soloState;
 }
 document.getElementById("walk-prev").addEventListener("click",
   function(){walkGo(walkIdx-1)});
@@ -1329,7 +1366,8 @@ _OPERATOR_LABEL = [  # display order in the inputs panel
 
 
 def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
-                           pop_rows: list, evolution=None) -> str:
+                           pop_rows: list, evolution=None,
+                           results_dir: Path | None = None) -> str:
     """The generation's INPUT side: how its slots were bred (operator mix),
     the GA knob values in force, and any Claude designer round -- badges,
     each proposal's fate, and the exact prompt."""
@@ -1355,9 +1393,12 @@ def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
         accepted = json.loads(rnd["accepted_json"])
         rejected = json.loads(rnd["rejected_json"])
         label = _ROUND_KIND_LABEL.get(rnd["kind"], rnd["kind"])
-        counts = f"{len(accepted)} design(s) injected"
-        if rejected:
-            counts += f", {len(rejected)} rejected pre-flight"
+        if not accepted and not rejected:
+            counts = "no usable proposals returned"
+        else:
+            counts = f"{len(accepted)} design(s) injected"
+            if rejected:
+                counts += f", {len(rejected)} rejected pre-flight"
         out.append(f'<span class="badge claude">&#10022; claude designer '
                    f'&middot; {label} &middot; {counts}</span>')
 
@@ -1384,27 +1425,50 @@ def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
 
     if rnd is not None:
         items = []
+
+        def thumb(png_rel: str, crossed: bool) -> str:
+            if not png_rel:
+                return ""
+            return (f'<span class="pthumbw{" xed" if crossed else ""}">'
+                    f'<img class="pthumb" src="{html.escape(png_rel)}" '
+                    'alt=""></span>')
+
         for a in json.loads(rnd["accepted_json"]):
             c = cands.get(a["hash"])
-            if c is None:
-                fate = ""
-            elif c["fitness"] is not None:
-                fate = (f'<span class="fate num">flew at '
-                        f'{c["fitness"]:.3f}&thinsp;Wh/km</span>')
-            else:
-                fate = (f'<span class="fate bad">invalid &mdash; '
-                        f'{html.escape(c["failure_reason"] or "?")}</span>')
+            png, fate, invalid = "", "", False
+            if c is not None:
+                png = _rel(results_dir, c["png_path"]) if results_dir else ""
+                invalid = c["fitness"] is None
+                if not invalid:
+                    fate = (f'<span class="fate num">flew at '
+                            f'{c["fitness"]:.3f}&thinsp;Wh/km</span>')
+                else:
+                    fate = (f'<span class="fate bad">invalid &mdash; '
+                            f'{html.escape(c["failure_reason"] or "?")}'
+                            "</span>")
             items.append(
-                f'<li><a href="#d-{html.escape(a["hash"])}" '
-                f'onclick="dovlClose(this)"><code>'
+                f'<li>{thumb(png, invalid)}<div class="pbody">'
+                f'<a href="#d-{html.escape(a["hash"])}" '
+                f'onclick="dovlClose(this)">candidate <code>'
                 f'{html.escape(a["hash"][:8])}</code></a> &mdash; '
                 f'{html.escape(a.get("rationale") or "(no rationale)")}'
-                f"{fate}</li>")
+                f"{fate}</div></li>")
         for r in json.loads(rnd["rejected_json"]):
+            name = (f'candidate <code>{html.escape(r["hash"][:8])}</code>'
+                    if r.get("hash") else "proposal")
+            png = _rel(results_dir, r["png"]) \
+                if results_dir and r.get("png") else ""
             items.append(
-                f'<li class="rej">rejected pre-flight '
+                f'<li class="rej">{thumb(png, True)}<div class="pbody">'
+                f'{name} &mdash; rejected pre-flight '
                 f'({html.escape(r.get("reason") or "?")}) &mdash; '
-                f'{html.escape(r.get("rationale") or "")}</li>')
+                f'{html.escape(r.get("rationale") or "")}</div></li>')
+        if not items:  # asked, but nothing usable came back
+            items.append(
+                '<li class="none"><div class="pbody">claude&rsquo;s reply '
+                "contained no usable genome vectors &mdash; nothing was "
+                "injected and the generation proceeded with ordinary GA "
+                "breeding (fail-soft)</div></li>")
         try:
             model = rnd["model"]
         except (KeyError, IndexError):
@@ -1485,7 +1549,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         parts.append(f"<h2>generation {g}</h2>")
         parts.append(f'<div class="genrow{" claude" if g in claude_gens else ""}">')
         parts.append(_generation_input_html(store, run_id, g, cands, rows,
-                                            evolution))
+                                            evolution, results_dir))
         parts.append('<div class="row">')
         for row in rows:
             h = row["hash"]
@@ -1577,9 +1641,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts.append('<p class="sub" style="font-style:italic">click a model to '
                  "open it full-screen: the full-kit model, its evolved "
                  "components alone, a side-by-side with the oldest ancestor "
-                 "of its lineage rotating in sync, the evolution difference "
-                 "overlay, and a lineage walkthrough that steps generation "
-                 "by generation from the oldest ancestor to the candidate "
+                 "of its lineage rotating in sync, the net change vs that "
+                 "ancestor, the lineage trail (every ancestor ghosted), and "
+                 "a replay that steps generation by generation from the "
+                 "oldest ancestor to the candidate "
                  "(very long runs shed the 3D models of their oldest, "
                  "weakest candidates first)</p>")
     blobs: list[str] = []
@@ -1731,14 +1796,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts.append(
         '<div id="ovl">'
         '<div class="ovl-bar">'
-        '<span class="ovl-tabs">'
-        '<button data-tab="solo" class="on">full-kit model</button>'
-        '<button data-tab="evolved">evolved components</button>'
-        '<button data-tab="compare">compare with oldest ancestor</button>'
-        '<button data-tab="diff">evolution difference</button>'
-        '<button data-tab="walk">lineage walkthrough</button>'
-        "</span>"
         '<span class="hash"></span>'
+        '<span class="ovl-tabs">'
+        '<button data-tab="solo" class="on">full kit</button>'
+        '<button data-tab="evolved">evolved parts</button>'
+        '<button data-tab="compare">vs oldest ancestor</button>'
+        '<button data-tab="diff">net change</button>'
+        '<button data-tab="fulldiff">lineage trail</button>'
+        '<button data-tab="walk">replay</button>'
+        "</span>"
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
         "</div>"
         f'<div class="ovl-lgd">{_parts_legend_html()}</div>'
@@ -1762,7 +1828,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         "the two models rotate and zoom in sync</div>"
         "</div>"
         '<div class="ovl-body" data-tab="diff" style="position:relative">'
-        '<div class="pane"><div class="cap">evolution difference '
+        '<div class="pane"><div class="cap">net change '
         '<span class="hash" id="diff-hash"></span>'
         '<span style="font-style:italic;text-transform:none;'
         'letter-spacing:0;font-weight:400">solid color = this candidate '
@@ -1771,6 +1837,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<canvas id="ovl-diff"></canvas></div>'
         '<div class="ovl-hint">only the parts evolution changes are shown, '
         "superimposed</div></div>"
+        '<div class="ovl-body" data-tab="fulldiff" style="position:relative">'
+        '<div class="pane"><div class="cap">lineage trail '
+        '<span class="hash" id="full-hash"></span>'
+        '<span style="font-style:italic;text-transform:none;'
+        'letter-spacing:0;font-weight:400">solid color = this candidate '
+        "&middot; gray ghosts = every ancestor, fainter = older</span></div>"
+        '<canvas id="ovl-full"></canvas></div>'
+        '<div class="ovl-hint">the whole lineage superimposed &middot; '
+        "evolved parts only</div></div>"
         '<div class="ovl-body" data-tab="walk" style="position:relative">'
         '<div class="pane"><div class="cap">'
         '<button class="wbtn" id="walk-prev">&#8249; older</button>'
@@ -1796,7 +1871,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         fit = store.fitness_of(c)
         walk_meta[h] = {"p": c["parent_a"] or c["parent_b"],
                         "g": c["generation_born"],
-                        "f": f"{fit:.3f}" if math.isfinite(fit) else None}
+                        "f": f"{fit:.3f}" if math.isfinite(fit) else None,
+                        "i": _rel(results_dir, c["png_path"])}
     parts.append('<script type="application/json" id="walk-meta">'
                  f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
     parts.extend(blobs)

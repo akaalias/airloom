@@ -301,6 +301,29 @@ def _repair_brief(brief: str, rejected: list[tuple[dict, str, str]],
             "JSON-array format, nothing else.")
 
 
+def _render_rejected(genes: dict, cfg: Config, results_dir: Path) -> str:
+    """Render a pre-screen-rejected proposal so the gallery can show the
+    shape claude wanted to build (collisions and all). Returns the png
+    path, or '' if rendering failed."""
+    genome = Genome.from_dict(genes)
+    out_dir = results_dir / "frames" / "rejected"
+    png = out_dir / f"{genome.hash}.png"
+    if png.exists():
+        return str(png)
+    try:
+        from .frame_gen import build_frame
+        from .render import render_parts, render_placeholder
+        out_dir.mkdir(parents=True, exist_ok=True)
+        frame = build_frame(genome, cfg.platform)
+        if frame.mesh is not None:
+            render_parts(frame.parts, png, valid=False)
+        else:
+            render_placeholder(png, frame.failure_reason or "no mesh")
+        return str(png)
+    except Exception:
+        return ""
+
+
 def design_round(store: Store, run_id: str, cfg: Config, generation: int,
                  n: int, model: str, timeout_s: float, log_dir: Path,
                  kind: str = "periodic") -> list[Proposal]:
@@ -340,8 +363,10 @@ def design_round(store: Store, run_id: str, cfg: Config, generation: int,
         out.append(Proposal(genome, None, None, "designer", None))
         accepted_meta.append({"hash": genome.hash, "rationale": rationale})
         log_lines.append(f"- `{genome.hash}` — {rationale}\n")
-    rejected_meta = [{"rationale": rationale, "reason": reason}
-                     for _, rationale, reason in rejected]
+    rejected_meta = [{"hash": Genome.from_dict(genes).hash,
+                      "rationale": rationale, "reason": reason,
+                      "png": _render_rejected(genes, cfg, log_dir)}
+                     for genes, rationale, reason in rejected]
     for r in rejected_meta:
         log_lines.append(f"- ~~rejected pre-flight ({r['reason']})~~ — "
                          f"{r['rationale']}\n")
