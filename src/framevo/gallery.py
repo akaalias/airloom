@@ -113,6 +113,7 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 .board p.note{font-size:12.5px;font-style:italic;line-height:1.65;
   color:var(--faint);margin:6px 0 0}
 .board ul{margin:4px 0 0;padding-left:16px}
+img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
 .board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
 .knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
 .knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
@@ -459,11 +460,50 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
 
 var DEF_YAW=-0.9,DEF_PITCH=0.8;
 var blobCache={};
+// ---- on-demand mesh loading: payloads live in per-candidate
+// frames/gen_XXXX/<hash>.mesh.js files (JSONP-style: they call
+// framevoBlob(id, data)). <script src> injection works over BOTH file://
+// (where fetch() is CORS-blocked) and GitHub Pages, so index.html stays
+// small no matter how long the run gets.
+var BLOBS={},BLOB_PENDING={};
+var bsEl=document.getElementById("blob-src");
+var BLOB_SRC=bsEl?JSON.parse(bsEl.textContent):{};
+window.framevoBlob=function(id,data){
+  BLOBS[id]=data;
+  (BLOB_PENDING[id]||[]).forEach(function(r){r()});
+  delete BLOB_PENDING[id];
+};
+function blobAvailable(id){ // known payload: loaded, lazy-loadable or inline
+  return !!(id&&(BLOBS[id]||BLOB_SRC[id]||document.getElementById(id)));
+}
+function ensureBlobs(ids){ // resolve when every needed payload has arrived
+  var need=[];
+  ids.forEach(function(id){
+    if(!id||BLOBS[id]||document.getElementById(id)||!BLOB_SRC[id])return;
+    if(need.indexOf(id)<0)need.push(id);
+  });
+  return Promise.all(need.map(function(id){
+    return new Promise(function(res){
+      if(BLOB_PENDING[id]){BLOB_PENDING[id].push(res);return}
+      BLOB_PENDING[id]=[res];
+      var s=document.createElement("script");
+      s.src=BLOB_SRC[id];
+      s.onerror=function(){ // missing file: resolve anyway, viewer shows
+        (BLOB_PENDING[id]||[]).forEach(function(r){r()}); // what it has
+        delete BLOB_PENDING[id];
+      };
+      document.head.appendChild(s);
+    });
+  }));
+}
 function decodeBlob(id){
   if(blobCache[id])return blobCache[id];
-  var el=document.getElementById(id);
-  if(!el)return null;
-  var d=JSON.parse(el.textContent);
+  var d=BLOBS[id];
+  if(!d){ // inline <script type=application/json> fallback (old pages)
+    var el=document.getElementById(id);
+    if(!el)return null;
+    d=JSON.parse(el.textContent);
+  }
   var V=new Float32Array(b64bytes(d.v).buffer);
   var F=d.i==="u16"?new Uint16Array(b64bytes(d.f).buffer)
                    :new Uint32Array(b64bytes(d.f).buffer);
@@ -761,7 +801,9 @@ function chainFrame(){
   });
   return {c:C,r:ents[0].r,mx:mx,my:my,mz:mz};
 }
-function hasEvBlob(x){ // an embedded mesh blob with the evolved subset
+function hasEvBlob(x){ // a mesh payload carrying the evolved-parts subset
+  if(BLOBS["m-"+x])return !!BLOBS["m-"+x].pn;
+  if(BLOB_SRC["m-"+x])return true; // lazy files always carry pn
   var el=document.getElementById("m-"+x);
   return !!el&&el.textContent.indexOf('"pn"')>=0;
 }
@@ -894,7 +936,7 @@ function openOverlay(d){
   var evoBtn=ovl.querySelector('button[data-tab="evolved"]');
   var cmpBtn=ovl.querySelector('button[data-tab="compare"]');
   var diffBtn=ovl.querySelector('button[data-tab="diff"]');
-  var hasAnc=d.ancestor&&document.getElementById(d.ancestor)&&d.ancestor!==d.mesh;
+  var hasAnc=d.ancestor&&blobAvailable(d.ancestor)&&d.ancestor!==d.mesh;
   var meshEv=decodeBlob(d.mesh),ancEv=hasAnc?decodeBlob(d.ancestor):null;
   if(meshEv&&meshEv.ev){
     evoBtn.disabled=false;
@@ -956,7 +998,7 @@ function openOverlay(d){
       if(ti===undefined){ // ancestor without an embedded 3D model
         tp.push('<span class="wthumb off" title="'+th+
           (tm.f?" · "+tm.f+" Wh/km":" · invalid")+
-          ' · 3D model not embedded">'+inner+"</span>");
+          ' · no 3D model">'+inner+"</span>");
       }else{
         tp.push('<button class="wthumb" data-k="'+ti+'" title="'+th+
           (tm.f?" · "+tm.f+" Wh/km":" · invalid")+'">'+inner+
@@ -1010,10 +1052,19 @@ document.addEventListener("keydown",function(e){
   if(e.key==="Escape")closeOverlay()});
 document.querySelectorAll("img.peek").forEach(function(img){
   img.addEventListener("click",function(){
-    openOverlay({mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
-                 title:img.dataset.title,anctitle:img.dataset.anctitle,
-                 fit:img.dataset.fit,setter:img.dataset.setter,
-                 claude:img.dataset.claude,failed:img.dataset.failed});
+    var d={mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
+           title:img.dataset.title,anctitle:img.dataset.anctitle,
+           fit:img.dataset.fit,setter:img.dataset.setter,
+           claude:img.dataset.claude,failed:img.dataset.failed};
+    // prefetch everything the overlay's tabs will decode synchronously:
+    // the candidate, its lineage root, and the full replay chain
+    var need=[d.mesh,d.ancestor];
+    walkChainFor(d.mesh.slice(2)).forEach(function(h){need.push("m-"+h)});
+    img.classList.add("busy");
+    ensureBlobs(need).then(function(){
+      img.classList.remove("busy");
+      openOverlay(d);
+    });
   });
 });
 // quick view presets act on whichever tab is showing
@@ -1178,6 +1229,28 @@ def _mesh_blob_for(results_dir: Path, png_path: str | None) -> str | None:
         except OSError:
             return None
     return None
+
+
+def _mesh_js_for(results_dir: Path, png_path: str | None) -> str | None:
+    """Relative URL of the candidate's lazy-load mesh script, writing (or
+    refreshing) `<hash>.mesh.js` -- a JSONP-style wrapper around the
+    .mesh.json payload -- next to it. <script src> injection is the one
+    loading mechanism that works over BOTH file:// (where fetch() is
+    CORS-blocked) and GitHub Pages, which is what lets index.html stay
+    small instead of inlining every candidate's mesh."""
+    if not png_path:
+        return None
+    p = Path(png_path).with_suffix(".mesh.json")
+    if not p.exists():
+        return None
+    js = p.with_suffix(".js")  # hash.mesh.json -> hash.mesh.js
+    try:
+        if not js.exists() or js.stat().st_mtime < p.stat().st_mtime:
+            h = p.name.split(".")[0]
+            js.write_text(f'framevoBlob("m-{h}",{p.read_text()});')
+    except OSError:
+        return None
+    return _rel(results_dir, str(js))
 
 
 # --------------------------------------------------------------- the chart --
@@ -1816,59 +1889,18 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 detail_ids.append(h)
         parts.append("</div></div>")  # close .row and .genrow
 
-    # embedding a mesh blob for every candidate would make very long runs
-    # enormous, so blobs are embedded by priority -- champion & setters,
-    # recent generations, the strongest hundred, then everything else
-    # (invalid included: the failures are instructive) newest first --
-    # until the size budget is spent. Typical runs fit entirely; only very
-    # long runs shed their oldest, weakest candidates.
-    EMBED_BUDGET = 64 * 1024 * 1024
-    prio: list[str] = []
-    seen_p: set[str] = set()
-
-    def _take(hashes) -> None:
-        for hh in hashes:
-            if hh in cands and hh not in seen_p:
-                seen_p.add(hh)
-                prio.append(hh)
-
-    if best_hash:
-        _take([best_hash])
-    _take(sorted(setter_hashes, key=lambda hh: cands[hh]["generation_born"]))
-    for g in reversed(gens[-3:]):
-        _take(r["hash"] for r in store.population(run_id, g))
-    ranked_all = sorted(((h, f) for h, f in
-                         ((h, store.fitness_of(r)) for h, r in cands.items())
-                         if math.isfinite(f)), key=lambda t: t[1])
-    _take(h for h, _ in ranked_all[:100])
-    _take(sorted((h for h in cands if h not in seen_p),
-                 key=lambda hh: -(cands[hh]["generation_born"] or 0)))
-
-    blob_texts: dict[str, str] = {}
-    viewer_hashes: set[str] = set()
-    used = 0
-    for h in prio:
-        if h in viewer_hashes:
-            continue
-        blob = _mesh_blob_for(results_dir, cands[h]["png_path"])
-        if blob is None:
-            continue
-        cost = len(blob)
-        # the compare tab needs the candidate's lineage root too
-        root = _oldest_ancestor(cands, h)
-        rblob = None
-        if root and root not in viewer_hashes:
-            rblob = _mesh_blob_for(results_dir, cands[root]["png_path"])
-            if rblob is not None:
-                cost += len(rblob)
-        if used + cost > EMBED_BUDGET and viewer_hashes:
-            break
-        blob_texts[h] = blob
-        viewer_hashes.add(h)
-        if root and rblob is not None:
-            blob_texts[root] = rblob
-            viewer_hashes.add(root)
-        used += cost
+    # 3D payloads are NOT inlined (a long run's index.html would grow past
+    # what GitHub accepts): every candidate with a mesh blob gets a
+    # JSONP-style frames/gen_XXXX/<hash>.mesh.js next to its .mesh.json,
+    # and the page injects those <script src> tags on demand when an
+    # overlay opens. No size budget -- EVERY candidate is viewable,
+    # invalid ones included (the failures are instructive).
+    blob_src: dict[str, str] = {}
+    for h, c in cands.items():
+        src = _mesh_js_for(results_dir, c["png_path"])
+        if src is not None:
+            blob_src[f"m-{h}"] = src
+    viewer_hashes = {h for h in cands if f"m-{h}" in blob_src}
 
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">click a model to '
@@ -1878,10 +1910,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                  "ancestor, the lineage trail (every ancestor ghosted), and "
                  "a replay that steps generation by generation from the "
                  "oldest ancestor to the candidate "
-                 "(very long runs shed the 3D models of their oldest, "
-                 "weakest candidates first)</p>")
-    blobs: list[str] = []
-    embedded: set[str] = set()
+                 "(3D models load on demand when an overlay opens)</p>")
     for h in detail_ids:
         c = cands[h]
         fit = store.fitness_of(c)
@@ -1890,25 +1919,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         # invalid renders get a red diagonal cross drawn over them
         xo, xc = ('<span class="xed">', "</span>") if invalid else ("", "")
         img = _rel(results_dir, c["png_path"])
-        blob = blob_texts.get(h)
         bottom = _bottom_png_for(results_dir, c["png_path"]) or img
-        if blob is not None:
-            if h not in embedded:
-                blobs.append(f'<script type="application/json" id="m-{h}">{blob}</script>')
-                embedded.add(h)
+        if h in viewer_hashes:
             root = _oldest_ancestor(cands, h)
             anc_attr = ""
             if root and root in viewer_hashes and root != h:
-                rblob = blob_texts.get(root)
-                if rblob is not None:
-                    if root not in embedded:
-                        blobs.append(f'<script type="application/json" '
-                                     f'id="m-{root}">{rblob}</script>')
-                        embedded.add(root)
-                    rfit = store.fitness_of(cands[root])
-                    anc_attr = (f' data-ancestor="m-{root}" data-anctitle='
-                                f'"{root} · g{cands[root]["generation_born"]}'
-                                f' · {_fmt(rfit)}"')
+                rfit = store.fitness_of(cands[root])
+                anc_attr = (f' data-ancestor="m-{root}" data-anctitle='
+                            f'"{root} · g{cands[root]["generation_born"]}'
+                            f' · {_fmt(rfit)}"')
             setter_attr = ' data-setter="1"' if is_setter else ""
             claude_attr = ' data-claude="1"' \
                 if c["operator"] == "designer" else ""
@@ -2110,7 +2129,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                         "i": _rel(results_dir, c["png_path"])}
     parts.append('<script type="application/json" id="walk-meta">'
                  f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
-    parts.extend(blobs)
+    parts.append('<script type="application/json" id="blob-src">'
+                 f"{json.dumps(blob_src, separators=(',', ':'))}</script>")
     parts.append(f"<script>{DOVL_JS}</script>")
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
@@ -2128,8 +2148,9 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
 def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     """Mirror the report into docs/ -- the GitHub Pages root -- so the
     published site always tracks the latest generated pages. Copies the
-    HTML pages, charts and tables, plus the render stills they reference;
-    mesh blobs stay out (they are embedded in the HTML)."""
+    HTML pages, charts and tables, the render stills they reference, and
+    the per-candidate .mesh.js payloads the gallery lazy-loads on demand
+    (index.html itself stays small)."""
     import shutil
 
     if not (results_dir / "index.html").exists():
@@ -2146,10 +2167,11 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     if dst_frames.exists():  # drop stills of previous runs' candidates
         shutil.rmtree(dst_frames)
     if src_frames.exists():
-        for png in sorted(src_frames.rglob("*.png")):
-            dst = docs_dir / png.relative_to(results_dir)
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(png, dst)
+        for pattern in ("*.png", "*.mesh.js"):
+            for f in sorted(src_frames.rglob(pattern)):
+                dst = docs_dir / f.relative_to(results_dir)
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(f, dst)
 
 
 def write_leaderboard(store: Store, run_id: str, results_dir: Path,
