@@ -122,9 +122,27 @@ table.dt.hd b{font-size:17px}
   font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.06em;color:var(--muted)}
 .headline .fail{color:var(--accent);font-style:italic}
-.note{max-width:660px;font-size:14.5px;line-height:1.55;margin:7px 0}
-.note .nlab{display:inline-block;width:86px}
+.note{max-width:660px;font-size:14.5px;line-height:1.55;margin:12px 0}
+.note .nlab{display:block;margin-bottom:2px}
 .note.res .nlab{color:var(--accent)}
+.dmeta .tlab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  margin:22px 0 2px;padding-top:14px;border-top:1px solid var(--rule-soft)}
+/* improvement-setter / champion detail rows: inverted, like the grid cards */
+.detail.setter{background:var(--ink);color:var(--paper);border-top-color:var(--ink);
+  margin:0 -26px;padding-left:26px;padding-right:26px}
+.detail.champion{outline:2px solid var(--accent);outline-offset:-1px}
+.detail.setter .viewer img,.detail.setter .parents img{mix-blend-mode:normal}
+.detail.setter .dmeta .hash,.detail.setter .parents .lab,
+.detail.setter .parents figcaption,.detail.setter table.dt th,
+.detail.setter .note .nlab,.detail.setter .dmeta .tlab,
+.detail.setter .viewer .hint{color:var(--disc)}
+.detail.setter table.dt td{border-bottom-color:#3a382f}
+.detail.setter table.dt th{border-bottom-color:var(--paper)}
+.detail.setter .dmeta .tlab{border-top-color:#3a382f}
+.detail.setter .note.res .nlab{color:#d0765b}
+.detail.setter .chip{background:var(--paper);color:var(--ink)}
+.detail.setter .chip.champ{background:var(--accent);color:var(--paper)}
 #ovl{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;
   flex-direction:column}
 #ovl.open{display:flex}
@@ -170,6 +188,7 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
   "float d=abs(dot(normalize(vN),L));float s=0.45+0.55*d;"+
   "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a);}";
 
+var DEF_YAW=-0.9,DEF_PITCH=0.8;
 var blobCache={};
 function decodeBlob(id){
   if(blobCache[id])return blobCache[id];
@@ -202,6 +221,15 @@ function decodeBlob(id){
     }
   }
   var entry={P:P,N:N,C:C,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3,ev:null};
+  // projected extents at the default yaw (pitch folded in at draw time)
+  // -> lets each viewer start zoomed to fit regardless of model size
+  var cyw=Math.cos(DEF_YAW),syw=Math.sin(DEF_YAW),mx=0,my=0,mz=0;
+  for(var vi=0;vi<V.length;vi+=3){
+    var X=V[vi]-d.c[0],Y=V[vi+1]-d.c[1],Z=V[vi+2]-d.c[2];
+    var qx=Math.abs(cyw*X+syw*Y),qy=Math.abs(cyw*Y-syw*X),qz=Math.abs(Z);
+    if(qx>mx)mx=qx;if(qy>my)my=qy;if(qz>mz)mz=qz;
+  }
+  entry.mx=mx;entry.my=my;entry.mz=mz;
   if(d.pn){ // evolved-parts subset (deck + arms) for the diff view
     var evIdx={};
     d.pn.forEach(function(nm,i){if(nm==="deck"||nm==="arms")evIdx[i]=1});
@@ -227,6 +255,15 @@ function decodeBlob(id){
         }
       }
       entry.ev={P:Pe,N:Ne,Ce:Ce,Cg:Cg,nf:keep.length};
+      // subset extents -> the diff view fits to deck+arms, not the props
+      var ex2=0,ey2=0,ez2=0;
+      for(var pi=0;pi<Pe.length;pi+=3){
+        var X2=Pe[pi]-d.c[0],Y2=Pe[pi+1]-d.c[1],Z2=Pe[pi+2]-d.c[2];
+        var ax=Math.abs(cyw*X2+syw*Y2),ay=Math.abs(cyw*Y2-syw*X2),
+            az=Math.abs(Z2);
+        if(ax>ex2)ex2=ax;if(ay>ey2)ey2=ay;if(az>ez2)ez2=az;
+      }
+      entry.ev.mx=ex2;entry.ev.my=ey2;entry.ev.mz=ez2;
     }
   }
   blobCache[id]=entry;
@@ -235,10 +272,13 @@ function decodeBlob(id){
 
 // one GL viewer per canvas, created once; loadBlob swaps model data;
 // several viewers may share one state -> they rotate/zoom in sync
-function makeState(){
-  var st={yaw:-0.9,pitch:0.42,zoom:1.0,viewers:[]};
+// zoom is relative to a per-viewer fit factor, so 1.0 = model fills the
+// canvas (with a small margin) at the state's base pitch
+function makeState(basePitch){
+  var bp=(basePitch===undefined?DEF_PITCH:basePitch);
+  var st={yaw:DEF_YAW,pitch:bp,zoom:1.0,basePitch:bp,viewers:[]};
   st.redraw=function(){st.viewers.forEach(function(v){v.draw()})};
-  st.reset=function(){st.yaw=-0.9;st.pitch=0.42;st.zoom=1.0;st.redraw()};
+  st.reset=function(){st.yaw=DEF_YAW;st.pitch=st.basePitch;st.zoom=1.0;st.redraw()};
   return st;
 }
 function makeViewer(canvas,state){
@@ -285,7 +325,11 @@ function makeViewer(canvas,state){
         }else{
           models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nf,nOpq:d2.nOpq});
         }
-        if(i2===0){frame={c:d2.c,r:d2.r}}
+        var ext=sp.evolved?d2.ev:d2;
+        if(i2===0){frame={c:d2.c,r:d2.r,mx:ext.mx,my:ext.my,mz:ext.mz}}
+        else{frame.mx=Math.max(frame.mx,ext.mx);
+             frame.my=Math.max(frame.my,ext.my);
+             frame.mz=Math.max(frame.mz,ext.mz)}
       }
       gl.uniform3f(uT,frame.c[0],frame.c[1],frame.c[2]);
     },
@@ -304,7 +348,16 @@ function makeViewer(canvas,state){
                                     0,cp,sp]);
       var asp=w>h?[h/w,1]:[1,w/h];
       gl.uniform2f(uA,asp[0],asp[1]);
-      gl.uniform1f(uS,0.85*state.zoom/frame.r);
+      // fit factor: at zoom 1 the model's projected extents (at the
+      // state's base pitch) reach 92% of the canvas on the tighter axis
+      var fit=1;
+      if(frame.mx!==undefined){
+        var bs=Math.sin(state.basePitch),bc=Math.cos(state.basePitch);
+        var ex=frame.mx*asp[0],
+            ey=(Math.abs(bs)*frame.my+Math.abs(bc)*frame.mz)*asp[1];
+        fit=0.92*frame.r/(0.85*Math.max(ex,ey));
+      }
+      gl.uniform1f(uS,0.85*state.zoom*fit/frame.r);
       gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       for(var m2=0;m2<models.length;m2++){
         var mo=models[m2];
@@ -345,7 +398,8 @@ function makeViewer(canvas,state){
 // ---- overlay: tab 1 = solo model, tab 2 = ancestor vs candidate (synced)
 var ovl=document.getElementById("ovl");
 if(!ovl)return;
-var soloState=makeState(),cmpState=makeState(),diffState=makeState();
+var soloState=makeState(),cmpState=makeState(),
+    diffState=makeState(1.2); // near top-down: plan-shape reads best
 var soloV=null,cmpA=null,cmpB=null,diffV=null,current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
@@ -393,8 +447,6 @@ function openOverlay(d){
     document.getElementById("diff-hash").textContent=(d.title||"")+
       "  vs  "+(d.anctitle||"");
     diffState.reset();
-    diffState.pitch=1.2; // start near top-down: plan-shape reads best
-    diffState.redraw();
   }else{
     diffBtn.disabled=true;
   }
@@ -725,7 +777,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             _rb = _f
             setter_hashes.add(_c["hash"])
 
-    parts = [f"<style>{CSS}</style>",
+    parts = ["<!doctype html>",  # quirks mode breaks color inheritance into tables
+             f"<style>{CSS}</style>",
              '<meta charset="utf-8">',
              # auto-refresh is JS-based so an open overlay is never killed
              "<title>framevo gallery</title>",
@@ -927,12 +980,16 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 text = None
             if text:
                 notes += (f'<div class="note{cls2}"><span class="nlab">'
-                          f"{label}</span> {html.escape(text)}</div>")
+                          f"{label}</span>{html.escape(text)}</div>")
+        dcls = "detail" + \
+            (" setter" if (h in setter_hashes or h == best_hash) else "") + \
+            (" champion" if h == best_hash else "")
         parts.append(
-            f'<div class="detail" id="d-{h}">'
+            f'<div class="{dcls}" id="d-{h}">'
             f"{viewer}"
             f'<div class="dmeta"><div class="hash">{h}{badge}</div>'
             f"{headline}{notes}"
+            f'<div class="tlab">scenario results &amp; genome</div>'
             f'<div class="tables">'
             f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
             f"<th>avg power, w</th><th>max tilt</th><th></th></tr>{sc_rows}</table>"
