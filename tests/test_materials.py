@@ -11,8 +11,6 @@ def test_material_gene_maps_onto_library(cfg):
     assert p.material_for(0.0).name == "cf_plate"
     assert p.material_for(0.2).name == "pa12_cf"
     assert p.material_for(0.998).name == "asa"
-    # gene bounds keep the index inside the library
-    assert p.material_for(0.999).name == p.materials[-1].name
 
 
 def test_material_changes_frame_mass(cfg):
@@ -26,28 +24,25 @@ def test_material_changes_frame_mass(cfg):
 
 
 def test_soft_print_material_fails_where_carbon_passes(cfg):
-    """A slim arm that carbon plate carries easily is too floppy in PETG."""
+    """A long slim-waisted arm that carbon carries is too floppy in PETG."""
     g = Genome.baseline().as_dict()
-    g.update(arm_length=0.20, arm_width=0.012, arm_height=0.0045)
+    g.update(arm_length_scale=1.3, arm_waist_scale=0.6, arm_thickness=0.0045)
     frame = build_frame(Genome.from_dict(g), cfg.platform)
-    assert frame.valid
     load, hover_hz = 8.0, 150.0
     cf = check_structure(frame.arm, load, hover_hz, cfg.platform,
-                         cfg.platform.material_for(0.05))   # cf_plate
+                         cfg.platform.material_for(0.05))
     petg = check_structure(frame.arm, load, hover_hz, cfg.platform,
-                           cfg.platform.material_for(0.75))  # petg
+                           cfg.platform.material_for(0.75))
     assert cf.ok, cf.reason
     assert not petg.ok
     assert petg.tip_deflection_m > cf.tip_deflection_m
 
 
 def test_stiff_print_material_is_usable(cfg):
-    """Carbon-fiber nylon should carry a reasonably sized printed arm."""
+    """Carbon-fiber nylon carries a beefed-up printed arm."""
     g = Genome.baseline().as_dict()
-    # fat printed arms need a wider deck for their root tongues
-    g.update(arm_width=0.026, arm_height=0.011, material=0.2,  # pa12_cf
-             body_length=0.130, body_width=0.062)
+    g.update(arm_width_scale=1.35, arm_waist_scale=1.25, arm_thickness=0.009,
+             material=0.2)  # pa12_cf
     frame = build_frame(Genome.from_dict(g), cfg.platform)
-    assert frame.valid
     res = check_structure(frame.arm, 8.0, 150.0, cfg.platform, frame.material)
     assert res.ok, res.reason

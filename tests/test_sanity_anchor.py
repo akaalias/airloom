@@ -42,7 +42,7 @@ def test_hover_power_5in_at_reference_mass():
 def test_platform_baseline_is_7in_class(cfg, rotor):
     frame = build_frame(Genome.baseline(), cfg.platform)
     assert frame.valid, frame.failure_reason
-    # diagonal wheelbase of a 7-inch long-range build: roughly 0.28-0.42 m
+    # front-left to rear-right span of the real V6 7in DC stance
     diag = float(np.linalg.norm(frame.rotor_centers[0] - frame.rotor_centers[3]))
     assert 0.28 < diag < 0.42
     # ~1 kg AUW on 7x4 props: plausible hover band for a 7" long-ranger

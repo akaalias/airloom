@@ -86,6 +86,7 @@ class EvolutionLoop:
                 pivot, far = self._patience_state(gen)
                 proposals = propose_next(prev, gen, ev.ga, rng,
                                          pivot=pivot, far_parents=far)
+                proposals = self._designer_round(gen, proposals)
 
             entries = self._evaluate_generation(gen, proposals)
 
@@ -268,6 +269,23 @@ class EvolutionLoop:
             mean_whkm=mean, worst_whkm=worst, f1_hz=f1_hz,
             stl_path=stl_path or (bv or {}).get("stl_path"),
             png_path=(bv or {}).get("png_path")))
+
+    # ------------------------------------------------------------ designer --
+    def _designer_round(self, gen: int, proposals: list[Proposal]) -> list[Proposal]:
+        dz = self.cfg.evolution.designer
+        if not dz.enabled or gen % dz.every_generations != 0:
+            return proposals
+        from .designer import design_round
+        designed = design_round(self.store, self.run_id, self.cfg, gen,
+                                dz.candidates, dz.model, dz.timeout_s,
+                                self.results)
+        if not designed:
+            return proposals
+        _log(f"designer round: injecting {len(designed)} candidates")
+        seen = {p.genome.hash for p in proposals}
+        designed = [d for d in designed if d.genome.hash not in seen]
+        keep = len(proposals) - len(designed)
+        return proposals[:keep] + designed
 
     # ------------------------------------------------------------ patience --
     def _patience_state(self, gen: int) -> tuple[int, list | None]:

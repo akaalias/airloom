@@ -43,10 +43,12 @@ README.</p>
 <h2>the evolutionary algorithm</h2>
 <dl>
 <dt>Genome / gene</dt>
-<dd>The complete parametric description of one frame: 14 continuous numbers
-(genes), each bounded (e.g. arm length 140&ndash;320&thinsp;mm) &mdash; 13 geometry genes
-plus one <em>material</em> gene. The genome is all the optimizer is allowed to
-change &mdash; battery, motors, propellers and electronics are fixed platform.</dd>
+<dd>The complete parametric description of one frame: 12 numbers that
+<em>morph the official Source One V6 plate drawings</em> &mdash; arm
+stretch/width/waist/thickness, front and rear sweep about the drawing's
+bolt anchors, plate scales, deck gap, battery wedge, material. Scale genes
+at &times;1.00 reproduce the real V6 exactly. The genome is all the optimizer may
+change &mdash; battery, motors, propellers and electronics are fixed kit.</dd>
 
 <dt>Candidate / individual</dt>
 <dd>One genome, built into a frame and evaluated. Identified everywhere by its
@@ -108,6 +110,14 @@ design can never be lost. Drawn as dotted vertical pass-through edges in
 birth generation and mutation magnitude &mdash; a self-referencing SQLite table, so
 <code>framevo lineage &lt;hash&gt;</code> walks the full ancestor chain
 (<code>WITH RECURSIVE</code>) and shows how fitness improved along it.</dd>
+
+<dt>Designer round</dt>
+<dd>Every 6 generations a <em>headless Claude</em> receives the elites, their
+per-scenario numbers and the invalid-design histogram, and proposes new
+genome vectors as reasoned design hypotheses (operator
+<code>designer</code>, violet edges in the family tree; rationales in
+<code>results/designer_log.md</code>). Complements the GA's local operators
+with non-local, physics-informed jumps.</dd>
 
 <dt>Patience / pivot</dt>
 <dd>Plateau escape. If the best-so-far fails to improve by &ge;0.5&thinsp;% for

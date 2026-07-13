@@ -74,21 +74,37 @@ are modeled visually. The best candidate of each generation is also exported
 as individual print/cut-ready pieces in `gen_XXXX_best_parts/`
 (bottom_plate, top_plate, arm ×4).
 
-## The genome (14 continuous genes)
+## The genome: morphs of the REAL parts (12 genes)
 
-arm length / width / height / sweep / dihedral / taper, a cross-section shape
-blend (rectangle → ellipse → faired teardrop), deck plate length / width /
-standoff gap / corner fillet, a battery wedge angle (`body_pitch_deg`), a
-plate-thickness scale — and a **print material** gene that selects the frame
-material from a config library: CNC carbon plate, carbon-fiber nylon
-(PA12-CF), PET-CF, PLA+, PETG or ASA, each with its own density, tensile
-strength and stiffness. Soft materials save mass but fail the structural
-constraints on slender arms — the optimizer gets to negotiate that trade.
+The genome no longer describes primitives — it deforms the **official
+Source One V6 7in DC plate drawings** (`data/source_one/`, parsed from the
+DXF with arcs, cutouts and every bolt hole) under zone constraints that keep
+each candidate a printable/cuttable derivative of the real design:
 
-Hard geometric constraints (fitness = ∞, no simulation): the deck gap must
-fit the 20 mm FC/ESC stack, a 36 mm flat must exist for the 30.5 mm mount
-pattern, the top plate must support the battery footprint, and rotors need
-≥ 5 mm clearance from each other and from the deck/battery.
+- `arm_length_scale`, `arm_width_scale`, `arm_waist_scale`, `arm_thickness`
+  — stretch/reshape the real arm outlines; the bolt tongue and the 16×19 mm
+  motor-mount end stay rigid.
+- `front_sweep_deg`, `rear_sweep_deg` — rotate the arms about their
+  drawing-registered plate anchors (front anchors are exact bolt-pattern
+  registrations; DC arms keep their true left/right mirrored chirality).
+- `plate_length_scale`, `plate_width_scale`, `plate_thickness_scale`,
+  `deck_gap` — stretch the real main/mid/top plates (the 30.5 mm stack
+  pattern stays pinned exactly), set the standoff length.
+- `battery_wedge_deg` — tilt of the pack on the top plate.
+- `material` — carbon plate / PA12-CF / PET-CF / PLA+ / PETG / ASA library.
+
+Gene value 1.0 on every scale gene reproduces the real V6 exactly (the
+generation-0 seed; its frame mass comes out at 144 g — the real frame weighs
+~145 g). Every candidate assembles the full kit: 6×21700 cell pack, FC/ESC
+stack, 2806 motors, 3-blade props, camera, VTX + ELRS antennas, GPS, XT60
+and routed wire looms — dimension-accurate meshes (`components.py`).
+
+Hard constraints (fitness = ∞, no simulation): the FC/ESC stack must fit the
+deck gap, placed arm outlines must not overlap (the real notch interlock is
+not redesigned), each tongue's bolt pair must land on main-plate material,
+rotors need ≥ 5 mm from each other, and prop disks are checked against the
+deck/battery **in 3D** (the real V6's rear props sweep below the top-plate
+corners; `deck_gap` trades that margin).
 
 ## Scenario portfolio
 
@@ -98,6 +114,14 @@ Six scenarios (config/scenarios.yaml): `calm_warm`, `cold_headwind`, `storm`
 over the identical mission: 2 km north + 2 km south at 12 m/s, 30 m AGL.
 Each scenario has a fixed turbulence seed, so all candidates fly identical
 gust histories — fitness differences are frame differences, never gust luck.
+
+**Designer rounds (headless Claude):** every 6 generations (config:
+`designer` in `evolution.yaml`), a headless `claude -p` call receives the
+elite genomes with per-scenario results and the invalid-design histogram,
+and proposes new genome vectors as design hypotheses — injected as operator
+`designer` (violet in the family tree), rationales appended to
+`results/designer_log.md`. Fail-soft: if the CLI is unavailable the round
+is skipped.
 
 **Patience:** if the best-so-far stalls for 6 generations (no ≥0.5 %
 improvement), the loop pivots — it crosses tournament winners with *far
@@ -152,10 +176,12 @@ the MA GF 7×4 data.
   the only allowance for anisotropy, print quality, or temperature.
 - Structural model checks the arms only (root stress, tip deflection,
   resonance); the deck is assumed rigid and the standoffs ideal.
-- **Printability is enforced by geometry constraints, not full DFM.** Parts
-  are flat plates with non-colliding bolt-clamped tongues and exported as
-  separate pieces, but bolt holes, interlock notches, tolerances and
-  print-orientation strength are not modeled.
+- **Printability is enforced by real-outline geometry constraints, not full
+  DFM.** Parts are the actual (morphed) V6 outlines with their holes and
+  cutouts, exported as separate flat pieces; but tongue bolt holes are
+  assumed re-cut with the plates when sweep deviates from stock, the rear
+  anchor is a best-fit (98 % clamp coverage) rather than a hole registration,
+  and tolerances/print-orientation strength are not modeled.
 - CMA-ES mode (`--optimizer cmaes`) has no discrete parents — it samples from
   an adapted Gaussian — so the family tree is skipped and distribution-level
   provenance (mean, σ per generation) is stored in `cma_state` instead.

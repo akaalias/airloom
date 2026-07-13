@@ -185,6 +185,15 @@ class GAParams:
 
 
 @dataclass(frozen=True)
+class Designer:
+    enabled: bool
+    every_generations: int
+    candidates: int
+    model: str
+    timeout_s: float
+
+
+@dataclass(frozen=True)
 class Evolution:
     optimizer: str
     population: int
@@ -192,6 +201,7 @@ class Evolution:
     seed: int
     ga: GAParams
     cmaes_sigma0: float
+    designer: Designer
     workers: int
     task_timeout_s: float
     results_dir: Path
@@ -348,6 +358,14 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
     results_dir = Path(overrides.get("results_dir") or ex["results_dir"])
     if not results_dir.is_absolute():
         results_dir = root / results_dir
+    dz = evo.get("designer", {})
+    designer = Designer(
+        enabled=bool(dz.get("enabled", False)),
+        every_generations=int(dz.get("every_generations", 6)),
+        candidates=int(dz.get("candidates", 3)),
+        model=str(dz.get("model", "") or ""),
+        timeout_s=float(dz.get("timeout_s", 300)),
+    )
     evolution = Evolution(
         optimizer=str(overrides.get("optimizer") or evo["optimizer"]),
         population=int(overrides.get("population") or evo["population"]),
@@ -355,6 +373,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         seed=int(overrides["seed"]) if overrides.get("seed") is not None else int(evo["seed"]),
         ga=ga_params,
         cmaes_sigma0=float(evo["cmaes"]["sigma0"]),
+        designer=designer,
         workers=int(workers),
         task_timeout_s=float(ex["task_timeout_s"]),
         results_dir=results_dir,

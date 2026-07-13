@@ -34,6 +34,17 @@ ga:
 cmaes:
   sigma0: 0.25                 # fraction of normalized [0,1] genome space
 
+designer:
+  # Headless-Claude design rounds: every K generations, `claude -p` receives
+  # the elites, their per-scenario results and the failure histogram, and
+  # proposes new genome vectors (operator `designer`). Fail-soft: skipped if
+  # the CLI is unavailable. Rationales land in results/designer_log.md.
+  enabled: true
+  every_generations: 6
+  candidates: 3
+  model: ""                    # empty = the claude CLI's default model
+  timeout_s: 300
+
 execution:
   workers: auto                # auto = os.cpu_count()
   task_timeout_s: 180          # per subprocess (build or scenario task)

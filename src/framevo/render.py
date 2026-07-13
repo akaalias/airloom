@@ -24,7 +24,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 VIEW_ELEV = 22.0
 VIEW_AZIM = -55.0
-WORLD_HALF = 0.36  # meters; fixed so every thumbnail shares scale (7" class)
+WORLD_HALF = 0.34  # meters; fixed so every thumbnail shares scale (7" class)
 PAPER = "#fffff8"
 
 # part -> (hex color, alpha). Evolved geometry in warm/dark tones, the fixed

@@ -20,6 +20,7 @@ from .genome import describe_genome
 OPERATOR_COLORS = {
     "crossover": "#4a6fa5",
     "pivot": "#2e6e63",
+    "designer": "#5e4a78",
     "mutation": "#8c2f1f",
     "immigrant": "#8a6a1e",
     "elite": "#9b998c",
