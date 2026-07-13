@@ -199,7 +199,7 @@ def cmd_cfd_calibrate(args: argparse.Namespace) -> int:
     from .cfd import run_calibration
     cfg = load_config(args.root)
     run_calibration(cfg, Path(args.root).resolve() / "cfd",
-                    solve=args.solve, report=args.report)
+                    solve=args.solve, report=args.report, jobs=args.jobs)
     return 0
 
 
@@ -309,6 +309,8 @@ def main(argv: list[str] | None = None) -> int:
                         " (opencfd/openfoam-default); CPU-heavy")
     p.add_argument("--report", action="store_true",
                    help="parse solved cases and write cfd/calibration.md")
+    p.add_argument("--jobs", type=int, default=1,
+                   help="concurrent case solves (each is a serial container)")
     p.set_defaults(fn=cmd_cfd_calibrate)
 
     args = ap.parse_args(argv)

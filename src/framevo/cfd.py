@@ -512,20 +512,38 @@ def write_report(out_root: Path) -> Path:
 
 
 def run_calibration(cfg: Config, out_root: Path, solve: bool = False,
-                    report: bool = False) -> None:
+                    report: bool = False, jobs: int = 1) -> None:
     if not (out_root / "manifest.json").exists() or not solve and not report:
         specs = generate(cfg, out_root)
         print(f"wrote {len(specs)} cases under {out_root / 'cases'} "
               f"(4 geometries x {len(TILTS_DEG)} tilts)")
     if solve:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         man = json.loads((out_root / "manifest.json").read_text())
+        image = man.get("docker_image", DOCKER_IMAGE)
+        todo = []
         for c in man["cases"]:
             case_dir = out_root / "cases" / c["name"]
             if list(case_dir.glob("postProcessing/forces1/*/force*.dat")):
-                print(f"  {c['name']}: already solved, skipping")
+                print(f"  {c['name']}: forces present (solved or in "
+                      "flight), skipping")
                 continue
-            print(f"  solving {c['name']} ...", flush=True)
-            solve_case(case_dir, man.get("docker_image", DOCKER_IMAGE))
+            todo.append((c["name"], case_dir))
+
+        def _one(name: str, d: Path) -> str:
+            print(f"  solving {name} ...", flush=True)
+            solve_case(d, image)
+            return name
+
+        with ThreadPoolExecutor(max_workers=max(1, jobs)) as ex:
+            futs = {ex.submit(_one, n, d): n for n, d in todo}
+            for f in as_completed(futs):
+                try:
+                    print(f"  done: {f.result()}", flush=True)
+                except Exception as exc:
+                    print(f"  FAILED {futs[f]}: {exc} "
+                          f"(see cases/{futs[f]}/run.log)", flush=True)
     if report or solve:
         out = write_report(out_root)
         print(f"report: {out}")
