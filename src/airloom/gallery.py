@@ -1801,6 +1801,54 @@ def _gameboard_html(cfg) -> str:
             + "".join(weather) + "</div>")
 
 
+def _process_html(cfg) -> str:
+    """How candidates come to exist, how they are scored, and why the
+    numbers deserve trust -- the methodology block under the game board."""
+    if cfg is None:
+        return ""
+    ga = cfg.evolution.ga
+    dz = cfg.evolution.designer
+    loop = (
+        f"tournament selection (k&thinsp;=&thinsp;{ga.tournament_k}) with "
+        f"SBX crossover and decaying Gaussian mutation; the top "
+        f"{ga.elitism} carry over unchanged, random immigrants keep "
+        "diversity, and a stalled search pivots to crosses with its most "
+        "genetically distant decent ancestors. Every "
+        f"{dz.every_generations} generations &mdash; and at every pivot "
+        "&mdash; a headless Claude reads the elites&rsquo; telemetry, the "
+        "failure histogram and its own past proposals, and injects design "
+        "hypotheses of its own (violet in the family tree); after each "
+        "generation it writes the lab-notebook notes on every card. Every "
+        "candidate ever built is archived here, failures included.")
+    physics = (
+        "each candidate flies all six scenarios at 100&thinsp;Hz: measured "
+        "UIUC propeller tables, Dryden gusts with per-scenario fixed seeds "
+        "(every frame sees identical weather), a battery that sags under "
+        "load and caps deliverable power, and drag priced from the "
+        "frame&rsquo;s actual rasterized silhouettes with "
+        "<b>CFD-calibrated</b> coefficients &mdash; 12 OpenFOAM RANS cases "
+        "measured the handbook buildup roughly 2&times; too pessimistic at "
+        "cruise tilt and pinned the interference between parts "
+        "(&minus;27&thinsp;% at 20&deg;). The corrected model reproduces "
+        "the measured drag to &plusmn;3&thinsp;%.")
+    audit = (
+        "before a leaderboard is trusted, the top frames are re-flown "
+        "under perturbed model assumptions (&plusmn;30&thinsp;% drag "
+        "coefficients, &plusmn;10&thinsp;% rotor tables, altered rain "
+        "physics); the current ordering survives every perturbation with "
+        "rank correlation &ge;&thinsp;0.95 and no champion change. "
+        "Champions then face a refined structural check &mdash; stress "
+        "concentrations at bolt holes and cutouts, as-printed strength "
+        "knockdowns &mdash; and ship with a bench print-and-test protocol, "
+        "because simulation ends where a vise begins.")
+    return ("<h2>the process</h2>"
+            '<div class="board">'
+            f'<div><h3>the loop</h3><p class="note">{loop}</p></div>'
+            f'<div><h3>the physics</h3><p class="note">{physics}</p></div>'
+            f'<div><h3>the audit</h3><p class="note">{audit}</p></div>'
+            "</div>")
+
+
 def write_gallery(store: Store, run_id: str, results_dir: Path,
                   target_whkm: float | None = None,
                   record_whkm: float | None = None,
@@ -1845,7 +1893,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              _inspiration_html(store, run_id),
              _chart_legend_html(),
              f'<div class="chart-card">{progress_chart_svg(store, run_id, target_whkm, record_whkm)}</div>',
-             _gameboard_html(cfg)]
+             _gameboard_html(cfg),
+             _process_html(cfg)]
 
     claude_gens = {r["generation"] for r in store.designer_rounds_for(run_id)}
     detail_ids: list[str] = []
