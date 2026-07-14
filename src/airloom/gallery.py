@@ -114,6 +114,25 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
   color:var(--faint);margin:6px 0 0}
 .board ul{margin:4px 0 0;padding-left:16px}
 img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
+/* flight tab: HUD over the canvas, screen-space weather streaks, scrub */
+.fl-hud{position:absolute;left:26px;top:46px;z-index:4;pointer-events:none;
+  font:12px/1.75 var(--mono);color:var(--muted);white-space:pre}
+.fl-hud b{color:var(--ink);font-weight:600}
+.fl-hud .warn{color:var(--accent);font-weight:700}
+.fl-bar{align-items:center;gap:10px}
+.fl-bar #fl-speed{width:44px}
+#fl-scrub{flex:1;-webkit-appearance:none;appearance:none;height:2px;
+  background:var(--rule);outline:none;margin:0;align-self:center}
+#fl-scrub::-webkit-slider-thumb{-webkit-appearance:none;width:11px;
+  height:11px;border-radius:50%;background:var(--ink);cursor:pointer}
+.fl-time{font:11px var(--mono);color:var(--faint);flex:0 0 auto;
+  min-width:100px;text-align:right;align-self:center}
+.fl-pill{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;background:none;
+  border:1px solid var(--rule);border-radius:2px;color:var(--muted);
+  padding:2px 8px;margin-right:5px;cursor:pointer}
+.fl-pill:hover{color:var(--ink);border-color:var(--ink)}
+.fl-pill.on{color:var(--paper);background:var(--ink);border-color:var(--ink)}
 .board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
 .knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
 .knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
@@ -496,6 +515,31 @@ function ensureBlobs(ids){ // resolve when every needed payload has arrived
     });
   }));
 }
+// ---- flight telemetry loading: same JSONP pattern as the mesh payloads
+var FLIGHTS={},FLIGHT_PENDING={};
+var fsEl=document.getElementById("flight-src");
+var FLIGHT_SRC=fsEl?JSON.parse(fsEl.textContent):{};
+window.airloomFlight=function(h,scen,data){
+  var k=h+"|"+scen;
+  FLIGHTS[k]=data;
+  (FLIGHT_PENDING[k]||[]).forEach(function(r){r()});
+  delete FLIGHT_PENDING[k];
+};
+function ensureFlight(h,scen){
+  var k=h+"|"+scen,src=(FLIGHT_SRC[h]||{})[scen];
+  if(FLIGHTS[k]||!src)return Promise.resolve();
+  return new Promise(function(res){
+    if(FLIGHT_PENDING[k]){FLIGHT_PENDING[k].push(res);return}
+    FLIGHT_PENDING[k]=[res];
+    var s=document.createElement("script");
+    s.src=src;
+    s.onerror=function(){
+      (FLIGHT_PENDING[k]||[]).forEach(function(r){r()});
+      delete FLIGHT_PENDING[k];
+    };
+    document.head.appendChild(s);
+  });
+}
 function decodeBlob(id){
   if(blobCache[id])return blobCache[id];
   var d=BLOBS[id];
@@ -624,6 +668,23 @@ function makeViewer(canvas,state){
   var view={
     canvas:canvas,
     loadBlob:function(id){view.load([{id:id}])},
+    setPropAngle:function(theta){ // spin prop clusters; CW/CCW by diagonal
+      for(var m3=0;m3<models.length;m3++){
+        var pr=models[m3].prop;
+        if(!pr)continue;
+        var cs=[Math.cos(theta),Math.cos(-theta)],
+            sn=[Math.sin(theta),Math.sin(-theta)];
+        for(var v4=0;v4<pr.base.length;v4+=3){
+          var q4=pr.cl[v4/3],dir=pr.spin[q4]>0?0:1;
+          var dx4=pr.base[v4]-pr.cc[q4][0],dy4=pr.base[v4+1]-pr.cc[q4][1];
+          pr.scr[v4]=pr.cc[q4][0]+cs[dir]*dx4-sn[dir]*dy4;
+          pr.scr[v4+1]=pr.cc[q4][1]+sn[dir]*dx4+cs[dir]*dy4;
+          pr.scr[v4+2]=pr.base[v4+2];
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER,models[m3].bufs.aP);
+        gl.bufferData(gl.ARRAY_BUFFER,pr.scr,gl.DYNAMIC_DRAW);
+      }
+    },
     // fixedFrame: an optional pre-computed {c,r,mx,my,mz} shared across
     // several loads so swapping models never re-centers or re-fits the
     // camera (the walkthrough uses one frame for its whole chain)
@@ -637,6 +698,85 @@ function makeViewer(canvas,state){
           models.push({bufs:upload(d2.ev.P,d2.ev.N,sp.ghost?d2.ev.Cg:d2.ev.Ce),
                        nf:d2.ev.nf,nOpq:sp.ghost?0:d2.ev.nf,
                        fade:sp.fade==null?1:sp.fade});
+        }else if(sp.propSpin&&d2.nf>d2.nOpq){
+          // flight tab: props are the (only) translucent tail of the
+          // buffers -- split them into a dynamic model so setPropAngle can
+          // spin each rotor about its own axis, diagonal pairs opposed
+          models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nOpq,nOpq:d2.nOpq,
+                       fade:sp.fade==null?1:sp.fade});
+          var off=d2.nOpq*9,pP=d2.P.slice(off),pN=d2.N.slice(off),
+              pC=d2.C.slice(d2.nOpq*12),np=pP.length/3;
+          // assign blades to their 4 rotors: farthest-point seeding +
+          // Lloyd iterations on (x,y) -- robust to any arm sweep, where a
+          // naive quadrant split misassigns blades near the boundaries
+          var seeds=[[pP[0],pP[1]]],v3,q3,s3;
+          while(seeds.length<4){
+            var bi=0,bd=-1;
+            for(v3=0;v3<pP.length;v3+=3){
+              var dmin=1e9;
+              for(s3=0;s3<seeds.length;s3++){
+                var ddx=pP[v3]-seeds[s3][0],ddy=pP[v3+1]-seeds[s3][1];
+                var dd=ddx*ddx+ddy*ddy;
+                if(dd<dmin)dmin=dd;
+              }
+              if(dmin>bd){bd=dmin;bi=v3}
+            }
+            seeds.push([pP[bi],pP[bi+1]]);
+          }
+          var cl=new Uint8Array(np),cc;
+          for(var it=0;it<3;it++){
+            cc=[[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
+            for(v3=0;v3<pP.length;v3+=3){
+              var qb=0,qd=1e9;
+              for(s3=0;s3<4;s3++){
+                var qx=pP[v3]-seeds[s3][0],qy=pP[v3+1]-seeds[s3][1];
+                var qq=qx*qx+qy*qy;
+                if(qq<qd){qd=qq;qb=s3}
+              }
+              cl[v3/3]=qb;
+              cc[qb][0]+=pP[v3];cc[qb][1]+=pP[v3+1];cc[qb][2]++;
+            }
+            for(s3=0;s3<4;s3++)if(cc[s3][2])
+              seeds[s3]=[cc[s3][0]/cc[s3][2],cc[s3][1]/cc[s3][2]];
+          }
+          cc=seeds.map(function(s6){return [s6[0],s6[1]]});
+          // counter-rotation by diagonal: sign from the quadrant of each
+          // CLUSTER CENTER (not the vertex), so pairs stay consistent
+          var spin=new Int8Array(4);
+          for(s3=0;s3<4;s3++)
+            spin[s3]=((cc[s3][0]>=0)===(cc[s3][1]>=0))?1:-1;
+          // re-center each cluster on its HUB: the raw vertex centroid of
+          // a decimated 3-blade prop sits off-axis (visible wobble); the
+          // innermost blade-root vertices are symmetric about the shaft
+          var rr=[0,0,0,0];
+          for(v3=0;v3<pP.length;v3+=3){
+            var qc=cl[v3/3];
+            var rdx=pP[v3]-cc[qc][0],rdy=pP[v3+1]-cc[qc][1];
+            var rd2=rdx*rdx+rdy*rdy;
+            if(rd2>rr[qc])rr[qc]=rd2;
+          }
+          for(s3=0;s3<4;s3++){
+            var rmax=Math.sqrt(rr[s3])||1,hx8=0,hy8=0,hn8=0;
+            for(v3=0;v3<pP.length;v3+=3){
+              if(cl[v3/3]!==s3)continue;
+              var ex8=pP[v3]-cc[s3][0],ey8=pP[v3+1]-cc[s3][1];
+              if(Math.sqrt(ex8*ex8+ey8*ey8)<rmax*0.3){
+                hx8+=pP[v3];hy8+=pP[v3+1];hn8++;
+              }
+            }
+            if(hn8>6){cc[s3][0]=hx8/hn8;cc[s3][1]=hy8/hn8}
+          }
+          var db={aP:gl.createBuffer(),aN:gl.createBuffer(),aC:gl.createBuffer()};
+          gl.bindBuffer(gl.ARRAY_BUFFER,db.aP);
+          gl.bufferData(gl.ARRAY_BUFFER,pP,gl.DYNAMIC_DRAW);
+          gl.bindBuffer(gl.ARRAY_BUFFER,db.aN);
+          gl.bufferData(gl.ARRAY_BUFFER,pN,gl.STATIC_DRAW);
+          gl.bindBuffer(gl.ARRAY_BUFFER,db.aC);
+          gl.bufferData(gl.ARRAY_BUFFER,pC,gl.STATIC_DRAW);
+          models.push({bufs:db,nf:d2.nf-d2.nOpq,nOpq:0,
+                       fade:sp.fade==null?1:sp.fade,
+                       prop:{base:pP,cl:cl,cc:cc,spin:spin,
+                             scr:new Float32Array(pP.length)}});
         }else{
           models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nf,nOpq:d2.nOpq,
                        fade:sp.fade==null?1:sp.fade});
@@ -679,9 +819,10 @@ function makeViewer(canvas,state){
       gl.viewport(0,0,canvas.width,canvas.height);
       var cy2=Math.cos(state.yaw),sy=Math.sin(state.yaw),
           cp=Math.cos(state.pitch),sp=Math.sin(state.pitch);
-      gl.uniformMatrix3fv(uR,false,[cy2,-sy*sp,sy*cp,
-                                    sy,cy2*sp,-cy2*cp,
-                                    0,cp,sp]);
+      var Rb=[cy2,-sy*sp,sy*cp,
+              sy,cy2*sp,-cy2*cp,
+              0,cp,sp];
+      gl.uniformMatrix3fv(uR,false,Rb);
       var asp=w>h?[h/w,1]:[1,w/h];
       gl.uniform2f(uA,asp[0],asp[1]);
       gl.uniform2f(uPn,state.panX||0,state.panY||0);
@@ -699,6 +840,18 @@ function makeViewer(canvas,state){
       for(var m2=0;m2<models.length;m2++){
         var mo=models[m2],fade=mo.fade==null?1:mo.fade;
         if(fade<=0.004)continue;
+        // flight tab: pose the vehicle by telemetry attitude, but leave
+        // world-frame models (weather particles) under the orbit alone
+        var MR=mo.noPose?null:view.modelR;
+        if(MR){
+          var Cm=new Array(9);
+          for(var mc=0;mc<3;mc++)for(var mr=0;mr<3;mr++)
+            Cm[mc*3+mr]=Rb[mr]*MR[mc*3]+Rb[3+mr]*MR[mc*3+1]
+                        +Rb[6+mr]*MR[mc*3+2];
+          gl.uniformMatrix3fv(uR,false,Cm);
+        }else{
+          gl.uniformMatrix3fv(uR,false,Rb);
+        }
         bindBuf(mo.bufs.aP,"aP",3);bindBuf(mo.bufs.aN,"aN",3);
         bindBuf(mo.bufs.aC,"aC",4);
         gl.uniform1f(uF,fade);
@@ -754,9 +907,10 @@ var ovl=document.getElementById("ovl");
 if(!ovl)return;
 var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
     diffState=makeState(1.2), // near top-down: plan-shape reads best
-    walkState=makeState(1.2),fullState=makeState(1.2);
+    walkState=makeState(1.2),fullState=makeState(1.2),
+    flState=makeState(0.35);  // low chase-cam pitch: tilt reads best
 var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,walkV=null,
-    fullV=null,current=null;
+    fullV=null,flV=null,current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
   if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
@@ -765,10 +919,11 @@ function ensureViewers(){
   if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
   if(!walkV)walkV=makeViewer(document.getElementById("ovl-walk"),walkState);
   if(!fullV)fullV=makeViewer(document.getElementById("ovl-full"),fullState);
+  if(!flV)flV=makeViewer(document.getElementById("ovl-flight"),flState);
 }
 function redrawAll(){soloState.redraw();evoState.redraw();
   cmpState.redraw();diffState.redraw();walkState.redraw();
-  fullState.redraw()}
+  fullState.redraw();flState.redraw()}
 
 // ---- lineage replay: step through the candidate's full ancestry from
 // the oldest ancestor to the candidate; the current step is solid, the
@@ -906,8 +1061,116 @@ function walkGo(k){
   }
   walkAnim=requestAnimationFrame(tick);
 }
+// ---- flight tab: replay the actual scored flight from sim telemetry.
+// Attitude = the recorded thrust vector (body z) + heading from motion;
+// screen-space streaks visualize the relative wind (and rain) the frame
+// actually experienced, gusts included.
+var FL={hash:null,data:null,scen:null,defScen:null,t:0,playing:false,
+        speed:8,last:null,hx:1,hy:0};
+function flLerp(ch,f0,i,j){var a=FL.data[ch];return a[i]*(1-f0)+a[j]*f0}
+function flPlaySet(on){
+  FL.playing=on;
+  var b=document.getElementById("fl-play");
+  if(b)b.innerHTML=on?"&#10074;&#10074;":"&#9654;";
+  if(on){FL.last=null;requestAnimationFrame(flTick)}
+}
+function flPause(){FL.playing=false;
+  var b=document.getElementById("fl-play");if(b)b.innerHTML="&#9654;"}
+function flTick(ts){
+  if(!FL.playing||!FL.data)return;
+  if(FL.last===null)FL.last=ts;
+  var dtf=Math.min((ts-FL.last)/1000,0.1);
+  FL.last=ts;
+  var dur=FL.data.x.length/FL.data.hz;
+  FL.t+=dtf*FL.speed;
+  if(FL.t>=dur)FL.t=0; // loop the mission
+  flShow(dtf);
+  requestAnimationFrame(flTick);
+}
+function flShow(dtf){
+  var d=FL.data;if(!d)return;
+  var n=d.x.length,fx=Math.min(FL.t*d.hz,n-1.001);
+  var i=Math.floor(fx),j=Math.min(i+1,n-1),f0=fx-i;
+  // -- attitude: body z = thrust vector, body x follows the motion
+  var tx=flLerp("tx",f0,i,j),ty=flLerp("ty",f0,i,j),tz=flLerp("tz",f0,i,j);
+  var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
+  var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
+  var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
+  if(hm<1e-4){hx=FL.hx;hy=FL.hy}else{hx/=hm;hy/=hm;FL.hx=hx;FL.hy=hy}
+  var dot=hx*tx+hy*ty;
+  var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
+  var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
+  bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
+  var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
+  flV.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+  var wx=flLerp("wx",f0,i,j),wy=flLerp("wy",f0,i,j),wz=flLerp("wz",f0,i,j);
+  // -- spinning rotors: display rate proportional to the telemetry RPM,
+  //    diagonal pairs counter-rotating. Fast enough to strobe like a
+  //    filmed prop; true 9k rpm would only alias worse.
+  var rpmNow=flLerp("rpm",f0,i,j);
+  FL.theta=(FL.theta||0)+rpmNow*0.0035*(dtf||0.016);
+  flV.setPropAngle(FL.theta);
+  flState.redraw();
+  // -- HUD
+  var air=Math.hypot(wx,wy,wz);
+  var gs=0;
+  if(i1>i0)gs=Math.hypot(d.x[i1]-d.x[i0],d.y[i1]-d.y[i0])*d.hz/(i1-i0);
+  var dist=0,px=d.x[0];
+  for(var k2=1;k2<=i;k2++){dist+=Math.abs(d.x[k2]-px);px=d.x[k2]}
+  var tilt=Math.acos(Math.max(-1,Math.min(1,tz)))*57.296;
+  var hud=document.getElementById("fl-hud");
+  if(hud)hud.innerHTML=
+    "t <b>"+FL.t.toFixed(1)+"</b> s · "+Math.round(dist)+" m flown\n"+
+    "ground <b>"+gs.toFixed(1)+"</b> m/s · air <b>"+air.toFixed(1)+
+    "</b> m/s · tilt <b>"+tilt.toFixed(0)+"&deg;</b>\n"+
+    "rotors <b>"+Math.round(flLerp("rpm",f0,i,j)).toLocaleString()+
+    "</b> rpm · <b>"+Math.round(flLerp("pw",f0,i,j))+"</b> W · pack <b>"+
+    flLerp("vt",f0,i,j).toFixed(1)+"</b> V\n"+
+    (d.lim[i]?'<span class="warn">THRUST LIMITED</span>':"");
+  var sc=document.getElementById("fl-scrub");
+  if(sc&&document.activeElement!==sc)sc.value=Math.round(999*fx/(n-1));
+  var tl=document.getElementById("fl-time");
+  if(tl){
+    var du=n/d.hz;
+    var fmt=function(s9){var m9=Math.floor(s9/60);
+      return m9+":"+("0"+Math.floor(s9-m9*60)).slice(-2)};
+    tl.textContent=fmt(FL.t)+" / "+fmt(du);
+  }
+}
+function flOpen(scen){
+  ensureFlight(FL.hash,scen).then(function(){
+    var pd=FLIGHTS[FL.hash+"|"+scen];
+    if(!pd)return;
+    FL.data=pd;FL.scen=scen;FL.t=0;FL.hx=1;FL.hy=0;
+    document.querySelectorAll("#fl-scens .fl-pill").forEach(function(b){
+      b.classList.toggle("on",b.dataset.scen===scen)});
+    flV.load([{id:"m-"+FL.hash,propSpin:true}]);
+    FL.theta=0;
+    var lab=pd.valid?(pd.whkm!=null?pd.whkm.toFixed(2)+" Wh/km":""):
+      "FAILED: "+(pd.reason||"");
+    document.getElementById("fl-lab").textContent=lab;
+    flPlaySet(true);
+  });
+}
+(function(){
+  var pb=document.getElementById("fl-play");
+  if(pb)pb.addEventListener("click",function(){
+    FL.playing?flPause():flPlaySet(true)});
+  var sb=document.getElementById("fl-speed");
+  if(sb)sb.addEventListener("click",function(){
+    FL.speed=FL.speed>=32?1:FL.speed*(FL.speed>=8?4:8);
+    sb.innerHTML=FL.speed+"&times;"});
+  var sc=document.getElementById("fl-scrub");
+  if(sc)sc.addEventListener("input",function(){
+    if(!FL.data)return;
+    FL.t=(+sc.value/999)*(FL.data.x.length/FL.data.hz);
+    if(!FL.playing)flShow(0.016);
+  });
+})();
 function setTab(name){
   if(name!=="walk")playStop();
+  if(name!=="flight")flPause();
+  else if(FL.hash&&!FL.data&&FL.defScen)flOpen(FL.defScen);
   ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
   ovl.querySelectorAll(".ovl-body").forEach(function(b){
@@ -1037,10 +1300,32 @@ function openOverlay(d){
     walkChain=[];
     walkFrame=null;
   }
+  // -- flight tab: only champions/setters have telemetry payloads
+  var flBtn=ovl.querySelector('button[data-tab="flight"]');
+  FL.hash=d.mesh.slice(2);FL.data=null;FL.scen=null;flPause();
+  var fsc=FLIGHT_SRC[FL.hash]||{},fkeys=Object.keys(fsc);
+  var scDiv=document.getElementById("fl-scens");
+  if(flV&&fkeys.length){
+    flBtn.disabled=false;
+    flBtn.title="";
+    FL.defScen=fkeys.indexOf("calm_warm")>=0?"calm_warm":fkeys[0];
+    scDiv.innerHTML=fkeys.map(function(s2){
+      return '<button class="fl-pill" data-scen="'+s2+'">'+
+        s2.replace(/_/g," ")+"</button>"}).join("");
+    scDiv.querySelectorAll(".fl-pill").forEach(function(b){
+      b.addEventListener("click",function(){flOpen(b.dataset.scen)});
+    });
+  }else{
+    flBtn.disabled=true;
+    flBtn.title="flights are rendered for the champion and "+
+      "best-so-far setters";
+    scDiv.innerHTML="";
+  }
   setTab("solo");
 }
 function closeOverlay(){
   playStop();
+  flPause();
   ovl.classList.remove("open");
   document.body.style.overflow="";
 }
@@ -1077,7 +1362,7 @@ function activeState(){
   var t=b?b.dataset.tab:"solo";
   return t==="compare"?cmpState:t==="diff"?diffState:
          t==="walk"?walkState:t==="fulldiff"?fullState:
-         t==="evolved"?evoState:soloState;
+         t==="evolved"?evoState:t==="flight"?flState:soloState;
 }
 document.getElementById("walk-prev").addEventListener("click",
   function(){playStop();walkGo(walkIdx-1)});
@@ -1951,6 +2236,17 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             blob_src[f"m-{h}"] = src
     viewer_hashes = {h for h in cands if f"m-{h}" in blob_src}
 
+    # flight telemetry for champion + best-so-far setters (curation rule);
+    # cached by file existence so only NEW setters cost a re-simulation.
+    # Fail-soft: no flights just means no flight tab.
+    flight_src: dict[str, dict[str, str]] = {}
+    if cfg is not None:
+        try:
+            from .flythrough import ensure_flights
+            flight_src = ensure_flights(cfg, store, run_id, results_dir)
+        except Exception:
+            flight_src = {}
+
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">click a model to '
                  "open it full-screen: the full-kit model, its evolved "
@@ -2106,6 +2402,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<button data-tab="diff">net change</button>'
         '<button data-tab="fulldiff">lineage trail</button>'
         '<button data-tab="walk">replay</button>'
+        '<button data-tab="flight">flight</button>'
         "</span>"
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
         "</div>"
@@ -2158,6 +2455,21 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div class="ovl-hint">solid = current step &middot; gray ghost = '
         "next in line &middot; click a thumbnail to morph there &middot; "
         "&#8592;/&#8594; step &middot; evolved parts only</div></div>"
+        '<div class="ovl-body" data-tab="flight" style="position:relative">'
+        '<div class="pane" style="position:relative"><div class="cap">'
+        '<span id="fl-scens"></span>'
+        '<span class="hash" id="fl-lab"></span></div>'
+        '<canvas id="ovl-flight"></canvas>'
+        '<div class="fl-hud" id="fl-hud"></div>'
+        '<div class="wtl fl-bar">'
+        '<button class="wplay" id="fl-play" title="play/pause">&#9654;</button>'
+        '<button class="wplay" id="fl-speed" title="replay speed">8&times;</button>'
+        '<input type="range" id="fl-scrub" min="0" max="999" value="0">'
+        '<span class="fl-time" id="fl-time"></span></div>'
+        "</div>"
+        '<div class="ovl-hint">the actual scored flight, replayed from '
+        "simulation telemetry &middot; attitude = thrust vector &middot; "
+        "rotors at telemetry rpm &middot; drag to orbit</div></div>"
         '<div class="ovl-views">'
         '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
         '<button data-view="front">front</button>'
@@ -2180,6 +2492,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                  f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
     parts.append('<script type="application/json" id="blob-src">'
                  f"{json.dumps(blob_src, separators=(',', ':'))}</script>")
+    parts.append('<script type="application/json" id="flight-src">'
+                 f"{json.dumps(flight_src, separators=(',', ':'))}</script>")
     parts.append(f"<script>{DOVL_JS}</script>")
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
@@ -2216,7 +2530,7 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     if dst_frames.exists():  # drop stills of previous runs' candidates
         shutil.rmtree(dst_frames)
     if src_frames.exists():
-        for pattern in ("*.png", "*.mesh.js"):
+        for pattern in ("*.png", "*.mesh.js", "*.flight.js"):
             for f in sorted(src_frames.rglob(pattern)):
                 dst = docs_dir / f.relative_to(results_dir)
                 dst.parent.mkdir(parents=True, exist_ok=True)

@@ -58,19 +58,24 @@ class ScenarioResult:
     sat_time_s: float
     peak_pack_power_w: float = 0.0
     min_pack_voltage_v: float = 0.0
+    # optional decimated telemetry (trace_hz > 0): dict of channel lists --
+    # the flight the gallery's flight tab replays. None on normal evals.
+    trace: dict | None = None
 
 
 def _fail(name: str, reason: str, energy_wh: float = math.inf,
           peak: float = 0.0, peak_pack_w: float = 0.0,
-          min_v: float = 0.0) -> ScenarioResult:
+          min_v: float = 0.0, trace: dict | None = None) -> ScenarioResult:
     return ScenarioResult(name, False, reason, math.inf, energy_wh, math.inf,
-                          math.inf, peak, 90.0, math.inf, peak_pack_w, min_v)
+                          math.inf, peak, 90.0, math.inf, peak_pack_w, min_v,
+                          trace)
 
 
 def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
                       scenario: Scenario, mission: Mission,
                       rain_model: RainModel,
-                      battery: Battery | None = None) -> ScenarioResult:
+                      battery: Battery | None = None,
+                      trace_hz: float = 0.0) -> ScenarioResult:
     dt = 1.0 / mission.sim_rate_hz
     vc = mission.cruise_speed_ms
     rho = scenario.air_density
@@ -116,6 +121,17 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
     min_v = v0 if pack_on else 0.0
     peak_pack_w = 0.0
     sat_rpm = sat_motor_w = sat_pack = 0.0
+
+    # -- telemetry for the gallery's flight tab (decimated channel lists)
+    trace: dict | None = None
+    trace_every = 0
+    sat_traced = 0.0
+    if trace_hz > 0.0:
+        trace_every = max(int(round(mission.sim_rate_hz / trace_hz)), 1)
+        trace = {k: [] for k in ("x", "y", "z", "tx", "ty", "tz", "rpm",
+                                 "vt", "pw", "lim", "wx", "wy", "wz")}
+        trace["hz"] = mission.sim_rate_hz / trace_every
+        trace["scenario"] = scenario.name
 
     # -- mission legs along the north axis
     legs = []
@@ -250,7 +266,8 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
                 peak_pack_w = p_pack
             energy_j += p_pack * dt
         else:
-            energy_j += 4.0 * p_one * dt
+            p_pack = 4.0 * p_one
+            energy_j += p_pack * dt
         sat_time = sat_rpm + sat_motor_w + sat_pack
 
         j_adv = v_axial / (n * diam)
@@ -266,22 +283,37 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
         vx += axx * dt; vy += ayy * dt; vz += azz * dt
         x += vx * dt; y += vy * dt; z += vz * dt
 
+        if trace is not None and step % trace_every == 0:
+            r3 = lambda v: round(v, 3)  # noqa: E731 (payload size discipline)
+            trace["x"].append(r3(x)); trace["y"].append(r3(y))
+            trace["z"].append(r3(z))
+            trace["tx"].append(r3(ux_t)); trace["ty"].append(r3(uy_t))
+            trace["tz"].append(r3(uz_t))
+            trace["rpm"].append(int(n * 60.0))
+            trace["vt"].append(round(v_term, 2) if pack_on else 0.0)
+            trace["pw"].append(int(p_pack))
+            trace["lim"].append(1 if sat_time > sat_traced else 0)
+            trace["wx"].append(r3(vax)); trace["wy"].append(r3(vay))
+            trace["wz"].append(r3(vaz))
+            sat_traced = sat_time
+
         if sat_time > sat_limit:
             return _fail(scenario.name,
                          _limiter_reason(sat_rpm, sat_motor_w, sat_pack),
-                         energy_j / 3600.0, peak_thrust, peak_pack_w, min_v)
+                         energy_j / 3600.0, peak_thrust, peak_pack_w, min_v,
+                         trace)
         if abs(y) > 50.0 or abs(z - mission.altitude_m) > 20.0:
             reason = "control divergence"
             elapsed = (step + 1) * dt
             if sat_time > 0.3 * elapsed:  # diverged BECAUSE thrust-limited
                 reason += f" ({_limiter_reason(sat_rpm, sat_motor_w, sat_pack)})"
             return _fail(scenario.name, reason, energy_j / 3600.0,
-                         peak_thrust, peak_pack_w, min_v)
+                         peak_thrust, peak_pack_w, min_v, trace)
         step += 1
 
     if leg_i < len(legs):
         return _fail(scenario.name, "mission not completed in time (speed not held)",
-                     energy_j / 3600.0, peak_thrust, peak_pack_w, min_v)
+                     energy_j / 3600.0, peak_thrust, peak_pack_w, min_v, trace)
 
     t_total = step * dt
     energy_wh = energy_j / 3600.0
@@ -291,4 +323,4 @@ def simulate_scenario(total_mass: float, drag: DragTable, rotor: RotorModel,
         avg_power_w=energy_j / t_total, flight_time_s=t_total,
         peak_rotor_thrust_n=peak_thrust, max_tilt_deg=math.degrees(max_tilt),
         sat_time_s=sat_time, peak_pack_power_w=peak_pack_w,
-        min_pack_voltage_v=min_v)
+        min_pack_voltage_v=min_v, trace=trace)
