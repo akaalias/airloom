@@ -63,6 +63,12 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   border:1px solid var(--rule);border-radius:6px;touch-action:none}
 #perf-row figcaption{font:12px var(--mono);color:var(--faint);
   text-align:center;margin-top:4px}
+#perf-open{display:flex;justify-content:center;margin-top:16px}
+#perf-open button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  background:none;border:1px solid var(--rule);border-radius:2px;
+  padding:8px 26px;cursor:pointer}
+#perf-open button:hover{color:var(--ink);border-color:var(--ink)}
 .panel .cap{font:12px var(--mono);color:var(--faint);margin:6px 0 0;
   min-height:16px}
 /* replay controls reuse the research log's visual language */
@@ -94,6 +100,14 @@ LANDING_JS = r"""
 "use strict";
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
+// the button under the scenario row rides the card's own overlay
+// wiring (same full-screen performance view)
+var po=document.getElementById("perf-open");
+if(po)po.addEventListener("click",function(){
+  var b=document.querySelector(
+    '.viewer .vbtns button[data-mode="perf"]');
+  if(b&&!b.disabled)b.click();
+});
 var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
 AL.ensureBlobs(need).then(function(){
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
@@ -315,7 +329,9 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             "orbit in unison; the <b>view candidate performance</b> "
             "button on the card above opens the full-screen replay "
             "with live telemetry.</p>",
-            f'<div id="perf-row">{boxes}</div>']
+            f'<div id="perf-row">{boxes}</div>',
+            '<div id="perf-open"><button>view candidate '
+            "performance</button></div>"]
 
     # the evolution: replay the champion's own line
     parts += [

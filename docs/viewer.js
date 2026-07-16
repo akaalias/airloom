@@ -161,9 +161,13 @@ function decodeBlob(id){
   for(var f=0;f<nf;f++)((PAL[FC[f]]||PAL[0])[3]<0.999?trans:opaque).push(f);
   var list=opaque.concat(trans),nOpq=opaque.length;
   var P=new Float32Array(nf*9),N=new Float32Array(nf*9),C=new Float32Array(nf*12);
+  // two-tone mono companion (the wind-tunnel look): evolved parts a
+  // shade darker than the fixed kit, translucency preserved
+  var M=d.pn?new Float32Array(nf*12):null;
   for(var k=0;k<nf;k++){
     var f2=list[k],a=F[3*f2],b=F[3*f2+1],c=F[3*f2+2];
     var pc=PAL[FC[f2]]||PAL[0];
+    var evPart=d.pn&&(d.pn[FC[f2]]==="deck"||d.pn[FC[f2]]==="arms");
     var e1x=V[3*b]-V[3*a],e1y=V[3*b+1]-V[3*a+1],e1z=V[3*b+2]-V[3*a+2];
     var e2x=V[3*c]-V[3*a],e2y=V[3*c+1]-V[3*a+1],e2z=V[3*c+2]-V[3*a+2];
     var nx=e1y*e2z-e1z*e2y,ny=e1z*e2x-e1x*e2z,nz=e1x*e2y-e1y*e2x;
@@ -174,9 +178,13 @@ function decodeBlob(id){
       N[o]=nx;N[o+1]=ny;N[o+2]=nz;
       var co=12*k+4*v;
       C[co]=pc[0]/255;C[co+1]=pc[1]/255;C[co+2]=pc[2]/255;C[co+3]=pc[3];
+      if(M){
+        M[co]=evPart?0.40:0.74;M[co+1]=evPart?0.39:0.73;
+        M[co+2]=evPart?0.36:0.70;M[co+3]=pc[3];
+      }
     }
   }
-  var entry={P:P,N:N,C:C,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3,ev:null};
+  var entry={P:P,N:N,C:C,M:M,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3,ev:null};
   // projected extents at the default yaw (pitch folded in at draw time)
   // -> lets each viewer start zoomed to fit regardless of model size
   var cyw=Math.cos(DEF_YAW),syw=Math.sin(DEF_YAW),mx=0,my=0,mz=0;
@@ -449,7 +457,7 @@ function makeViewer(canvas,state,opts){
       for(var i2=0;i2<specs.length;i2++){
         var sp=specs[i2],d2=decodeBlob(sp.id);
         if(!d2)continue;
-        var CC=sp.mono?monoC(d2.C):d2.C;
+        var CC=sp.mono?(d2.M||monoC(d2.C)):d2.C;
         if(sp.evolved){
           if(!d2.ev)continue;
           models.push({bufs:upload(d2.ev.P,d2.ev.N,sp.ghost?d2.ev.Cg:d2.ev.Ce),
