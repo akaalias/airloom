@@ -148,7 +148,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     if lb.exists():
         print()
         print(lb.read_text())
-    print(f"gallery: file://{cfg.evolution.results_dir / 'index.html'}")
+    print(f"landing: file://{cfg.evolution.results_dir / 'index.html'}")
+    print(f"research log: file://{cfg.evolution.results_dir / 'log.html'}")
     return 0
 
 
@@ -181,6 +182,8 @@ def cmd_gallery(args: argparse.Namespace) -> int:
         shutil.copyfile(glossary, results / "glossary.html")
     gallery.write_gallery(store, run_id, results, cfg.aggregation.target_whkm,
                           cfg.aggregation.record_whkm, cfg.evolution, cfg=cfg)
+    from . import landing
+    landing.write_landing(store, run_id, results)
     gallery.write_leaderboard(store, run_id, results,
                               [s.name for s in cfg.scenarios])
     gallery.write_convergence(store, run_id, results)
@@ -190,7 +193,8 @@ def cmd_gallery(args: argparse.Namespace) -> int:
         lineage.write_svg(store, run_id, results)
         lineage.write_lineage_page(store, run_id, results)
     gallery.publish_docs(results, cfg.root / "docs")
-    print(f"gallery: file://{results / 'index.html'}")
+    print(f"landing: file://{results / 'index.html'}")
+    print(f"research log: file://{results / 'log.html'}")
     print(f"published: {cfg.root / 'docs' / 'index.html'}")
     return 0
 

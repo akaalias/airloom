@@ -19,6 +19,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from . import gallery as gallery_mod
+from . import landing as landing_mod
 from . import lineage as lineage_mod
 from .config import Config
 from .dbstore import CandidateRow, Store
@@ -104,8 +105,8 @@ class EvolutionLoop:
         self._join_narrators()  # let pending note-enrichments land
         self._write_artifacts(ev.generations - 1)
         self.store.finish_run(self.run_id)
-        gallery_path = self.results / "index.html"
-        _log(f"done. gallery: file://{gallery_path}")
+        _log(f"done. landing: file://{self.results / 'index.html'}  "
+             f"research log: file://{self.results / 'log.html'}")
 
     def _run_generations(self, ev, cmaes) -> None:
         for gen in range(self.start_gen, ev.generations):
@@ -425,6 +426,7 @@ class EvolutionLoop:
         import importlib
         try:
             importlib.reload(gallery_mod)
+            importlib.reload(landing_mod)
             importlib.reload(lineage_mod)
         except Exception:
             pass
@@ -435,6 +437,7 @@ class EvolutionLoop:
                                   self.cfg.aggregation.target_whkm,
                                   self.cfg.aggregation.record_whkm,
                                   self.cfg.evolution, cfg=self.cfg)
+        landing_mod.write_landing(self.store, self.run_id, self.results)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
         gallery_mod.write_convergence(self.store, self.run_id, self.results)

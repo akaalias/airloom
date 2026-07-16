@@ -69,7 +69,8 @@ NAV_CSS = """
 .topnav a.on{color:var(--ink);border-bottom-color:var(--ink)}
 """
 
-_NAV_PAGES = [("index.html", "gallery"),
+_NAV_PAGES = [("index.html", "the result"),
+              ("log.html", "research log"),
               ("lineage.html", "family tree"),
               ("glossary.html", "glossary")]
 
@@ -501,7 +502,7 @@ document.addEventListener("keydown",function(e){
 });
 """
 
-VIEWER_JS = r"""
+ENGINE_JS = r"""
 (function(){
 "use strict";
 function b64bytes(s){var b=atob(s),a=new Uint8Array(b.length);
@@ -986,76 +987,24 @@ function makeViewer(canvas,state){
   return view;
 }
 
-// ---- overlay tabs: full kit, evolved parts, ancestor vs candidate
-// (synced, evolved parts only), evolution-difference superimposition
-var ovl=document.getElementById("ovl");
-if(!ovl)return;
-var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
-    diffState=makeState(1.2), // near top-down: plan-shape reads best
-    walkState=makeState(1.2),fullState=makeState(1.2),
-    flState=makeState(0.35);  // low chase-cam pitch: tilt reads best
-var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,walkV=null,
-    fullV=null,flV=null,flVB=null,current=null,pendingTab=null;
-function ensureViewers(){
-  if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
-  if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
-  if(!cmpA)cmpA=makeViewer(document.getElementById("ovl-anc"),cmpState);
-  if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
-  if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
-  if(!walkV)walkV=makeViewer(document.getElementById("ovl-walk"),walkState);
-  if(!fullV)fullV=makeViewer(document.getElementById("ovl-full"),fullState);
-  if(!flV)flV=makeViewer(document.getElementById("ovl-flight"),flState);
-  // the ancestor split pane shares flState -> both replays orbit in sync
-  if(!flVB)flVB=makeViewer(document.getElementById("ovl-flight-b"),flState);
-}
-function redrawAll(){soloState.redraw();evoState.redraw();
-  cmpState.redraw();diffState.redraw();walkState.redraw();
-  fullState.redraw();flState.redraw()}
 
-// ---- lineage replay: step through the candidate's full ancestry from
-// the baseline to the candidate; the current step is solid, the
-// next in line a gray ghost, and each step cross-fades
+// ---- lineage metadata: parent map + the run baseline (gen-0 winner);
+// pages provide #walk-meta JSON and a window.BASELINE global
 var wmetaEl=document.getElementById("walk-meta");
 var WMETA=wmetaEl?JSON.parse(wmetaEl.textContent):{};
-var walkChain=[],walkIdx=0,walkAnim=null,walkFrame=null;
-// one shared camera frame for the whole chain: common center + union of
-// every member's extents, so stepping never re-centers or re-fits --
-// only the actual geometry differences move
-function chainFrame(){
-  var cyw=Math.cos(DEF_YAW),syw=Math.sin(DEF_YAW);
-  var ents=[],C=[0,0,0];
-  walkChain.forEach(function(h){
-    var e=decodeBlob("m-"+h);
-    if(e&&e.ev)ents.push(e);
-  });
-  if(!ents.length)return null;
-  ents.forEach(function(e){C[0]+=e.c[0];C[1]+=e.c[1];C[2]+=e.c[2]});
-  C[0]/=ents.length;C[1]/=ents.length;C[2]/=ents.length;
-  var mx=0,my=0,mz=0;
-  ents.forEach(function(e){
-    // extents are stored about the blob's own center in the DEF_YAW
-    // frame; shift them by the rotated offset to the common center
-    var dx=e.c[0]-C[0],dy=e.c[1]-C[1],dz=e.c[2]-C[2];
-    var ox=Math.abs(cyw*dx+syw*dy),oy=Math.abs(cyw*dy-syw*dx);
-    mx=Math.max(mx,e.ev.mx+ox);
-    my=Math.max(my,e.ev.my+oy);
-    mz=Math.max(mz,e.ev.mz+Math.abs(dz));
-  });
-  return {c:C,r:ents[0].r,mx:mx,my:my,mz:mz};
-}
+var BASELINE=typeof window.BASELINE==="string"?window.BASELINE:null;
 function hasEvBlob(x){ // a mesh payload carrying the evolved-parts subset
   if(BLOBS["m-"+x])return !!BLOBS["m-"+x].pn;
   if(BLOB_SRC["m-"+x])return true; // lazy files always carry pn
   var el=document.getElementById("m-"+x);
   return !!el&&el.textContent.indexOf('"pn"')>=0;
 }
-var walkAll=[]; // full ancestry incl. members without a 3D blob
 function walkChainFor(h){
   // FULL ancestry via both parents (a primary-line walk dead-ends when
   // parent_a is a parentless designer/immigrant while the deep lineage
   // runs through parent_b), ordered oldest generation first, the
-  // candidate itself last. Returns the 3D-steppable subset; walkAll
-  // keeps everyone for the timeline display.
+  // candidate itself last. Returns {all, steps}: every member for
+  // timeline display, and the 3D-steppable subset.
   var seen={},stack=[h];
   while(stack.length){
     var cur=stack.pop();
@@ -1077,83 +1026,229 @@ function walkChainFor(h){
   });
   var bi=anc.indexOf(BASELINE);
   if(bi>0){anc.splice(bi,1);anc.unshift(BASELINE)}
-  walkAll=anc.concat([h]);
-  return walkAll.filter(hasEvBlob);
+  var all=anc.concat([h]);
+  return {all:all,steps:all.filter(hasEvBlob)};
 }
-function walkSpecs(k){
-  var s=[{id:"m-"+walkChain[k],evolved:true}];
-  if(k+1<walkChain.length)
-    s.push({id:"m-"+walkChain[k+1],evolved:true,ghost:true});
-  return s;
-}
-function walkLabel(){
-  var h=walkChain[walkIdx],m=WMETA[h]||{};
-  var t="step "+(walkIdx+1)+" of "+walkChain.length+" · g"+m.g+
-    (h===BASELINE?" · baseline":"")+
-    " · "+h+(m.f?" · "+m.f+" Wh/km":" · invalid");
-  if(walkIdx+1<walkChain.length){
-    var h2=walkChain[walkIdx+1],m2=WMETA[h2]||{};
-    t+="  —  ghost: g"+m2.g+" · "+h2.slice(0,8);
-  }
-  document.getElementById("walk-lab").textContent=t;
-  document.getElementById("walk-prev").disabled=walkIdx===0;
-  document.getElementById("walk-next").disabled=
-    walkIdx>=walkChain.length-1;
-  document.querySelectorAll("#walk-tl .wthumb").forEach(function(b){
-    var on=+b.dataset.k===walkIdx;
-    b.classList.toggle("on",on);
-    if(on)b.scrollIntoView({block:"nearest",inline:"nearest"});
+// one shared camera frame for a whole chain: common center + union of
+// every member's extents, so stepping never re-centers or re-fits --
+// only the actual geometry differences move
+function chainFrame(chain){
+  var cyw=Math.cos(DEF_YAW),syw=Math.sin(DEF_YAW);
+  var ents=[],C=[0,0,0];
+  chain.forEach(function(h){
+    var e=decodeBlob("m-"+h);
+    if(e&&e.ev)ents.push(e);
   });
+  if(!ents.length)return null;
+  ents.forEach(function(e){C[0]+=e.c[0];C[1]+=e.c[1];C[2]+=e.c[2]});
+  C[0]/=ents.length;C[1]/=ents.length;C[2]/=ents.length;
+  var mx=0,my=0,mz=0;
+  ents.forEach(function(e){
+    // extents are stored about the blob's own center in the DEF_YAW
+    // frame; shift them by the rotated offset to the common center
+    var dx=e.c[0]-C[0],dy=e.c[1]-C[1],dz=e.c[2]-C[2];
+    var ox=Math.abs(cyw*dx+syw*dy),oy=Math.abs(cyw*dy-syw*dx);
+    mx=Math.max(mx,e.ev.mx+ox);
+    my=Math.max(my,e.ev.my+oy);
+    mz=Math.max(mz,e.ev.mz+Math.abs(dz));
+  });
+  return {c:C,r:ents[0].r,mx:mx,my:my,mz:mz};
 }
-// autoplay: one step per beat, stops at the end or on any manual input
-var walkPlay=null;
-function playStop(){
-  if(!walkPlay)return;
-  clearInterval(walkPlay);walkPlay=null;
-  var b=document.getElementById("walk-play");
-  if(b){b.innerHTML="&#9654;";b.title="play"}
+// lineage trail: every prior frame a gray ghost, depth-graded so the
+// nearest parent is strongest and the oldest faintest; candidate solid
+// LAST so it stays crisp on top of the stacked ghosts
+function trailSpecs(chain){
+  var n=chain.length,fs=[];
+  for(var i=0;i<n-1;i++)
+    fs.push({id:"m-"+chain[i],evolved:true,ghost:true,
+             fade:n>2?0.35+0.65*i/(n-2):1});
+  fs.push({id:"m-"+chain[n-1],evolved:true});
+  return fs;
 }
-function playStart(){
-  var b=document.getElementById("walk-play");
-  if(!b||walkChain.length<2)return;
-  if(walkIdx>=walkChain.length-1)walkGo(0); // at the end: rewind first
-  b.innerHTML="&#10074;&#10074;";b.title="pause";
-  walkPlay=setInterval(function(){
-    if(walkIdx>=walkChain.length-1){playStop();return}
-    walkGo(walkIdx+1);
-  },1600);
-}
-function walkGo(k){
-  if(k<0||k>=walkChain.length||k===walkIdx||!walkV)return;
-  if(walkAnim){cancelAnimationFrame(walkAnim);walkAnim=null}
-  var key=function(s){return s.id+(s.ghost?"|g":"|s")};
-  var oldS=walkSpecs(walkIdx),newS=walkSpecs(k);
-  var oldK={},newK={};
-  oldS.forEach(function(s){oldK[key(s)]=1});
-  newS.forEach(function(s){newK[key(s)]=1});
-  walkIdx=k;
-  // union of both steps' models: leavers fade out, joiners fade in
-  var specs=[],fades=[];
-  oldS.forEach(function(s){
-    if(!newK[key(s)]){specs.push(s);fades.push([1,0])}});
-  newS.forEach(function(s){
-    specs.push(s);fades.push(oldK[key(s)]?[1,1]:[0,1])});
-  walkV.load(specs.map(function(s,i){
-    return {id:s.id,evolved:true,ghost:s.ghost,fade:fades[i][0]}}),
-    walkFrame);
-  walkLabel();
-  var t0=null,DUR=950;
-  function tick(ts){
-    if(t0===null)t0=ts;
-    var t=Math.min(1,(ts-t0)/DUR),e=t*(2-t); // ease-out
-    fades.forEach(function(f,i){walkV.setFade(i,f[0]+(f[1]-f[0])*e)});
-    walkState.redraw();
-    if(t<1){walkAnim=requestAnimationFrame(tick)}
-    else{walkAnim=null;walkV.load(walkSpecs(walkIdx),walkFrame);
-      walkState.redraw()}
+// ---- evolution replay component: steps through a candidate's ancestry
+// from the baseline to the candidate, cross-fading between steps. Pages
+// hand it their own canvas/timeline/label/prev/next elements.
+function makeReplay(o){
+  var state=makeState(o.pitch===undefined?1.2:o.pitch);
+  var viewer=null,anim=null,timer=null,playBtn=null;
+  var rep={state:state,chain:[],all:[],frame:null,idx:0};
+  rep.redraw=function(){state.redraw()};
+  function specs(k){
+    var s=[{id:"m-"+rep.chain[k],evolved:true}];
+    if(k+1<rep.chain.length)
+      s.push({id:"m-"+rep.chain[k+1],evolved:true,ghost:true});
+    return s;
   }
-  walkAnim=requestAnimationFrame(tick);
+  function label(){
+    var h=rep.chain[rep.idx],m=WMETA[h]||{};
+    var t="step "+(rep.idx+1)+" of "+rep.chain.length+" · g"+m.g+
+      (h===BASELINE?" · baseline":"")+
+      " · "+h+(m.f?" · "+m.f+" Wh/km":" · invalid");
+    if(rep.idx+1<rep.chain.length){
+      var h2=rep.chain[rep.idx+1],m2=WMETA[h2]||{};
+      t+="  —  ghost: g"+m2.g+" · "+h2.slice(0,8);
+    }
+    if(o.label)o.label.textContent=t;
+    if(o.prev)o.prev.disabled=rep.idx===0;
+    if(o.next)o.next.disabled=rep.idx>=rep.chain.length-1;
+    if(o.timeline)
+      o.timeline.querySelectorAll(".wthumb").forEach(function(b){
+        var on=+b.dataset.k===rep.idx;
+        b.classList.toggle("on",on);
+        if(on)b.scrollIntoView({block:"nearest",inline:"nearest"});
+      });
+  }
+  rep.stop=function(){
+    if(!timer)return;
+    clearInterval(timer);timer=null;
+    if(playBtn){playBtn.innerHTML="&#9654;";playBtn.title="play"}
+  };
+  // autoplay: one step per beat, stops at the end or on any manual input
+  rep.play=function(){
+    if(!playBtn||rep.chain.length<2)return;
+    if(rep.idx>=rep.chain.length-1)rep.go(0); // at the end: rewind first
+    playBtn.innerHTML="&#10074;&#10074;";playBtn.title="pause";
+    timer=setInterval(function(){
+      if(rep.idx>=rep.chain.length-1){rep.stop();return}
+      rep.go(rep.idx+1);
+    },1600);
+  };
+  rep.go=function(k){
+    if(k<0||k>=rep.chain.length||k===rep.idx||!viewer)return;
+    if(anim){cancelAnimationFrame(anim);anim=null}
+    var key=function(s){return s.id+(s.ghost?"|g":"|s")};
+    var oldS=specs(rep.idx),newS=specs(k);
+    var oldK={},newK={};
+    oldS.forEach(function(s){oldK[key(s)]=1});
+    newS.forEach(function(s){newK[key(s)]=1});
+    rep.idx=k;
+    // union of both steps' models: leavers fade out, joiners fade in
+    var sp=[],fades=[];
+    oldS.forEach(function(s){
+      if(!newK[key(s)]){sp.push(s);fades.push([1,0])}});
+    newS.forEach(function(s){
+      sp.push(s);fades.push(oldK[key(s)]?[1,1]:[0,1])});
+    viewer.load(sp.map(function(s,i){
+      return {id:s.id,evolved:true,ghost:s.ghost,fade:fades[i][0]}}),
+      rep.frame);
+    label();
+    var t0=null,DUR=950;
+    function tick(ts){
+      if(t0===null)t0=ts;
+      var t=Math.min(1,(ts-t0)/DUR),e=t*(2-t); // ease-out
+      fades.forEach(function(f,i){viewer.setFade(i,f[0]+(f[1]-f[0])*e)});
+      state.redraw();
+      if(t<1){anim=requestAnimationFrame(tick)}
+      else{anim=null;viewer.load(specs(rep.idx),rep.frame);
+        state.redraw()}
+    }
+    anim=requestAnimationFrame(tick);
+  };
+  rep.next=function(){rep.stop();rep.go(rep.idx+1)};
+  rep.prev=function(){rep.stop();rep.go(rep.idx-1)};
+  rep.open=function(h){ // false when there is nothing to replay
+    if(!viewer)viewer=makeViewer(o.canvas,state);
+    var c=walkChainFor(h);
+    rep.all=c.all;rep.chain=c.steps;
+    // need >=2 steppable frames AND the chain must reach the candidate
+    if(!viewer||rep.chain.length<2||
+       rep.chain[rep.chain.length-1]!==h){
+      rep.chain=[];rep.frame=null;
+      return false;
+    }
+    rep.stop();
+    rep.idx=0;
+    rep.frame=chainFrame(rep.chain);
+    viewer.load(specs(0),rep.frame);
+    state.reset();
+    if(o.timeline){
+      // timeline: play button + one thumbnail per lineage step
+      // (meta values are trusted generator output: paths, hex, numbers)
+      var stepIdx={};
+      rep.chain.forEach(function(sh,si){stepIdx[sh]=si});
+      var tp=['<button class="wplay" title="play">&#9654;</button>'];
+      rep.all.forEach(function(th){
+        var tm=WMETA[th]||{},ti=stepIdx[th];
+        var lab=th===BASELINE?"base":"g"+tm.g;
+        var tt=th+(th===BASELINE?" · baseline":"")+
+          (tm.f?" · "+tm.f+" Wh/km":" · invalid");
+        var inner=(tm.i?'<img src="'+tm.i+'" alt="'+th+
+          '" loading="lazy" decoding="async">':"")+
+          "<span>"+lab+"</span>";
+        if(ti===undefined){ // ancestor without an embedded 3D model
+          tp.push('<span class="wthumb off" title="'+tt+
+            ' · no 3D model">'+inner+"</span>");
+        }else{
+          tp.push('<button class="wthumb" data-k="'+ti+'" title="'+tt+
+            '">'+inner+"</button>");
+        }
+      });
+      o.timeline.innerHTML=tp.join("");
+      o.timeline.querySelectorAll(".wthumb").forEach(function(b){
+        b.addEventListener("click",function(){
+          rep.stop();rep.go(+b.dataset.k)});
+      });
+      playBtn=o.timeline.querySelector(".wplay");
+      playBtn.addEventListener("click",
+        function(){timer?rep.stop():rep.play()});
+    }
+    label();
+    return true;
+  };
+  return rep;
 }
+
+window.AL={makeState:makeState,makeViewer:makeViewer,
+  decodeBlob:decodeBlob,ensureBlobs:ensureBlobs,ensureFlight:ensureFlight,
+  blobAvailable:blobAvailable,FLIGHTS:FLIGHTS,FLIGHT_SRC:FLIGHT_SRC,
+  WMETA:WMETA,BASELINE:BASELINE,DEF_YAW:DEF_YAW,DEF_PITCH:DEF_PITCH,
+  walkChainFor:walkChainFor,chainFrame:chainFrame,trailSpecs:trailSpecs,
+  makeReplay:makeReplay};
+})();
+"""  # noqa: E501  -- written verbatim to viewer.js
+
+
+VIEWER_JS = r"""
+(function(){
+"use strict";
+// page script for the research log's 3D overlays; the engine
+// (makeState/makeViewer/blobs/replay) lives in the shared viewer.js
+var AL=window.AL;
+var makeState=AL.makeState,makeViewer=AL.makeViewer,
+    decodeBlob=AL.decodeBlob,ensureBlobs=AL.ensureBlobs,
+    ensureFlight=AL.ensureFlight,blobAvailable=AL.blobAvailable,
+    FLIGHTS=AL.FLIGHTS,FLIGHT_SRC=AL.FLIGHT_SRC,BASELINE=AL.BASELINE;
+// ---- overlay tabs: full kit, evolved parts, ancestor vs candidate
+// (synced, evolved parts only), evolution-difference superimposition
+var ovl=document.getElementById("ovl");
+if(!ovl)return;
+var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
+    diffState=makeState(1.2), // near top-down: plan-shape reads best
+    fullState=makeState(1.2),
+    flState=makeState(0.35);  // low chase-cam pitch: tilt reads best
+var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,
+    fullV=null,flV=null,flVB=null,current=null,pendingTab=null;
+// the replay tab is the shared engine component wired to overlay DOM
+var rep=AL.makeReplay({canvas:document.getElementById("ovl-walk"),
+  timeline:document.getElementById("walk-tl"),
+  label:document.getElementById("walk-lab"),
+  prev:document.getElementById("walk-prev"),
+  next:document.getElementById("walk-next")});
+function ensureViewers(){
+  if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
+  if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
+  if(!cmpA)cmpA=makeViewer(document.getElementById("ovl-anc"),cmpState);
+  if(!cmpB)cmpB=makeViewer(document.getElementById("ovl-cur"),cmpState);
+  if(!diffV)diffV=makeViewer(document.getElementById("ovl-diff"),diffState);
+  if(!fullV)fullV=makeViewer(document.getElementById("ovl-full"),fullState);
+  if(!flV)flV=makeViewer(document.getElementById("ovl-flight"),flState);
+  // the ancestor split pane shares flState -> both replays orbit in sync
+  if(!flVB)flVB=makeViewer(document.getElementById("ovl-flight-b"),flState);
+}
+function redrawAll(){soloState.redraw();evoState.redraw();
+  cmpState.redraw();diffState.redraw();rep.redraw();
+  fullState.redraw();flState.redraw()}
+
 // ---- flight tab: replay the actual scored flight from sim telemetry.
 // Attitude = the recorded thrust vector (body z) + heading from motion;
 // screen-space streaks visualize the relative wind (and rain) the frame
@@ -1330,7 +1425,7 @@ function flOpen(scen){
     if(!sb2.disabled)flSplitSet(!FLB.on)});
 })();
 function setTab(name){
-  if(name!=="walk")playStop();
+  if(name!=="walk")rep.stop();
   if(name!=="flight")flPause();
   else if(FL.hash&&!FL.data&&FL.defScen)flOpen(FL.defScen);
   ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
@@ -1408,60 +1503,13 @@ function openOverlay(d,mode){
   var walkBtn=ovl.querySelector('button[data-tab="walk"]');
   var fullBtn=ovl.querySelector('button[data-tab="fulldiff"]');
   var wh=d.mesh.slice(2); // "m-<hash>" -> hash
-  walkChain=walkChainFor(wh);
-  // need >=2 walkable steps AND the chain must reach the candidate itself
-  if(walkV&&walkChain.length>=2&&walkChain[walkChain.length-1]===wh){
+  if(rep.open(wh)){
     walkBtn.disabled=false;
-    walkIdx=0;
-    walkFrame=chainFrame();
-    walkV.load(walkSpecs(0),walkFrame);
-    walkState.reset();
-    // replay timeline: play button + one thumbnail per lineage step
-    // (meta values are trusted generator output: paths, hex, numbers)
-    playStop();
-    var stepIdx={};
-    walkChain.forEach(function(sh,si){stepIdx[sh]=si});
-    var tl=document.getElementById("walk-tl");
-    var tp=['<button class="wplay" id="walk-play" title="play">'
-            +"&#9654;</button>"];
-    walkAll.forEach(function(th){
-      var tm=WMETA[th]||{},ti=stepIdx[th];
-      var lab=th===BASELINE?"base":"g"+tm.g;
-      var tt=th+(th===BASELINE?" · baseline":"")+
-        (tm.f?" · "+tm.f+" Wh/km":" · invalid");
-      var inner=(tm.i?'<img src="'+tm.i+'" alt="'+th+
-        '" loading="lazy" decoding="async">':"")+
-        "<span>"+lab+"</span>";
-      if(ti===undefined){ // ancestor without an embedded 3D model
-        tp.push('<span class="wthumb off" title="'+tt+
-          ' · no 3D model">'+inner+"</span>");
-      }else{
-        tp.push('<button class="wthumb" data-k="'+ti+'" title="'+tt+
-          '">'+inner+"</button>");
-      }
-    });
-    tl.innerHTML=tp.join("");
-    tl.querySelectorAll(".wthumb").forEach(function(b){
-      b.addEventListener("click",function(){
-        playStop();walkGo(+b.dataset.k)});
-    });
-    document.getElementById("walk-play").addEventListener("click",
-      function(){walkPlay?playStop():playStart()});
-    walkLabel();
-    // full difference: the candidate solid, EVERY ancestor a ghost --
-    // depth-graded so the nearest parent is strongest, the oldest
-    // faintest (a motion trail of the whole lineage)
+    // lineage trail: the shared engine grades the ghosts; the replay's
+    // chain + camera frame are reused so both tabs agree exactly
     fullBtn.disabled=false;
-    var n=walkChain.length;
-    // ghosts first (oldest to nearest), the candidate solid LAST so it
-    // stays crisp on top instead of being washed out by stacked ghosts
-    var fspecs=[];
-    for(var fi=0;fi<n-1;fi++)
-      fspecs.push({id:"m-"+walkChain[fi],evolved:true,ghost:true,
-                   fade:n>2?0.35+0.65*fi/(n-2):1});
-    fspecs.push({id:"m-"+walkChain[n-1],evolved:true});
-    fullV.load(fspecs,walkFrame);
-    var nAll=walkAll.length-1;
+    fullV.load(AL.trailSpecs(rep.chain),rep.frame);
+    var n=rep.chain.length,nAll=rep.all.length-1;
     document.getElementById("full-hash").textContent=(d.title||"")+
       (d.fit?" · "+d.fit:"")+"  vs  "+nAll+" prior frame"+(nAll>1?"s":"")+
       (BASELINE&&BASELINE!==wh?" incl. the baseline":"")+
@@ -1470,8 +1518,6 @@ function openOverlay(d,mode){
   }else{
     walkBtn.disabled=true;
     fullBtn.disabled=true;
-    walkChain=[];
-    walkFrame=null;
   }
   // -- performance overlay: the weather scenarios ARE the tabs (only
   //    champions/setters have telemetry payloads; the detail-card button
@@ -1529,7 +1575,7 @@ function openOverlay(d,mode){
   }
 }
 function closeOverlay(){
-  playStop();
+  rep.stop();
   flPause();
   ovl.classList.remove("open");
   document.body.style.overflow="";
@@ -1550,7 +1596,8 @@ function openFromPeek(img,mode){
   // prefetch everything the overlay's tabs will decode synchronously:
   // the candidate, its lineage root, and the full replay chain
   var need=[d.mesh,d.ancestor];
-  walkChainFor(d.mesh.slice(2)).forEach(function(h){need.push("m-"+h)});
+  AL.walkChainFor(d.mesh.slice(2)).steps.forEach(
+    function(h){need.push("m-"+h)});
   img.classList.add("busy");
   ensureBlobs(need).then(function(){
     img.classList.remove("busy");
@@ -1590,19 +1637,17 @@ function activeState(){
   var b=ovl.querySelector(".ovl-tabs button.on");
   var t=b?b.dataset.tab:"solo";
   return t==="compare"?cmpState:t==="diff"?diffState:
-         t==="walk"?walkState:t==="fulldiff"?fullState:
+         t==="walk"?rep.state:t==="fulldiff"?fullState:
          t==="evolved"?evoState:soloState;
 }
-document.getElementById("walk-prev").addEventListener("click",
-  function(){playStop();walkGo(walkIdx-1)});
-document.getElementById("walk-next").addEventListener("click",
-  function(){playStop();walkGo(walkIdx+1)});
+document.getElementById("walk-prev").addEventListener("click",rep.prev);
+document.getElementById("walk-next").addEventListener("click",rep.next);
 document.addEventListener("keydown",function(e){
-  if(!ovl.classList.contains("open")||!walkChain.length)return;
+  if(!ovl.classList.contains("open")||!rep.chain.length)return;
   var b=ovl.querySelector(".ovl-tabs button.on");
   if(!b||b.dataset.tab!=="walk")return;
-  if(e.key==="ArrowRight"){e.preventDefault();playStop();walkGo(walkIdx+1)}
-  if(e.key==="ArrowLeft"){e.preventDefault();playStop();walkGo(walkIdx-1)}
+  if(e.key==="ArrowRight"){e.preventDefault();rep.next()}
+  if(e.key==="ArrowLeft"){e.preventDefault();rep.prev()}
 });
 ovl.querySelectorAll(".ovl-views button").forEach(function(b){
   b.addEventListener("click",function(){
@@ -2397,7 +2442,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
              # auto-refresh is JS-based so an open overlay is never killed
              "<title>Airloom — the frame gallery</title>",
              '<div class="wrap">',
-             nav_html("gallery"),
+             nav_html("research log"),
              f"<h1>Airloom &mdash; run <code>{html.escape(run_id)}</code></h1>",
              f'<p class="sub num">{len(gens)} generation(s) &middot; '
              f'{len(cands)} candidates ({n_valid} valid) &middot; '
@@ -2798,6 +2843,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                  f"{json.dumps(blob_src, separators=(',', ':'))}</script>")
     parts.append('<script type="application/json" id="flight-src">'
                  f"{json.dumps(flight_src, separators=(',', ':'))}</script>")
+    # shared 3D engine (viewer + blobs + replay components); the landing
+    # page loads the same file, so it must come before the page scripts
+    (results_dir / "viewer.js").write_text(ENGINE_JS)
+    parts.append('<script src="viewer.js"></script>')
     parts.append(f"<script>{DOVL_JS}</script>")
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
@@ -2805,10 +2854,11 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     # display:none #ovl would keep it from rendering on plain page loads
     parts.append(GH_RIBBON_HTML)
 
-    out = results_dir / "index.html"
+    out = results_dir / "log.html"
     out.write_text("\n".join(parts))
-    # a run may leave a stale pre-rename gallery.html behind: remove it so
-    # the directory has exactly one gallery page
+    # runs may leave stale pre-rename pages behind: gallery.html predates
+    # the index.html era, whose gallery in turn became log.html when the
+    # landing page took over index.html (write_landing rewrites it)
     legacy = results_dir / "gallery.html"
     if legacy.exists():
         legacy.unlink()
@@ -2823,12 +2873,12 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     (index.html itself stays small)."""
     import shutil
 
-    if not (results_dir / "index.html").exists():
+    if not (results_dir / "log.html").exists():
         return
     docs_dir.mkdir(parents=True, exist_ok=True)
-    for name in ("index.html", "lineage.html", "lineage.svg", "lineage.dot",
-                 "glossary.html", "convergence.png", "leaderboard.md",
-                 "designer_log.md"):
+    for name in ("index.html", "log.html", "viewer.js", "lineage.html",
+                 "lineage.svg", "lineage.dot", "glossary.html",
+                 "convergence.png", "leaderboard.md", "designer_log.md"):
         src = results_dir / name
         if src.exists():
             shutil.copyfile(src, docs_dir / name)
