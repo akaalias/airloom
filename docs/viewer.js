@@ -509,7 +509,7 @@ function makeViewer(canvas,state,opts){
     // real CFD streamlines (body frame, from a .flow.js payload): the
     // line geometry is static per scenario; only the traveling ripple
     // is animated. null falls back to the analytic field.
-    setFlowLines:function(data){
+    setFlowLines:function(data,pose){
       if(!data||!data.lines||!data.lines.length){flow.cfd=null;return}
       var segs=0;
       data.lines.forEach(function(l){segs+=l.p.length/3-1});
@@ -551,7 +551,7 @@ function makeViewer(canvas,state,opts){
           gl.bindBuffer(gl.ARRAY_BUFFER,b[0]);
           gl.bufferData(gl.ARRAY_BUFFER,b[1],gl.STATIC_DRAW);
         });
-      flow.cfd={nv:V,bufs:bufs,umag:umag};
+      flow.cfd={nv:V,bufs:bufs,umag:umag,pose:pose||null};
     },
     // feed the wind-channel layer: wv = the telemetry's relative wind
     // (world frame, m/s); dt advances the dash trains at real speed
@@ -676,8 +676,9 @@ function makeViewer(canvas,state,opts){
       var FB=flow.cfd;
       if(flow.on&&FB&&FB.nv){
         var FR=Rb;
-        if(view.modelR){
-          var MR2=view.modelR,Cm2=new Array(9);
+        var MRf=FB.pose||view.modelR;
+        if(MRf){
+          var MR2=MRf,Cm2=new Array(9);
           for(var mc2=0;mc2<3;mc2++)for(var mr2=0;mr2<3;mr2++)
             Cm2[mc2*3+mr2]=Rb[mr2]*MR2[mc2*3]+Rb[3+mr2]*MR2[mc2*3+1]
                           +Rb[6+mr2]*MR2[mc2*3+2];
@@ -1056,11 +1057,30 @@ function makeReplay(o){
   return rep;
 }
 
+// the trace's MEAN attitude (same basis reconstruction the replay
+// uses per frame): the pose a steady CFD solution is valid for. The
+// flow field anchors here -- world-fixed -- while the craft oscillates
+// within it.
+function meanPose(d){
+  var n=d.x.length,sx=0,sy=0,sz=0;
+  for(var i=0;i<n;i++){sx+=d.tx[i];sy+=d.ty[i];sz+=d.tz[i]}
+  var tm=Math.hypot(sx,sy,sz)||1;
+  var tx=sx/tm,ty=sy/tm,tz=sz/tm;
+  var hx=d.x[n-1]-d.x[0],hy=d.y[n-1]-d.y[0];
+  var hm=Math.hypot(hx,hy)||1;hx/=hm;hy/=hm;
+  var dot=hx*tx+hy*ty;
+  var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
+  var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
+  bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
+  var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
+  return [bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+}
+
 window.AL={makeState:makeState,makeViewer:makeViewer,
   decodeBlob:decodeBlob,ensureBlobs:ensureBlobs,ensureFlight:ensureFlight,
   ensureFlowLines:ensureFlowLines,
   blobAvailable:blobAvailable,FLIGHTS:FLIGHTS,FLIGHT_SRC:FLIGHT_SRC,
   WMETA:WMETA,BASELINE:BASELINE,DEF_YAW:DEF_YAW,DEF_PITCH:DEF_PITCH,
   walkChainFor:walkChainFor,chainFrame:chainFrame,trailSpecs:trailSpecs,
-  makeReplay:makeReplay,liveCards:liveCards};
+  makeReplay:makeReplay,liveCards:liveCards,meanPose:meanPose};
 })();

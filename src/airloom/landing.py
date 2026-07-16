@@ -124,9 +124,12 @@ AL.ensureBlobs(need).then(function(){
   .then(function(){
     views.forEach(function(w){
       w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
-      // real CFD streamlines where solved; analytic field otherwise
+      // real CFD streamlines where solved; analytic field otherwise.
+      // Anchored at the trace's mean attitude: the wind stays
+      // world-fixed while the craft oscillates within it.
       AL.ensureFlowLines(CH,w.scen).then(function(d){
-        w.v.setFlowLines(d)});
+        var fd=AL.FLIGHTS[CH+"|"+w.scen];
+        w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
     });
     var row=document.getElementById("perf-row"),on=true,last=null;
     if("IntersectionObserver" in window){
