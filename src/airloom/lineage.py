@@ -537,6 +537,11 @@ def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
     gallery. Embeds lineage.svg inline plus per-candidate metadata so that
     hovering a node shows a small candidate card and lights up the full
     ancestor lineage (nodes and edges) of that candidate."""
+    fits = {r["hash"]: store.fitness_of(r)
+            for r in store.candidates_for_run(run_id)}
+    champion = min((h for h, f in fits.items() if math.isfinite(f)),
+                   key=lambda h: fits[h], default=None)
+
     page = f"""<style>
 :root{{--paper:#fffff8;--ink:#111111;--muted:#6b6a60;--faint:#9b998c;
   --rule:#d9d5c3;--rule-soft:#ece9da;--accent:#8c2f1f;
@@ -560,8 +565,9 @@ a{{color:var(--accent);text-decoration:none}}
 <div class="wrap">
 {nav_html("family tree")}
 <h1>family tree &mdash; run <code>{run_id}</code></h1>
-<p class="sub">the same family tree twice, one row per generation,
-candidates ordered best&#8594;worst. The LEFT column speaks the gallery
+<p class="sub">the same family tree twice, one row per generation with
+the LATEST at the top, candidates ordered best&#8594;worst; the run
+champion&rsquo;s ancestry starts highlighted. The LEFT column speaks the gallery
 chart&rsquo;s performance language: gray&thinsp;=&thinsp;candidate,
 black&thinsp;=&thinsp;best-so-far, red&thinsp;&#215;&thinsp;=&thinsp;invalid,
 accent ring&thinsp;=&thinsp;the run champion, <span style="color:#6a4a8a">
@@ -573,7 +579,7 @@ dashed rules for pivot generations. Edges rest muted in both columns
 click to pin (esc releases). Node size everywhere:
 large&thinsp;=&thinsp;born that generation,
 small&thinsp;=&thinsp;elite carried over.</p>
-{tree_section_html(store, run_id, results_dir)}
+{tree_section_html(store, run_id, results_dir, pin=champion)}
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
 (<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
@@ -623,12 +629,17 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
     champion = min((h for h, f in fits.items() if math.isfinite(f)),
                    key=lambda h: fits[h], default=None)
 
+    # newest generation at the TOP: the champion's row leads, ancestry
+    # flows downward into the past
+    def row_y(gi: int) -> float:
+        return margin + (len(gens) - 1 - gi) * ystep
+
     pos: dict[tuple[int, str], tuple[float, float]] = {}
     birth_pos: dict[str, tuple[float, float]] = {}
     for gi, g in enumerate(gens):
         for si, row in enumerate(pop_rows[g]):
             x = margin + si * xstep + xstep / 2
-            y = margin + gi * ystep
+            y = row_y(gi)
             pos[(g, row["hash"])] = (x, y)
             cand = cands.get(row["hash"])
             if cand is not None and cand["generation_born"] == g \
@@ -643,15 +654,17 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
     # generation bands behind everything: light purple = claude designer
     # round shaped this generation; teal dashed top rule = pivot generation
     for gi, g in enumerate(gens):
-        y = margin + gi * ystep
+        y = row_y(gi)
         if g in claude_gens:
             svg.append(f'<rect class="gb" x="0" y="{y - ystep / 2:.0f}"'
                        f' width="{width}" height="{ystep}" fill="{CLAUDE}"'
                        f' opacity="0.06"><title>g{g}: claude designer round'
                        "</title></rect>")
         if g in pivot_gens:
-            svg.append(f'<line class="gp" x1="8" y1="{y - ystep / 2:.0f}"'
-                       f' x2="{width - 8}" y2="{y - ystep / 2:.0f}"'
+            # the rule separates the pivot row from the older generation
+            # BELOW it (its input) now that time flows upward
+            svg.append(f'<line class="gp" x1="8" y1="{y + ystep / 2:.0f}"'
+                       f' x2="{width - 8}" y2="{y + ystep / 2:.0f}"'
                        f' stroke="#2e6e63" stroke-width="1"'
                        f' stroke-dasharray="5,4" opacity="0.5"/>')
 
@@ -673,17 +686,19 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
                     else:
                         continue
                     col = OPERATOR_COLORS.get(cand["operator"], "#888")
+                    # parents sit BELOW their children: leave from the
+                    # parent's top edge, arrive at the child's bottom
                     svg.append(f'<path class="ed" data-c="{h}" data-p="{parent}"'
-                               f' d="M{px:.0f},{py + r_node:.0f}'
+                               f' d="M{px:.0f},{py - r_node:.0f}'
                                f' C{px:.0f},{(py + y1) / 2:.0f} {x1:.0f},'
-                               f'{(py + y1) / 2:.0f} {x1:.0f},{y1 - r_node:.0f}"'
+                               f'{(py + y1) / 2:.0f} {x1:.0f},{y1 + r_node:.0f}"'
                                f' stroke="{col}" fill="none" stroke-width="1.1"'
                                f' opacity="0.75"/>')
             elif (g - 1, h) in pos:  # elite pass-through
                 px, py = pos[(g - 1, h)]
                 svg.append(f'<line class="el" data-h="{h}" data-g="{g}"'
-                           f' x1="{px:.0f}" y1="{py + r_node:.0f}"'
-                           f' x2="{x1:.0f}" y2="{y1 - r_node:.0f}"'
+                           f' x1="{px:.0f}" y1="{py - r_node:.0f}"'
+                           f' x2="{x1:.0f}" y2="{y1 + r_node:.0f}"'
                            f' stroke="#999188" stroke-dasharray="3,3"'
                            f' stroke-width="1.2"/>')
 
@@ -764,7 +779,7 @@ def write_svg(store: Store, run_id: str, results_dir: Path) -> Path:
             marks += f'<tspan fill="{CLAUDE}"> &#10022;</tspan>'
         if g in pivot_gens:
             marks += '<tspan fill="#2e6e63"> &#10227;</tspan>'
-        svg.append(f'<text x="{margin - 50}" y="{margin + gi * ystep + 4}"'
+        svg.append(f'<text x="{margin - 50}" y="{row_y(gi) + 4:.0f}"'
                    f' font-size="11" fill="#9b998c">g{g}{marks}</text>')
 
     # legend, above the first generation row; the elite swatch is dashed

@@ -85,9 +85,7 @@ var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
 AL.ensureBlobs(need).then(function(){
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
     timeline:document.getElementById("replay-tl"),
-    label:document.getElementById("replay-lab"),
-    prev:document.getElementById("replay-prev"),
-    next:document.getElementById("replay-next")});
+    label:document.getElementById("replay-lab")});
   if(!rep.open(CH)){
     var rp=document.getElementById("replay-panel");
     if(rp)rp.style.display="none";
@@ -202,34 +200,33 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
 
     # the evolution: replay the champion's own line
     parts += [
-        "<h2>the evolution</h2>",
+        f"<h2>watch the champion evolve: {n_gens} generations, "
+        "replayed step by step</h2>",
         '<p class="sub">'
-        f"{len(cands)} candidate frames flown through six weather "
-        f"scenarios across {n_gens} generations, breeding lower-energy "
-        "designs each round. Replay the champion&rsquo;s own line: step "
-        "generation by generation from the baseline to the winner "
-        "&mdash; the current step solid, the next in line a gray "
-        "ghost. Press play, click a thumbnail, or step with the "
-        "buttons.</p>",
+        f"{len(cands)} candidate frames flew six weather scenarios "
+        f"across {n_gens} generations, breeding lower-energy designs "
+        "each round. This replay walks the champion&rsquo;s own line, "
+        "from the baseline to the winner &mdash; the current step "
+        "solid, the next in line a gray ghost. Press play or click a "
+        "thumbnail.</p>",
         '<div class="panel" id="replay-panel">'
-        '<div><button class="wbtn" id="replay-prev">&#8249; older</button>'
-        '<button class="wbtn" id="replay-next">newer &#8250;</button>'
-        '<span class="cap" id="replay-lab"></span></div>'
+        '<div><span class="cap" id="replay-lab"></span></div>'
         '<canvas id="replay-canvas"></canvas>'
         '<div class="wtl" id="replay-tl"></div></div>']
 
     # the family tree, champion lineage lit -- the same component the
     # dedicated lineage page renders
     parts += [
-        "<h2>the family tree</h2>",
-        '<p class="sub">every candidate of the run in two lenses '
-        "&mdash; performance on the left, breeding on the right &mdash; "
-        "with the champion&rsquo;s full ancestry highlighted. Hover any "
-        "node to inspect it, click to pin another lineage (esc "
-        'releases); the <a href="lineage.html">family tree page</a> '
-        "tells the whole story, and the "
-        '<a href="log.html">research log</a> has every candidate in '
-        "full.</p>",
+        "<h2>the family tree: where the champion&rsquo;s bloodline "
+        "runs through the whole run</h2>",
+        '<p class="sub">every candidate of the run, newest generation '
+        "at the top, in two lenses &mdash; performance on the left, "
+        "breeding on the right &mdash; with the champion&rsquo;s full "
+        "ancestry highlighted. Hover any node to inspect it, click to "
+        "pin another lineage (esc releases); the "
+        '<a href="lineage.html">family tree page</a> tells the whole '
+        'story, and the <a href="log.html">research log</a> has every '
+        "candidate in full.</p>",
         tree_section_html(store, run_id, results_dir, pin=champ_hash)]
 
     # data payloads for the shared engine: only the champion's ancestry

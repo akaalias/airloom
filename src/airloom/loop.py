@@ -437,7 +437,6 @@ class EvolutionLoop:
                                   self.cfg.aggregation.target_whkm,
                                   self.cfg.aggregation.record_whkm,
                                   self.cfg.evolution, cfg=self.cfg)
-        landing_mod.write_landing(self.store, self.run_id, self.results)
         gallery_mod.write_leaderboard(self.store, self.run_id, self.results,
                                       [s.name for s in self.cfg.scenarios])
         gallery_mod.write_convergence(self.store, self.run_id, self.results)
@@ -445,6 +444,8 @@ class EvolutionLoop:
             lineage_mod.write_dot(self.store, self.run_id, self.results)
             lineage_mod.write_svg(self.store, self.run_id, self.results)
             lineage_mod.write_lineage_page(self.store, self.run_id, self.results)
+        # the landing embeds lineage.svg, so it renders AFTER the tree
+        landing_mod.write_landing(self.store, self.run_id, self.results)
         # docs/ is the standing publish target (the GitHub Pages root):
         # every artifact refresh mirrors the report there
         gallery_mod.publish_docs(self.results, self.cfg.root / "docs")
