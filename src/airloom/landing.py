@@ -227,12 +227,15 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
               f'<p class="sub lead">{INTRO_TEXT}</p>']
 
     # the champion's own header, then headline stats and the full card
+    n_scen = len(store.scenario_results_for(run_id, champ_hash))
+    scen_word = {6: "six"}.get(n_scen, str(n_scen))
     if improvement is not None:
-        parts.append(f"<h2>we evolved the champion candidate to "
-                     f"{improvement:.0f}% better than the baseline</h2>")
+        parts.append("<h2>the bottom line: we evolved the champion to "
+                     f"fly {improvement:.0f}% more efficiently (Wh/km) "
+                     f"across {scen_word} weather scenarios</h2>")
     else:
-        parts.append(f"<h2>we evolved a champion candidate across "
-                     f"{n_gens} generations</h2>")
+        parts.append(f"<h2>the bottom line: we evolved a champion "
+                     f"candidate across {n_gens} generations</h2>")
     parts += [
         '<div class="stats">',
         f'<div class="stat"><b>{_fmt(champ_fit)}</b>'
