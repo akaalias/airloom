@@ -181,7 +181,8 @@ function makeState(basePitch){
     st.panX=0;st.panY=0;st.redraw()};
   return st;
 }
-function makeViewer(canvas,state){
+function makeViewer(canvas,state,opts){
+  opts=opts||{};
   var gl=canvas.getContext("webgl",{antialias:true,alpha:false})
        ||canvas.getContext("experimental-webgl");
   if(!gl)return null;
@@ -338,6 +339,14 @@ function makeViewer(canvas,state){
       gl.uniform3f(uT,frame.c[0],frame.c[1],frame.c[2]);
     },
     setFade:function(i,v){if(models[i])models[i].fade=v},
+    // release the GL context (card viewers churn as the page scrolls;
+    // without this the browser's per-page context cap bites)
+    destroy:function(){
+      var i=state.viewers.indexOf(view);
+      if(i>=0)state.viewers.splice(i,1);
+      var ext=gl.getExtension("WEBGL_lose_context");
+      if(ext)ext.loseContext();
+    },
     // zoom that fits the CURRENT pitch: draw()'s fit factor is anchored
     // at basePitch so rotation doesn't breathe, so after rotating the
     // fit button needs this correction ratio
@@ -444,9 +453,10 @@ function makeViewer(canvas,state){
     }
     state.hovAnim=requestAnimationFrame(step);
   }
-  var dragging=false,panning=false,lastX=0,lastY=0;
+  var dragging=false,panning=false,lastX=0,lastY=0,downX=0,downY=0;
   canvas.addEventListener("pointerdown",function(e){
     dragging=true;panning=e.metaKey||e.ctrlKey; // cmd/ctrl-drag pans
+    downX=e.clientX;downY=e.clientY;
     // freeze the lean where it is: fold it into the real camera so the
     // grab starts from exactly what the eye sees, with no snap
     if(state.hovAnim){cancelAnimationFrame(state.hovAnim);state.hovAnim=null}
@@ -473,14 +483,71 @@ function makeViewer(canvas,state){
     lastX=e.clientX;lastY=e.clientY;state.redraw()});
   canvas.addEventListener("pointerleave",function(){
     if(state.hovTX||state.hovTY||state.hovX||state.hovY)hovTo(0,0)});
-  canvas.addEventListener("pointerup",function(){
-    dragging=false;canvas.style.cursor="grab"});
-  canvas.addEventListener("wheel",function(e){
-    e.preventDefault();
-    state.zoom=Math.max(0.3,Math.min(8,state.zoom*Math.exp(-e.deltaY*0.0016)));
-    state.redraw()},{passive:false});
+  canvas.addEventListener("pointerup",function(e){
+    dragging=false;canvas.style.cursor="grab";
+    // a press that never moved is a tap, not a grab
+    if(opts.onTap&&Math.abs(e.clientX-downX)<5&&
+       Math.abs(e.clientY-downY)<5)opts.onTap();
+  });
+  if(opts.wheel!==false) // card viewers keep the page's scroll wheel
+    canvas.addEventListener("wheel",function(e){
+      e.preventDefault();
+      state.zoom=Math.max(0.3,Math.min(8,state.zoom*Math.exp(-e.deltaY*0.0016)));
+      state.redraw()},{passive:false});
   canvas.addEventListener("dblclick",function(){state.reset()});
   return view;
+}
+// ---- live card viewers: swap a card's still for a real 3D view when
+// it nears the viewport, and release the GL context when it leaves.
+// Hundreds of cards can carry one, but only the on-screen few ever
+// hold a context; the mesh payloads lazy-load exactly like the stills.
+function liveCards(o){
+  o=o||{};
+  if(!("IntersectionObserver" in window))return;
+  var active=[];
+  function activate(vr,img){
+    if(vr._cv||vr._pend)return;
+    vr._pend=1;
+    ensureBlobs([img.dataset.mesh]).then(function(){
+      vr._pend=0;
+      if(!vr._on||vr._cv)return; // scrolled away while loading
+      var cv=document.createElement("canvas");
+      cv.className="cv3d";
+      var st=makeState();
+      var v=makeViewer(cv,st,o.viewerOpts||{});
+      if(!v)return; // no webgl: the still stays
+      vr.appendChild(cv);
+      v.load([{id:img.dataset.mesh}]);
+      vr._cv=cv;cv._view=v;cv._st=st;
+      active.push(st);
+      requestAnimationFrame(function(){st.redraw()});
+    });
+  }
+  function deactivate(vr){
+    var cv=vr._cv;
+    if(!cv)return;
+    vr._cv=null;
+    var i=active.indexOf(cv._st);
+    if(i>=0)active.splice(i,1);
+    if(cv._view)cv._view.destroy();
+    cv.remove();
+  }
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(en){
+      var vr=en.target,img=vr.querySelector("img.peek");
+      if(!img)return;
+      vr._on=en.isIntersecting?1:0;
+      if(en.isIntersecting)activate(vr,img);
+      else deactivate(vr);
+    });
+  },{rootMargin:"250px"});
+  document.querySelectorAll(".viewer .vr").forEach(function(vr){
+    var img=vr.querySelector("img.peek");
+    // failed designs keep their crossed-out still: the red X matters
+    if(img&&!img.dataset.failed)io.observe(vr);
+  });
+  window.addEventListener("resize",function(){
+    active.forEach(function(s){s.redraw()})});
 }
 
 
@@ -703,5 +770,5 @@ window.AL={makeState:makeState,makeViewer:makeViewer,
   blobAvailable:blobAvailable,FLIGHTS:FLIGHTS,FLIGHT_SRC:FLIGHT_SRC,
   WMETA:WMETA,BASELINE:BASELINE,DEF_YAW:DEF_YAW,DEF_PITCH:DEF_PITCH,
   walkChainFor:walkChainFor,chainFrame:chainFrame,trailSpecs:trailSpecs,
-  makeReplay:makeReplay};
+  makeReplay:makeReplay,liveCards:liveCards};
 })();
