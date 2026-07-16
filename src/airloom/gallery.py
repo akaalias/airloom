@@ -2276,6 +2276,12 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         if math.isfinite(_f) and _f < _rb:
             _rb = _f
             setter_hashes.add(_c["hash"])
+    # baseline: the winner of the first generation -- every detail card
+    # reports its energy score as % better/worse than this reference
+    gen0 = [(h, f) for h, f in finite
+            if cands[h]["generation_born"] == 0]
+    baseline_hash, baseline_fit = (min(gen0, key=lambda t: t[1])
+                                   if gen0 else (None, math.inf))
 
     parts = ["<!doctype html>",  # quirks mode breaks color inheritance into tables
              f"<style>{CSS}</style>",
@@ -2473,6 +2479,23 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         else:
             metric_rows = [
                 ("energy score", f"<b>{_fmt(fit)}</b> Wh/km"),
+            ]
+            # % vs the baseline (the generation-0 winner); lower Wh/km
+            # is better, so a drop reads as improvement
+            if h == baseline_hash:
+                metric_rows.append(
+                    ("vs baseline", "is the baseline (gen-0 winner)"))
+            elif math.isfinite(baseline_fit) and baseline_fit > 0:
+                delta = (baseline_fit - fit) / baseline_fit * 100
+                if abs(delta) < 0.05:
+                    vs = "&plusmn;0.0% (matches baseline)"
+                elif delta > 0:
+                    vs = f"<b>{delta:.1f}%</b> better"
+                else:
+                    vs = (f'<span style="color:var(--accent)">'
+                          f"<b>{-delta:.1f}%</b> worse</span>")
+                metric_rows.append(("vs baseline", vs))
+            metric_rows += [
                 ("scenario mean", f"{_fmt(c['mean_whkm'])} Wh/km"),
                 ("worst scenario", f"{_fmt(c['worst_whkm'])} Wh/km"),
             ]
