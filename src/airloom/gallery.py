@@ -500,6 +500,11 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
 // default camera: nose-side three-quarter view (the FPV camera faces the
 // viewer); the pre-flip back view was DEF_YAW=-0.9
 var DEF_YAW=Math.PI-0.9,DEF_PITCH=0.8;
+// hover parallax: until the user's first real drag, a hovered canvas
+// leans a few degrees toward the cursor -- a wordless hint that the
+// view is live 3D. One drag anywhere retires the effect for the page.
+var PARALLAX=!(window.matchMedia&&
+  matchMedia("(prefers-reduced-motion: reduce)").matches);
 var blobCache={};
 // ---- on-demand mesh loading: payloads live in per-candidate
 // frames/gen_XXXX/<hash>.mesh.js files (JSONP-style: they call
@@ -839,8 +844,11 @@ function makeViewer(canvas,state){
       if(canvas.width!==Math.round(w*dpr)){
         canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
       gl.viewport(0,0,canvas.width,canvas.height);
-      var cy2=Math.cos(state.yaw),sy=Math.sin(state.yaw),
-          cp=Math.cos(state.pitch),sp=Math.sin(state.pitch);
+      // the hover lean rides on top of the real camera and never
+      // mutates it, so grabbing the model starts from where it looks
+      var yw=state.yaw+(state.hovX||0),pt=state.pitch+(state.hovY||0);
+      var cy2=Math.cos(yw),sy=Math.sin(yw),
+          cp=Math.cos(pt),sp=Math.sin(pt);
       var Rb=[cy2,-sy*sp,sy*cp,
               sy,cy2*sp,-cy2*cp,
               0,cp,sp];
@@ -898,13 +906,44 @@ function makeViewer(canvas,state){
     }
   };
   state.viewers.push(view);
+  // ease the hover lean toward its target; a tiny rAF loop that stops
+  // itself the moment the offsets settle
+  function hovTo(tx,ty){
+    state.hovTX=tx;state.hovTY=ty;
+    if(state.hovAnim)return;
+    function step(){
+      state.hovAnim=null;
+      var dx=(state.hovTX||0)-(state.hovX||0),
+          dy=(state.hovTY||0)-(state.hovY||0);
+      if(Math.abs(dx)<0.0008&&Math.abs(dy)<0.0008){
+        state.hovX=state.hovTX;state.hovY=state.hovTY;
+        state.redraw();return}
+      state.hovX=(state.hovX||0)+dx*0.10;
+      state.hovY=(state.hovY||0)+dy*0.10;
+      state.redraw();
+      state.hovAnim=requestAnimationFrame(step);
+    }
+    state.hovAnim=requestAnimationFrame(step);
+  }
   var dragging=false,panning=false,lastX=0,lastY=0;
   canvas.addEventListener("pointerdown",function(e){
     dragging=true;panning=e.metaKey||e.ctrlKey; // cmd/ctrl-drag pans
+    // freeze the lean where it is: fold it into the real camera so the
+    // grab starts from exactly what the eye sees, with no snap
+    if(state.hovAnim){cancelAnimationFrame(state.hovAnim);state.hovAnim=null}
+    state.yaw+=(state.hovX||0);state.pitch+=(state.hovY||0);
+    state.hovX=state.hovY=state.hovTX=state.hovTY=0;
     lastX=e.clientX;lastY=e.clientY;
     canvas.setPointerCapture(e.pointerId);canvas.style.cursor="grabbing"});
   canvas.addEventListener("pointermove",function(e){
-    if(!dragging)return;
+    if(!dragging){
+      if(!PARALLAX)return;
+      var r=canvas.getBoundingClientRect();
+      hovTo(((e.clientX-r.left)/r.width-0.5)*0.12,
+            ((e.clientY-r.top)/r.height-0.5)*0.08);
+      return;
+    }
+    PARALLAX=false; // the invitation worked: the user is driving now
     if(panning){
       state.panX+=(e.clientX-lastX)*2/Math.max(1,canvas.clientWidth);
       state.panY-=(e.clientY-lastY)*2/Math.max(1,canvas.clientHeight);
@@ -913,6 +952,8 @@ function makeViewer(canvas,state){
       state.pitch=Math.max(-1.6,Math.min(1.6,state.pitch+(e.clientY-lastY)*0.011));
     }
     lastX=e.clientX;lastY=e.clientY;state.redraw()});
+  canvas.addEventListener("pointerleave",function(){
+    if(state.hovTX||state.hovTY||state.hovX||state.hovY)hovTo(0,0)});
   canvas.addEventListener("pointerup",function(){
     dragging=false;canvas.style.cursor="grab"});
   canvas.addEventListener("wheel",function(e){
