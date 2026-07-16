@@ -22,6 +22,22 @@ from pathlib import Path
 from .dbstore import Store
 from .genome import describe_genome
 
+# diagonal github ribbon, pinned bottom-right over every layer (overlays
+# included). Self-contained (style + anchor, literal colors) so every
+# generated or static page can embed the same snippet.
+GH_RIBBON_HTML = (
+    "<style>#gh-ribbon{position:fixed;right:-56px;bottom:36px;z-index:80;"
+    "transform:rotate(-45deg);background:#111111;color:#fffff8;"
+    'font:600 11px "Palatino","Palatino Linotype","Book Antiqua",Georgia,'
+    'serif;font-feature-settings:"smcp" 1;'
+    "text-transform:uppercase;letter-spacing:.12em;white-space:nowrap;"
+    "padding:7px 64px;text-decoration:none;border:none;"
+    "outline:1px solid rgba(255,255,248,.4);outline-offset:-4px;"
+    "box-shadow:0 1px 8px rgba(0,0,0,.3)}"
+    "#gh-ribbon:hover{background:#8c2f1f;color:#fffff8}</style>"
+    '<a id="gh-ribbon" href="https://github.com/akaalias/airloom" '
+    'target="_blank" rel="noopener">view on GitHub</a>')
+
 TUFTE_TOKENS = """
 :root{
   --paper:#fffff8; --ink:#111111; --muted:#6b6a60; --faint:#9b998c;
@@ -2755,6 +2771,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                         "g": c["generation_born"],
                         "f": f"{fit:.3f}" if math.isfinite(fit) else None,
                         "i": _rel(results_dir, c["png_path"])}
+    parts.append(GH_RIBBON_HTML)
     # viewport-driven image loading: thousands of heavy stills, so only
     # those near the viewport get fetched (1600px lookahead keeps
     # scrolling seamless). Native loading=lazy proved unreliable --

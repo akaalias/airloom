@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 
 from .dbstore import Store
-from .gallery import NAV_CSS, nav_html
+from .gallery import GH_RIBBON_HTML, NAV_CSS, nav_html
 from .genome import describe_genome
 
 OPERATOR_COLORS = {
@@ -541,7 +541,7 @@ setInterval(function(){{if(!pinned)location.reload()}},30000);
 }})();
 </script>"""
     out = results_dir / "lineage.html"
-    out.write_text(page)
+    out.write_text(page + GH_RIBBON_HTML)
     return out
 
 
