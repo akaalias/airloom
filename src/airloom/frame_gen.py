@@ -265,9 +265,18 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
     frame_mass = math.nan
     if want_mesh:  # skipped for cheap constraint-only pre-screens
         try:
-            main_mesh = extrude(p_main, tp)
+            # buildability: the sweep genes rotate the arms off the stock
+            # clamp pattern, so the BUILT plates (meshes, renders, viewer,
+            # mass -- and the parts export, which re-cuts identically) get
+            # the arm-clamp bolt holes where the placed tongues actually
+            # sit. The constraint checks above deliberately still see the
+            # scaled stock pattern: re-cutting there would retroactively
+            # flip validity of scored candidates (the web check is very
+            # sensitive to the extra holes).
+            clamp = _arm_clamp_holes(arm_front, arm_rear, g)
+            main_mesh = extrude(_recut_clamp_holes(p_main, clamp), tp)
             main_mesh.apply_translation([0, 0, -tp])
-            mid_mesh = extrude(p_mid, tp)
+            mid_mesh = extrude(_recut_clamp_holes(p_mid, clamp), tp)
             mid_mesh.apply_translation([0, 0, ta])
             top_mesh = extrude(p_top, tp)
             top_mesh.apply_translation([0, 0, top_z])
