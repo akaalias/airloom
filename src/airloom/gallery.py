@@ -258,8 +258,13 @@ h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
 .card.best{border:1.5px solid var(--ink)}
 .card.invalid{color:var(--muted)}
 .card.invalid img{opacity:.55}
+/* lazy-loaded stills reserve their box up front (top views are 4:3,
+   detail bottom views square) so scrolling and #d- anchor jumps never
+   land on a page that is still reflowing; until the observer fills in
+   src, the empty img stays invisible instead of a broken-image glyph */
+img[data-src]{visibility:hidden}
 .card img{width:100%;height:auto;display:block;mix-blend-mode:multiply;
-  border-radius:6px}
+  border-radius:6px;aspect-ratio:4/3;object-fit:contain}
 .card .hash{font:12px var(--mono);color:var(--faint);margin-top:4px}
 .card .agg{font-size:19px;font-weight:700;margin-top:2px}
 .card .agg .unit{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
@@ -277,7 +282,7 @@ table.sc td:last-child{text-align:right;color:var(--ink)}
   cursor:grab;touch-action:none}
 /* static fallback renders are 360px wide: never upscale them past
    natural size or they pixelate */
-.viewer img{object-fit:contain;width:100%;aspect-ratio:auto;cursor:default;
+.viewer img{object-fit:contain;width:100%;aspect-ratio:1/1;cursor:default;
   border-radius:6px}
 .viewer .vr{position:relative}
 .viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
@@ -299,7 +304,8 @@ table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
 .parents .lab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px}
 .parents figure{margin:0 0 10px}
-.parents img{width:100%;mix-blend-mode:multiply;border-radius:6px}
+.parents img{width:100%;mix-blend-mode:multiply;border-radius:6px;
+  aspect-ratio:4/3;object-fit:contain}
 .parents figcaption{font:12px var(--mono);color:var(--faint)}
 .viewer img.peek{cursor:zoom-in}
 .chart-card svg [data-h]{cursor:pointer}
@@ -1407,7 +1413,8 @@ function openOverlay(d,mode){
       var lab=th===BASELINE?"base":"g"+tm.g;
       var tt=th+(th===BASELINE?" · baseline":"")+
         (tm.f?" · "+tm.f+" Wh/km":" · invalid");
-      var inner=(tm.i?'<img src="'+tm.i+'" alt="'+th+'">':"")+
+      var inner=(tm.i?'<img src="'+tm.i+'" alt="'+th+
+        '" loading="lazy" decoding="async">':"")+
         "<span>"+lab+"</span>";
       if(ti===undefined){ // ancestor without an embedded 3D model
         tp.push('<span class="wthumb off" title="'+tt+
@@ -2132,7 +2139,8 @@ def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
             if not png_rel:
                 return ""
             return (f'<span class="pthumbw{" xed" if crossed else ""}">'
-                    f'<img class="pthumb" src="{html.escape(png_rel)}" '
+                    f'<img class="pthumb" decoding="async" '
+                    f'data-src="{html.escape(png_rel)}" '
                     'alt=""></span>')
 
         for a in json.loads(rnd["accepted_json"]):
@@ -2425,7 +2433,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                     "</div>") if invalid and c["failure_reason"] else ""
             parts.append(
                 f'<div class="{cls}">'
-                f'<a href="#d-{h}" style="border:none"><img src="{img}" alt="{h}"></a>'
+                f'<a href="#d-{h}" style="border:none"><img data-src="{img}" '
+                f'alt="{h}" decoding="async"></a>'
                 f'<div class="hash">{h}</div>'
                 f'<div class="agg num">{_fmt(fit)} <span class="unit">wh/km agg</span></div>'
                 f"{fail}"
@@ -2501,7 +2510,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 ' disabled title="flights are rendered for the champion '
                 'and best-so-far setters"')
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
-                      f'<img class="peek" src="{bottom}" '
+                      f'<img class="peek" decoding="async" '
+                      f'data-src="{bottom}" '
                       f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
                       f'data-fit="{_fmt(fit)}"{setter_attr}{claude_attr}'
                       f'{failed_attr}{anc_attr}>{xc}'
@@ -2514,7 +2524,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                       f"{_parts_legend_html()}</div>")
         else:
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
-                      f'<img src="{bottom}" alt="{h}">{xc}</div>'
+                      f'<img data-src="{bottom}" alt="{h}" '
+                      f'decoding="async">{xc}</div>'
                       f"{_parts_legend_html()}</div>")
 
         parent_imgs = []
@@ -2525,7 +2536,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                 pfit = store.fitness_of(cands[ph])
                 parent_imgs.append(
                     f'<figure><a href="#d-{ph}" style="border:none">'
-                    f'<img src="{pimg}" alt="{ph}"></a>'
+                    f'<img data-src="{pimg}" alt="{ph}" '
+                    f'decoding="async"></a>'
                     f'<figcaption>{ph} &middot; <span class="num">{_fmt(pfit)}'
                     "</span></figcaption></figure>")
         parents_html = ('<div class="lab">parents</div>' + "".join(parent_imgs)
@@ -2743,6 +2755,23 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                         "g": c["generation_born"],
                         "f": f"{fit:.3f}" if math.isfinite(fit) else None,
                         "i": _rel(results_dir, c["png_path"])}
+    # viewport-driven image loading: thousands of heavy stills, so only
+    # those near the viewport get fetched (1600px lookahead keeps
+    # scrolling seamless). Native loading=lazy proved unreliable --
+    # Chrome fetched the whole page -- hence the explicit observer.
+    parts.append(
+        "<script>(function(){"
+        'var all=document.querySelectorAll("img[data-src]");'
+        "function loadNow(im){im.src=im.dataset.src;"
+        'im.removeAttribute("data-src")}'
+        'if(!("IntersectionObserver" in window)){'
+        "all.forEach(loadNow);return}"
+        "var ob=new IntersectionObserver(function(es){"
+        "es.forEach(function(en){if(!en.isIntersecting)return;"
+        "loadNow(en.target);ob.unobserve(en.target)})},"
+        '{rootMargin:"1600px"});'
+        "all.forEach(function(im){ob.observe(im)});"
+        "})()</script>")
     parts.append('<script type="application/json" id="walk-meta">'
                  f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
     # the baseline hash (gen-0 winner): the reference every comparison
