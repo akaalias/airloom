@@ -575,7 +575,7 @@ function makeReplay(o){
       s.push({id:"m-"+rep.chain[k+1],evolved:true,ghost:true});
     return s;
   }
-  function label(){
+  function label(scrollThumb){
     var h=rep.chain[rep.idx],m=WMETA[h]||{};
     var t="step "+(rep.idx+1)+" of "+rep.chain.length+" · g"+m.g+
       (h===BASELINE?" · baseline":"")+
@@ -591,7 +591,11 @@ function makeReplay(o){
       o.timeline.querySelectorAll(".wthumb").forEach(function(b){
         var on=+b.dataset.k===rep.idx;
         b.classList.toggle("on",on);
-        if(on)b.scrollIntoView({block:"nearest",inline:"nearest"});
+        // only chase the active thumb on user-driven steps: on an
+        // inline page (the landing) the open()-time call would drag
+        // the whole document down to the timeline
+        if(on&&scrollThumb)
+          b.scrollIntoView({block:"nearest",inline:"nearest"});
       });
   }
   rep.stop=function(){
@@ -627,7 +631,7 @@ function makeReplay(o){
     viewer.load(sp.map(function(s,i){
       return {id:s.id,evolved:true,ghost:s.ghost,fade:fades[i][0]}}),
       rep.frame);
-    label();
+    label(true);
     var t0=null,DUR=950;
     function tick(ts){
       if(t0===null)t0=ts;

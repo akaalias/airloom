@@ -17,32 +17,32 @@ from pathlib import Path
 
 from .dbstore import Store
 from .gallery import (CARD_CSS, GH_RIBBON_HTML, LAZY_IMG_JS, NAV_CSS,
-                      TUFTE_TOKENS, _bottom_png_for, _fmt, _mesh_js_for,
-                      _parts_legend_html, _rel, candidate_card_html,
-                      nav_html)
+                      OVERLAY_CSS, TUFTE_TOKENS, VIEWER_JS, _bottom_png_for,
+                      _fmt, _mesh_js_for, _parts_legend_html, _rel,
+                      candidate_card_html, nav_html, overlay_html)
 
-LANDING_CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + """
+LANDING_CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + OVERLAY_CSS + """
 .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
-h1{font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;
-  margin:0 0 10px;text-align:center}
-h1 .tagline{display:block;font-size:19px;font-style:italic;
-  color:var(--muted);margin-top:10px;letter-spacing:0}
+h1{font-weight:400;font-size:30px;line-height:1.3;letter-spacing:-.01em;
+  margin:0 0 14px;text-align:center}
 h1 .hash{font:26px var(--mono);color:var(--muted)}
 p.sub{text-align:center;font-style:italic;color:var(--muted);
   font-size:15.5px;line-height:1.7;margin:0 auto 8px;max-width:760px}
 h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
-/* hero: the champion, live */
-.hero{position:relative;margin:26px 0 0}
+/* hero: the champion, live (hint pinned to the canvas, not the legend) */
+.hero{margin:26px 0 0}
+.hero .cw{position:relative}
 .hero canvas{width:100%;height:520px;display:block;cursor:grab}
 .hero .hint{position:absolute;right:6px;bottom:6px;
   font:italic 11.5px var(--serif);color:var(--faint);pointer-events:none}
 .hero .lgd{justify-content:center;font-size:12.5px;gap:4px 14px}
-/* headline stats strip */
+/* headline stats strip; the label rule targets DIRECT children only so
+   the highlighted %-figure inside <b> keeps the big number size */
 .stats{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;
-  margin:26px 0 0;text-align:center}
+  margin:30px 0 8px;text-align:center}
 .stats .stat b{display:block;font-size:30px;font-weight:600;
   font-variant-numeric:lining-nums tabular-nums;line-height:1.15}
-.stats .stat span{font:600 11px var(--serif);
+.stats .stat>span{font:600 11px var(--serif);
   font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.08em;color:var(--faint)}
 .stats .stat b .up{color:#2e6e63}
@@ -78,48 +78,26 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
   align-self:center;padding-bottom:40px}
 """
 
-# the walk-timeline styles the shared replay component expects; kept in
-# sync with the research log by copying the same class names, values
-# authored once here for the landing's lighter layout
-TIMELINE_CSS = """
-.wtl{display:flex;gap:6px;overflow-x:auto;padding:8px 2px;margin-top:8px}
-.wplay{flex:none;font:14px var(--serif);background:none;color:var(--muted);
-  border:1px solid var(--rule);width:34px;cursor:pointer}
-.wplay:hover{color:var(--ink);border-color:var(--ink)}
-.wthumb{flex:none;width:74px;display:block;background:none;
-  border:1px solid var(--rule);padding:2px;cursor:pointer}
-.wthumb.off{opacity:.4;cursor:default}
-.wthumb img{width:100%;display:block;mix-blend-mode:multiply;
-  border-radius:3px}
-.wthumb span{display:block;font:10.5px var(--mono);color:var(--faint);
-  text-align:center}
-.wthumb:hover{border-color:var(--muted)}
-.wthumb.on{border:2px solid var(--ink);padding:1px}
-.wthumb.on span{color:var(--ink);font-weight:700}
+# the landing's inline replay: the timeline docks inside the panel, so
+# the overlay's fixed-chrome spacing is trimmed back to the flow
+TIMELINE_TWEAKS_CSS = """
+.panel .wtl{padding:8px 2px;margin-bottom:0;border-top:none}
 """
+
+# share links for candidates the landing does not carry live in the
+# research log; the champion's own hashes are handled by the shared
+# overlay right here
+REDIRECT_JS = (
+    "<script>(function(){"
+    "var m=location.hash.match(/^#(?:ovl|perf|d)-([0-9a-f]+)/);"
+    'if(m&&m[1]!==CHAMP)location.replace("log.html"+location.hash);'
+    "})()</script>")
 
 LANDING_JS = r"""
 (function(){
 "use strict";
-// old share links pointed at the gallery when it WAS index.html; hand
-// them to the research log where the overlays live
-if(/^#(ovl|perf|d)-/.test(location.hash)){
-  location.replace("log.html"+location.hash);
-  return;
-}
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
-// the champion card's controls hand off to the research log, where the
-// full-screen overlays live (deep links restore the exact view)
-document.querySelectorAll(".vbtns button").forEach(function(bt){
-  bt.addEventListener("click",function(){
-    location.href="log.html#"+
-      (bt.dataset.mode==="perf"?"perf":"ovl")+"-"+CH;
-  });
-});
-var pk=document.querySelector("img.peek");
-if(pk)pk.addEventListener("click",function(){
-  location.href="log.html#ovl-"+CH});
 var chain=AL.walkChainFor(CH).steps;
 var need=["m-"+CH];
 chain.forEach(function(h){need.push("m-"+h)});
@@ -161,10 +139,9 @@ AL.ensureBlobs(need).then(function(){
 """
 
 
-INTRO_TITLE = ("&ldquo;The snuggle is real&rdquo;"
-               '<span class="tagline">Airloom &mdash; evolving quadcopter '
-               "frame geometry for Wh/km, with Claude as an occasional "
-               "co-designer</span>")
+INTRO_TITLE = ("&ldquo;The snuggle is real&rdquo;: &mdash; evolving "
+               "quadcopter frame geometry for Wh/km, with Claude as an "
+               "occasional co-designer")
 
 INTRO_TEXT = (
     "I let a genetic algorithm loose on the geometry of a 7-inch "
@@ -198,7 +175,7 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
              '<meta name="viewport" content="width=device-width,'
              'initial-scale=1">',
              "<title>Airloom &mdash; an evolved drone frame</title>",
-             f"<style>{LANDING_CSS}{TIMELINE_CSS}</style>",
+             f"<style>{LANDING_CSS}{TIMELINE_TWEAKS_CSS}</style>",
              '<div class="wrap">',
              nav_html("the result")]
 
@@ -221,34 +198,8 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
     parts += [f"<h1>{INTRO_TITLE}</h1>",
               f'<p class="sub">{INTRO_TEXT}</p>']
 
-    # the champion's full detail card -- the same component the research
-    # log renders for every candidate; its controls deep-link into the
-    # log's overlays (wired by LANDING_JS below)
-    viewer_hashes = {h for h in (champ_hash, base_hash)
-                     if h and _mesh_js_for(results_dir, cands[h]["png_path"])}
-    champ_png = Path(champ["png_path"] or "")
-    has_flight = bool(champ["png_path"]) and any(
-        champ_png.parent.glob(f"{champ_hash}.*.flight.js"))
-    parts.append(candidate_card_html(
-        store, run_id, results_dir, cands, champ_hash,
-        viewer_hashes=viewer_hashes,
-        flight_src={champ_hash: True} if has_flight else {},
-        setter_hashes=set(), best_hash=champ_hash,
-        baseline_hash=base_hash, baseline_fit=base_fit,
-        href_base="log.html"))
-
-    # hero + stats
+    # headline stats, then the champion's full detail card
     parts += [
-        "<h2>the champion, live</h2>",
-        '<p class="sub">'
-        f"{len(cands)} candidate frames flown through six weather "
-        f"scenarios across {n_gens} generations, breeding lower-energy "
-        "designs each round. This is the winner &mdash; drag it around; "
-        "it is the real simulated geometry.</p>",
-        '<div class="hero"><canvas id="hero-canvas"></canvas>'
-        '<div class="hint">drag to rotate &middot; scroll to zoom &middot; '
-        "double-click resets</div>"
-        f"{_parts_legend_html()}</div>",
         '<div class="stats">',
         f'<div class="stat"><b>{_fmt(champ_fit)}</b>'
         "<span>Wh/km energy score</span></div>"]
@@ -263,6 +214,42 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         f'<div class="stat"><b>{len(cands)}</b>'
         "<span>candidates evaluated</span></div>",
         "</div>"]
+
+    # the champion's full detail card -- the same component the research
+    # log renders for every candidate; the shared overlay embedded below
+    # makes its controls work right here on the landing
+    viewer_hashes = {h for h in (champ_hash, base_hash)
+                     if h and _mesh_js_for(results_dir, cands[h]["png_path"])}
+    flight_src: dict[str, dict[str, str]] = {}
+    for fh in (champ_hash, base_hash):
+        if not fh or not cands[fh]["png_path"]:
+            continue
+        fdir = Path(cands[fh]["png_path"]).parent
+        scens = {p.name.split(".")[1]: _rel(results_dir, str(p))
+                 for p in sorted(fdir.glob(f"{fh}.*.flight.js"))}
+        if scens:
+            flight_src[fh] = scens
+    parts.append(candidate_card_html(
+        store, run_id, results_dir, cands, champ_hash,
+        viewer_hashes=viewer_hashes,
+        flight_src=flight_src,
+        setter_hashes=set(), best_hash=champ_hash,
+        baseline_hash=base_hash, baseline_fit=base_fit,
+        href_base="log.html"))
+
+    # hero: the champion, live
+    parts += [
+        "<h2>the champion, live</h2>",
+        '<p class="sub">'
+        f"{len(cands)} candidate frames flown through six weather "
+        f"scenarios across {n_gens} generations, breeding lower-energy "
+        "designs each round. This is the winner &mdash; drag it around; "
+        "it is the real simulated geometry.</p>",
+        '<div class="hero"><div class="cw">'
+        '<canvas id="hero-canvas"></canvas>'
+        '<div class="hint">drag to rotate &middot; scroll to zoom &middot; '
+        "double-click resets</div></div>"
+        f"{_parts_legend_html()}</div>"]
 
     # vs baseline stills
     if base_hash and base_hash != champ_hash:
@@ -349,15 +336,22 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         if src is not None:
             blob_src[f"m-{cur}"] = src
 
+    # the SAME full-screen overlay the research log uses: the card's
+    # thumbnail and buttons open it right here instead of navigating away
     parts += [
+        overlay_html(),
         LAZY_IMG_JS,
         '<script type="application/json" id="walk-meta">'
         f"{json.dumps(walk_meta, separators=(',', ':'))}</script>",
         '<script type="application/json" id="blob-src">'
         f"{json.dumps(blob_src, separators=(',', ':'))}</script>",
+        '<script type="application/json" id="flight-src">'
+        f"{json.dumps(flight_src, separators=(',', ':'))}</script>",
         f"<script>var BASELINE={json.dumps(base_hash)};"
         f"var CHAMP={json.dumps(champ_hash)};</script>",
+        REDIRECT_JS,
         '<script src="viewer.js"></script>',
+        f"<script>{VIEWER_JS}</script>",
         f"<script>{LANDING_JS}</script>",
         "</div>",
         GH_RIBBON_HTML]

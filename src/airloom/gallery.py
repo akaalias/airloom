@@ -158,7 +158,7 @@ img[data-src]{visibility:hidden}
 .detail .dhead{font:400 21px var(--serif);margin:0 0 14px}
 .detail .dhead .hash{font:17px var(--mono);color:var(--muted)}
 .detail .dcols{display:flex;gap:26px}
-.viewer{width:50%;min-width:320px;position:relative}
+.viewer{width:42%;min-width:300px;position:relative}
 .viewer canvas,.viewer img{width:100%;aspect-ratio:4/3;display:block;
   cursor:grab;touch-action:none}
 /* static fallback renders are 360px wide: never upscale them past
@@ -181,7 +181,7 @@ table.dt th{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
   border-bottom:1.5px solid var(--ink)}
 table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
-.parents{width:220px;flex-shrink:0}
+.parents{width:170px;flex-shrink:0}
 .parents .lab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px}
 .parents figure{margin:0 0 10px}
@@ -237,52 +237,10 @@ table.dt.hd b{font-size:17px}
 .detail.setter .chip.champ{background:var(--accent);color:var(--paper)}
 """
 
-CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + """
-.wrap{max-width:92vw;margin:0 auto;padding:40px 0 96px}
-@media(max-width:1100px){.wrap{max-width:none;padding-left:28px;padding-right:28px}}
-h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;
-  margin:0 0 6px;text-align:center}
-h1 code{font:400 26px var(--mono);color:var(--muted)}
-.sub{font-size:15px;color:var(--muted);margin:0 auto 4px;text-align:center}
-.sub .updated{color:var(--faint);font-style:italic}
-.sub.intro{max-width:820px;margin:12px auto 16px;line-height:1.55}
-.inspiration{max-width:820px;margin:14px auto 4px;font-size:14.5px;
-  color:var(--muted)}
-.inspiration summary{cursor:pointer;text-align:center;list-style:none}
-.inspiration summary::-webkit-details-marker{display:none}
-.inspiration summary b{font:600 12px var(--serif);
-  font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.08em}
-.inspiration summary code{font:12.5px var(--mono);color:var(--faint)}
-.inspiration pre{white-space:pre-wrap;font:13.5px/1.55 var(--serif);
-  border-left:2px solid var(--rule);padding:2px 0 2px 16px;
-  margin:10px 0 0;text-align:left}
-/* per-generation two-column layout: inputs (left) -> candidates (right) */
-.genrow{display:flex;gap:26px;align-items:flex-start}
-.genin{flex:0 0 264px;position:sticky;top:12px;font-size:13.5px;
-  color:var(--muted);border-right:1px solid var(--rule);
-  padding-right:22px;min-width:0}
-.genrow .row{flex:1;min-width:0}
-@media(max-width:1100px){.genrow{flex-direction:column}
-  .genin{position:static;flex:none;border-right:none;padding-right:0;
-  border-bottom:1px solid var(--rule);padding-bottom:14px;width:100%}}
-.ginlab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
-  margin-bottom:8px}
-.badge{display:inline-block;font:600 10.5px var(--serif);
-  font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.06em;padding:3px 8px;border:1px solid var(--rule);
-  border-radius:2px;color:var(--muted);margin:0 6px 8px 0;line-height:1.5}
-.badge.pivot{color:#2e6e63;border-color:#2e6e63}
-.badge.claude{color:#6a4a8a;border-color:#b9a6cf}
-.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
-  gap:4px 40px;margin:2px 0 8px}
-.board h3{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
-  margin:14px 0 2px}
-.board p.note{font-size:12.5px;font-style:italic;line-height:1.65;
-  color:var(--faint);margin:6px 0 0}
-.board ul{margin:4px 0 0;padding-left:16px}
+
+# the full-screen 3D overlay (all tabs + the flight replay): shared
+# between the research log and the landing page
+OVERLAY_CSS = """
 /* flight tab: HUD over the canvas, screen-space weather streaks, scrub */
 .fl-hud{position:absolute;left:26px;top:46px;z-index:4;pointer-events:none;
   font:12px/1.75 var(--mono);color:var(--muted);white-space:pre}
@@ -304,69 +262,6 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
   border-left:1px solid var(--rule)}
 .fl-b .cap{white-space:nowrap}
 #fl-split-btn{margin-left:auto}
-.board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
-.knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
-.knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
-  font-size:13px}
-.knobs td.num{text-align:right;font-feature-settings:"tnum" 1}
-.kline{font-size:12.5px;font-style:italic;line-height:1.65;
-  color:var(--faint);margin:0 0 12px}
-.dround-open{display:block;text-align:left;cursor:pointer;background:none;
-  border:none;border-top:1px solid var(--rule);padding:10px 0 0;margin:2px 0 0;
-  font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;color:#6a4a8a;width:100%}
-.dround-open::before{content:"▸ "}
-.dround-open:hover{color:#3b2a52}
-/* designer-round overlay: prompt (left) | proposals (right) */
-.dovl{position:fixed;inset:0;background:rgba(24,18,32,.45);z-index:70;
-  display:none;align-items:center;justify-content:center;padding:28px}
-.dovl.open{display:flex}
-.dbox{background:var(--paper);width:min(1180px,94vw);height:min(780px,90vh);
-  display:flex;flex-direction:column;border:1px solid #6a4a8a;
-  box-shadow:0 14px 44px rgba(24,18,32,.35)}
-.dbar{display:flex;align-items:center;gap:16px;padding:12px 22px;
-  border-bottom:1px solid var(--rule);background:rgba(106,74,138,.08);
-  flex-shrink:0}
-.dbar .t{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;color:#6a4a8a}
-.dclose{margin-left:auto;font:24px/1 var(--serif);background:none;
-  border:none;color:var(--muted);cursor:pointer;padding:0 4px}
-.dclose:hover{color:var(--ink)}
-.dcols2{flex:1;display:flex;min-height:0}
-.dcols2 section{flex:1;min-width:0;display:flex;flex-direction:column;
-  padding:16px 22px 20px}
-.dcols2 section+section{border-left:1px solid var(--rule)}
-.dcols2 h3{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.08em;color:#6a4a8a;
-  margin:0 0 12px}
-.dprompt pre{flex:1;overflow-y:auto;white-space:pre-wrap;
-  font:12px/1.6 var(--mono);margin:0;border-left:2px solid #b9a6cf;
-  padding:2px 0 2px 14px;color:var(--muted)}
-.dprops ul{flex:1;overflow-y:auto;margin:0;padding:0;list-style:none;
-  font-size:14.5px;line-height:1.55;color:var(--muted)}
-.dprops li{margin-bottom:16px;display:flex;gap:14px;align-items:flex-start}
-.dprops li.rej{color:#8c2f1f;opacity:.85}
-.dprops .pbody{min-width:0}
-.dprops .pthumbw{position:relative;flex:none;display:block;width:104px;
-  border:1px solid var(--rule);border-radius:4px;background:var(--paper)}
-.dprops .pthumb{display:block;width:100%;aspect-ratio:4/3;
-  object-fit:contain;mix-blend-mode:multiply;border-radius:4px}
-.dprops li.rej .pthumb{opacity:.75}
-.dprops li.none{font-style:italic;color:var(--faint)}
-.dprops .fate{display:block;font-size:12.5px;font-style:italic;
-  color:var(--faint);margin-top:2px}
-.dprops .fate.bad{color:#8c2f1f}
-@media(max-width:900px){.dcols2{flex-direction:column;overflow-y:auto}
-  .dcols2 section{flex:none}.dcols2 section+section{border-left:none;
-  border-top:1px solid var(--rule)}.dprompt pre{max-height:300px}}
-/* claude-infused generations & candidates: the purple language */
-.genrow.claude{background:rgba(106,74,138,.05);border:1px solid
-  rgba(106,74,138,.18);padding:16px 18px;margin:0 -19px}
-.card.claude{border:1.5px solid #6a4a8a}
-.card.setter.claude{background:#3b2a52;border-color:#3b2a52}
-.card.setter.claude .hash,.card.setter.claude .agg .unit,
-.card.setter.claude table.sc td{color:#c9b9de}
-.card.setter.claude table.sc td:last-child{color:var(--paper)}
 /* 3d overlay bar inherits the claude tint */
 #ovl.claude .ovl-bar,#ovl.claude .ovl-lgd{background:rgba(106,74,138,.08)}
 #ovl.claude.inv .ovl-bar,#ovl.claude.inv .ovl-lgd{background:#3b2a52;
@@ -376,36 +271,6 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 #ovl.claude.inv .ovl-tabs button:hover:not(:disabled),
 #ovl.claude.inv .ovl-tabs button.on{color:var(--paper)}
 #ovl.claude.inv .ovl-tabs button.on{border-bottom-color:var(--paper)}
-h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
-  border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
-.chart-card{border-top:1px solid var(--rule);padding:14px 0 0;margin-top:14px}
-.chart-card svg{width:100%;height:auto;display:block}
-.row{display:flex;flex-wrap:wrap;gap:14px}
-.card{border:1px solid var(--rule);padding:10px 12px;width:190px;background:var(--paper)}
-.card.best{border:1.5px solid var(--ink)}
-.card.invalid{color:var(--muted)}
-.card.invalid img{opacity:.55}
-.card img{width:100%;height:auto;display:block;mix-blend-mode:multiply;
-  border-radius:6px;aspect-ratio:4/3;object-fit:contain}
-.card .hash{font:12px var(--mono);color:var(--faint);margin-top:4px}
-.card .agg{font-size:19px;font-weight:700;margin-top:2px}
-.card .agg .unit{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
-.card .fail{color:var(--accent);font-size:13px;font-style:italic;line-height:1.35;margin-top:4px}
-table.sc{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
-table.sc td{padding:1px 0;color:var(--muted);border:none}
-table.sc td:last-child{text-align:right;color:var(--ink)}
-.chart-card svg [data-h]{cursor:pointer}
-.chart-card svg circle[data-h]:hover{stroke:#111111;stroke-width:2.5}
-.chart-card svg text[data-h]:hover{font-size:16px}
-.card.setter{background:var(--ink);border-color:var(--ink);color:var(--paper)}
-.card.setter .hash{color:#b9b6a6}
-.card.setter .agg .unit{color:#b9b6a6}
-.card.setter table.sc td{color:#b9b6a6}
-.card.setter table.sc td:last-child{color:var(--paper)}
-.card.setter img{mix-blend-mode:normal}
-.card.champion{outline:2px solid var(--accent);outline-offset:-1px}
 #ovl{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;
   flex-direction:column}
 #ovl.open{display:flex}
@@ -507,6 +372,147 @@ table.sc td:last-child{text-align:right;color:var(--ink)}
 .ovl-body canvas{flex:1;width:100%;min-height:0;cursor:grab;touch-action:none}
 .ovl-hint{position:absolute;right:26px;bottom:12px;font:italic 12px var(--serif);
   color:var(--faint);pointer-events:none}
+"""
+
+CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + OVERLAY_CSS + """
+.wrap{max-width:92vw;margin:0 auto;padding:40px 0 96px}
+@media(max-width:1100px){.wrap{max-width:none;padding-left:28px;padding-right:28px}}
+h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;
+  margin:0 0 6px;text-align:center}
+h1 code{font:400 26px var(--mono);color:var(--muted)}
+.sub{font-size:15px;color:var(--muted);margin:0 auto 4px;text-align:center}
+.sub .updated{color:var(--faint);font-style:italic}
+.sub.intro{max-width:820px;margin:12px auto 16px;line-height:1.55}
+.inspiration{max-width:820px;margin:14px auto 4px;font-size:14.5px;
+  color:var(--muted)}
+.inspiration summary{cursor:pointer;text-align:center;list-style:none}
+.inspiration summary::-webkit-details-marker{display:none}
+.inspiration summary b{font:600 12px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.08em}
+.inspiration summary code{font:12.5px var(--mono);color:var(--faint)}
+.inspiration pre{white-space:pre-wrap;font:13.5px/1.55 var(--serif);
+  border-left:2px solid var(--rule);padding:2px 0 2px 16px;
+  margin:10px 0 0;text-align:left}
+/* per-generation two-column layout: inputs (left) -> candidates (right) */
+.genrow{display:flex;gap:26px;align-items:flex-start}
+.genin{flex:0 0 264px;position:sticky;top:12px;font-size:13.5px;
+  color:var(--muted);border-right:1px solid var(--rule);
+  padding-right:22px;min-width:0}
+.genrow .row{flex:1;min-width:0}
+@media(max-width:1100px){.genrow{flex-direction:column}
+  .genin{position:static;flex:none;border-right:none;padding-right:0;
+  border-bottom:1px solid var(--rule);padding-bottom:14px;width:100%}}
+.ginlab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
+  margin-bottom:8px}
+.badge{display:inline-block;font:600 10.5px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.06em;padding:3px 8px;border:1px solid var(--rule);
+  border-radius:2px;color:var(--muted);margin:0 6px 8px 0;line-height:1.5}
+.badge.pivot{color:#2e6e63;border-color:#2e6e63}
+.badge.claude{color:#6a4a8a;border-color:#b9a6cf}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:4px 40px;margin:2px 0 8px}
+.board h3{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
+  margin:14px 0 2px}
+.board p.note{font-size:12.5px;font-style:italic;line-height:1.65;
+  color:var(--faint);margin:6px 0 0}
+.board ul{margin:4px 0 0;padding-left:16px}
+.board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
+.knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
+.knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
+  font-size:13px}
+.knobs td.num{text-align:right;font-feature-settings:"tnum" 1}
+.kline{font-size:12.5px;font-style:italic;line-height:1.65;
+  color:var(--faint);margin:0 0 12px}
+.dround-open{display:block;text-align:left;cursor:pointer;background:none;
+  border:none;border-top:1px solid var(--rule);padding:10px 0 0;margin:2px 0 0;
+  font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:#6a4a8a;width:100%}
+.dround-open::before{content:"▸ "}
+.dround-open:hover{color:#3b2a52}
+/* designer-round overlay: prompt (left) | proposals (right) */
+.dovl{position:fixed;inset:0;background:rgba(24,18,32,.45);z-index:70;
+  display:none;align-items:center;justify-content:center;padding:28px}
+.dovl.open{display:flex}
+.dbox{background:var(--paper);width:min(1180px,94vw);height:min(780px,90vh);
+  display:flex;flex-direction:column;border:1px solid #6a4a8a;
+  box-shadow:0 14px 44px rgba(24,18,32,.35)}
+.dbar{display:flex;align-items:center;gap:16px;padding:12px 22px;
+  border-bottom:1px solid var(--rule);background:rgba(106,74,138,.08);
+  flex-shrink:0}
+.dbar .t{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:#6a4a8a}
+.dclose{margin-left:auto;font:24px/1 var(--serif);background:none;
+  border:none;color:var(--muted);cursor:pointer;padding:0 4px}
+.dclose:hover{color:var(--ink)}
+.dcols2{flex:1;display:flex;min-height:0}
+.dcols2 section{flex:1;min-width:0;display:flex;flex-direction:column;
+  padding:16px 22px 20px}
+.dcols2 section+section{border-left:1px solid var(--rule)}
+.dcols2 h3{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:#6a4a8a;
+  margin:0 0 12px}
+.dprompt pre{flex:1;overflow-y:auto;white-space:pre-wrap;
+  font:12px/1.6 var(--mono);margin:0;border-left:2px solid #b9a6cf;
+  padding:2px 0 2px 14px;color:var(--muted)}
+.dprops ul{flex:1;overflow-y:auto;margin:0;padding:0;list-style:none;
+  font-size:14.5px;line-height:1.55;color:var(--muted)}
+.dprops li{margin-bottom:16px;display:flex;gap:14px;align-items:flex-start}
+.dprops li.rej{color:#8c2f1f;opacity:.85}
+.dprops .pbody{min-width:0}
+.dprops .pthumbw{position:relative;flex:none;display:block;width:104px;
+  border:1px solid var(--rule);border-radius:4px;background:var(--paper)}
+.dprops .pthumb{display:block;width:100%;aspect-ratio:4/3;
+  object-fit:contain;mix-blend-mode:multiply;border-radius:4px}
+.dprops li.rej .pthumb{opacity:.75}
+.dprops li.none{font-style:italic;color:var(--faint)}
+.dprops .fate{display:block;font-size:12.5px;font-style:italic;
+  color:var(--faint);margin-top:2px}
+.dprops .fate.bad{color:#8c2f1f}
+@media(max-width:900px){.dcols2{flex-direction:column;overflow-y:auto}
+  .dcols2 section{flex:none}.dcols2 section+section{border-left:none;
+  border-top:1px solid var(--rule)}.dprompt pre{max-height:300px}}
+/* claude-infused generations & candidates: the purple language */
+.genrow.claude{background:rgba(106,74,138,.05);border:1px solid
+  rgba(106,74,138,.18);padding:16px 18px;margin:0 -19px}
+.card.claude{border:1.5px solid #6a4a8a}
+.card.setter.claude{background:#3b2a52;border-color:#3b2a52}
+.card.setter.claude .hash,.card.setter.claude .agg .unit,
+.card.setter.claude table.sc td{color:#c9b9de}
+.card.setter.claude table.sc td:last-child{color:var(--paper)}
+h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
+.chart-card{border-top:1px solid var(--rule);padding:14px 0 0;margin-top:14px}
+.chart-card svg{width:100%;height:auto;display:block}
+.row{display:flex;flex-wrap:wrap;gap:14px}
+.card{border:1px solid var(--rule);padding:10px 12px;width:190px;background:var(--paper)}
+.card.best{border:1.5px solid var(--ink)}
+.card.invalid{color:var(--muted)}
+.card.invalid img{opacity:.55}
+.card img{width:100%;height:auto;display:block;mix-blend-mode:multiply;
+  border-radius:6px;aspect-ratio:4/3;object-fit:contain}
+.card .hash{font:12px var(--mono);color:var(--faint);margin-top:4px}
+.card .agg{font-size:19px;font-weight:700;margin-top:2px}
+.card .agg .unit{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.card .fail{color:var(--accent);font-size:13px;font-style:italic;line-height:1.35;margin-top:4px}
+table.sc{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+table.sc td{padding:1px 0;color:var(--muted);border:none}
+table.sc td:last-child{text-align:right;color:var(--ink)}
+.chart-card svg [data-h]{cursor:pointer}
+.chart-card svg circle[data-h]:hover{stroke:#111111;stroke-width:2.5}
+.chart-card svg text[data-h]:hover{font-size:16px}
+.card.setter{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.card.setter .hash{color:#b9b6a6}
+.card.setter .agg .unit{color:#b9b6a6}
+.card.setter table.sc td{color:#b9b6a6}
+.card.setter table.sc td:last-child{color:var(--paper)}
+.card.setter img{mix-blend-mode:normal}
+.card.champion{outline:2px solid var(--accent);outline-offset:-1px}
 """
 
 DOVL_JS = r"""
@@ -1104,7 +1110,7 @@ function makeReplay(o){
       s.push({id:"m-"+rep.chain[k+1],evolved:true,ghost:true});
     return s;
   }
-  function label(){
+  function label(scrollThumb){
     var h=rep.chain[rep.idx],m=WMETA[h]||{};
     var t="step "+(rep.idx+1)+" of "+rep.chain.length+" · g"+m.g+
       (h===BASELINE?" · baseline":"")+
@@ -1120,7 +1126,11 @@ function makeReplay(o){
       o.timeline.querySelectorAll(".wthumb").forEach(function(b){
         var on=+b.dataset.k===rep.idx;
         b.classList.toggle("on",on);
-        if(on)b.scrollIntoView({block:"nearest",inline:"nearest"});
+        // only chase the active thumb on user-driven steps: on an
+        // inline page (the landing) the open()-time call would drag
+        // the whole document down to the timeline
+        if(on&&scrollThumb)
+          b.scrollIntoView({block:"nearest",inline:"nearest"});
       });
   }
   rep.stop=function(){
@@ -1156,7 +1166,7 @@ function makeReplay(o){
     viewer.load(sp.map(function(s,i){
       return {id:s.id,evolved:true,ghost:s.ghost,fade:fades[i][0]}}),
       rep.frame);
-    label();
+    label(true);
     var t0=null,DUR=950;
     function tick(ts){
       if(t0===null)t0=ts;
@@ -2434,6 +2444,110 @@ def _process_html(cfg) -> str:
             "</div>")
 
 
+def overlay_html() -> str:
+    """The full-screen 3D overlay skeleton (every tab + the
+    flight replay). Shared verbatim between the research log and
+    the landing page; VIEWER_JS drives it on both."""
+    return (
+        '<div id="ovl">'
+        '<div class="ovl-bar">'
+        '<span class="hash"></span>'
+        '<span class="ovl-tabs" id="evo-tabs">'
+        '<button data-tab="solo" class="on">full kit</button>'
+        '<button data-tab="evolved">evolved parts</button>'
+        '<button data-tab="compare">vs baseline</button>'
+        '<button data-tab="diff">net change</button>'
+        '<button data-tab="fulldiff">lineage trail</button>'
+        '<button data-tab="walk">replay</button>'
+        "</span>"
+        '<span class="ovl-tabs" id="perf-tabs"></span>'
+        '<button id="ovl-close" title="close (esc)">&#215;</button>'
+        "</div>"
+        f'<div class="ovl-lgd">{_parts_legend_html()}</div>'
+        '<div class="ovl-body on" data-tab="solo" style="position:relative">'
+        '<div class="pane"><canvas id="ovl-solo"></canvas></div>'
+        '<div class="ovl-hint">drag to rotate &middot; &#8984;-drag pans '
+        "&middot; scroll to zoom &middot; double-click resets &middot; "
+        "esc closes</div></div>"
+        '<div class="ovl-body" data-tab="evolved" style="position:relative">'
+        '<div class="pane"><canvas id="ovl-evo"></canvas></div>'
+        '<div class="ovl-hint">only the evolved parts (deck + arms) are '
+        "shown &middot; fixed kit hidden</div></div>"
+        '<div class="ovl-body" data-tab="compare" style="position:relative">'
+        '<div class="pane"><div class="cap">baseline '
+        '<span class="hash" id="anc-hash"></span></div>'
+        '<canvas id="ovl-anc"></canvas></div>'
+        '<div class="pane"><div class="cap">this candidate '
+        '<span class="hash" id="cur-hash"></span></div>'
+        '<canvas id="ovl-cur"></canvas></div>'
+        '<div class="ovl-hint">evolved parts only &middot; '
+        "the two models rotate and zoom in sync</div>"
+        "</div>"
+        '<div class="ovl-body" data-tab="diff" style="position:relative">'
+        '<div class="pane"><div class="cap">net change '
+        '<span class="hash" id="diff-hash"></span>'
+        '<span style="font-style:italic;text-transform:none;'
+        'letter-spacing:0;font-weight:400">solid color = this candidate '
+        "&middot; gray ghost = baseline &middot; fixed kit hidden"
+        "</span></div>"
+        '<canvas id="ovl-diff"></canvas></div>'
+        '<div class="ovl-hint">only the parts evolution changes are shown, '
+        "superimposed</div></div>"
+        '<div class="ovl-body" data-tab="fulldiff" style="position:relative">'
+        '<div class="pane"><div class="cap">lineage trail '
+        '<span class="hash" id="full-hash"></span>'
+        '<span style="font-style:italic;text-transform:none;'
+        'letter-spacing:0;font-weight:400">solid color = this candidate '
+        "&middot; gray ghosts = the baseline + every ancestor, "
+        "fainter = older</span></div>"
+        '<canvas id="ovl-full"></canvas></div>'
+        '<div class="ovl-hint">the whole lineage superimposed &middot; '
+        "evolved parts only</div></div>"
+        '<div class="ovl-body" data-tab="walk" style="position:relative">'
+        '<div class="pane"><div class="cap">'
+        '<button class="wbtn" id="walk-prev">&#8249; older</button>'
+        '<button class="wbtn" id="walk-next">newer &#8250;</button>'
+        '<span class="hash" id="walk-lab"></span></div>'
+        '<canvas id="ovl-walk"></canvas>'
+        '<div class="wtl" id="walk-tl"></div></div>'
+        '<div class="ovl-hint">solid = current step &middot; gray ghost = '
+        "next in line &middot; click a thumbnail to morph there &middot; "
+        "&#8592;/&#8594; step &middot; evolved parts only</div></div>"
+        '<div class="ovl-body" data-tab="flight" style="position:relative">'
+        '<div class="pane" style="position:relative"><div class="cap">'
+        '<span class="hash" id="fl-lab"></span>'
+        '<button class="wbtn" id="fl-split-btn">vs baseline</button>'
+        "</div>"
+        '<canvas id="ovl-flight"></canvas>'
+        '<div class="fl-hud" id="fl-hud"></div>'
+        '<div class="wtl fl-bar">'
+        '<button class="wplay" id="fl-play" title="play/pause">&#9654;</button>'
+        '<button class="wplay" id="fl-speed" title="replay speed">8&times;</button>'
+        '<input type="range" id="fl-scrub" min="0" max="999" value="0">'
+        '<span class="fl-time" id="fl-time"></span></div>'
+        "</div>"
+        '<div class="pane fl-b" style="position:relative"><div class="cap">'
+        'baseline <span class="hash" id="flb-anc"></span>'
+        '<span class="hash" id="flb-lab"></span></div>'
+        '<canvas id="ovl-flight-b"></canvas>'
+        '<div class="fl-hud" id="flb-hud"></div>'
+        "</div>"
+        '<div class="ovl-hint">the actual scored flight, replayed from '
+        "simulation telemetry &middot; attitude = thrust vector &middot; "
+        "rotors at telemetry rpm &middot; drag to orbit &middot; "
+        "<b>vs baseline</b> slides in a second replay flying the "
+        "same weather in sync</div></div>"
+        '<div class="ovl-views">'
+        '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
+        '<button data-view="front">front</button>'
+        '<button data-view="top">top</button>'
+        '<button data-view="bottom">bottom</button>'
+        '<button data-view="left">left</button>'
+        '<button data-view="right">right</button>'
+        '<button data-view="default" title="default view (double-click)">'
+        "default</button></div>")
+
+
 def candidate_card_html(store, run_id: str, results_dir: Path,
                         cands: dict, h: str, *, viewer_hashes: set,
                         flight_src: dict, setter_hashes: set,
@@ -2754,104 +2868,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             baseline_hash=baseline_hash, baseline_fit=baseline_fit,
             scen_cache=scen_cache))
 
-    parts.append(
-        '<div id="ovl">'
-        '<div class="ovl-bar">'
-        '<span class="hash"></span>'
-        '<span class="ovl-tabs" id="evo-tabs">'
-        '<button data-tab="solo" class="on">full kit</button>'
-        '<button data-tab="evolved">evolved parts</button>'
-        '<button data-tab="compare">vs baseline</button>'
-        '<button data-tab="diff">net change</button>'
-        '<button data-tab="fulldiff">lineage trail</button>'
-        '<button data-tab="walk">replay</button>'
-        "</span>"
-        '<span class="ovl-tabs" id="perf-tabs"></span>'
-        '<button id="ovl-close" title="close (esc)">&#215;</button>'
-        "</div>"
-        f'<div class="ovl-lgd">{_parts_legend_html()}</div>'
-        '<div class="ovl-body on" data-tab="solo" style="position:relative">'
-        '<div class="pane"><canvas id="ovl-solo"></canvas></div>'
-        '<div class="ovl-hint">drag to rotate &middot; &#8984;-drag pans '
-        "&middot; scroll to zoom &middot; double-click resets &middot; "
-        "esc closes</div></div>"
-        '<div class="ovl-body" data-tab="evolved" style="position:relative">'
-        '<div class="pane"><canvas id="ovl-evo"></canvas></div>'
-        '<div class="ovl-hint">only the evolved parts (deck + arms) are '
-        "shown &middot; fixed kit hidden</div></div>"
-        '<div class="ovl-body" data-tab="compare" style="position:relative">'
-        '<div class="pane"><div class="cap">baseline '
-        '<span class="hash" id="anc-hash"></span></div>'
-        '<canvas id="ovl-anc"></canvas></div>'
-        '<div class="pane"><div class="cap">this candidate '
-        '<span class="hash" id="cur-hash"></span></div>'
-        '<canvas id="ovl-cur"></canvas></div>'
-        '<div class="ovl-hint">evolved parts only &middot; '
-        "the two models rotate and zoom in sync</div>"
-        "</div>"
-        '<div class="ovl-body" data-tab="diff" style="position:relative">'
-        '<div class="pane"><div class="cap">net change '
-        '<span class="hash" id="diff-hash"></span>'
-        '<span style="font-style:italic;text-transform:none;'
-        'letter-spacing:0;font-weight:400">solid color = this candidate '
-        "&middot; gray ghost = baseline &middot; fixed kit hidden"
-        "</span></div>"
-        '<canvas id="ovl-diff"></canvas></div>'
-        '<div class="ovl-hint">only the parts evolution changes are shown, '
-        "superimposed</div></div>"
-        '<div class="ovl-body" data-tab="fulldiff" style="position:relative">'
-        '<div class="pane"><div class="cap">lineage trail '
-        '<span class="hash" id="full-hash"></span>'
-        '<span style="font-style:italic;text-transform:none;'
-        'letter-spacing:0;font-weight:400">solid color = this candidate '
-        "&middot; gray ghosts = the baseline + every ancestor, "
-        "fainter = older</span></div>"
-        '<canvas id="ovl-full"></canvas></div>'
-        '<div class="ovl-hint">the whole lineage superimposed &middot; '
-        "evolved parts only</div></div>"
-        '<div class="ovl-body" data-tab="walk" style="position:relative">'
-        '<div class="pane"><div class="cap">'
-        '<button class="wbtn" id="walk-prev">&#8249; older</button>'
-        '<button class="wbtn" id="walk-next">newer &#8250;</button>'
-        '<span class="hash" id="walk-lab"></span></div>'
-        '<canvas id="ovl-walk"></canvas>'
-        '<div class="wtl" id="walk-tl"></div></div>'
-        '<div class="ovl-hint">solid = current step &middot; gray ghost = '
-        "next in line &middot; click a thumbnail to morph there &middot; "
-        "&#8592;/&#8594; step &middot; evolved parts only</div></div>"
-        '<div class="ovl-body" data-tab="flight" style="position:relative">'
-        '<div class="pane" style="position:relative"><div class="cap">'
-        '<span class="hash" id="fl-lab"></span>'
-        '<button class="wbtn" id="fl-split-btn">vs baseline</button>'
-        "</div>"
-        '<canvas id="ovl-flight"></canvas>'
-        '<div class="fl-hud" id="fl-hud"></div>'
-        '<div class="wtl fl-bar">'
-        '<button class="wplay" id="fl-play" title="play/pause">&#9654;</button>'
-        '<button class="wplay" id="fl-speed" title="replay speed">8&times;</button>'
-        '<input type="range" id="fl-scrub" min="0" max="999" value="0">'
-        '<span class="fl-time" id="fl-time"></span></div>'
-        "</div>"
-        '<div class="pane fl-b" style="position:relative"><div class="cap">'
-        'baseline <span class="hash" id="flb-anc"></span>'
-        '<span class="hash" id="flb-lab"></span></div>'
-        '<canvas id="ovl-flight-b"></canvas>'
-        '<div class="fl-hud" id="flb-hud"></div>'
-        "</div>"
-        '<div class="ovl-hint">the actual scored flight, replayed from '
-        "simulation telemetry &middot; attitude = thrust vector &middot; "
-        "rotors at telemetry rpm &middot; drag to orbit &middot; "
-        "<b>vs baseline</b> slides in a second replay flying the "
-        "same weather in sync</div></div>"
-        '<div class="ovl-views">'
-        '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
-        '<button data-view="front">front</button>'
-        '<button data-view="top">top</button>'
-        '<button data-view="bottom">bottom</button>'
-        '<button data-view="left">left</button>'
-        '<button data-view="right">right</button>'
-        '<button data-view="default" title="default view (double-click)">'
-        "default</button></div>")
+    parts.append(overlay_html())
     # parent map for the overlay's replay/trail: the JS walks BOTH
     # parents to collect each candidate's full ancestry
     walk_meta = {}
