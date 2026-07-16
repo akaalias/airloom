@@ -195,20 +195,23 @@ AL.ensureBlobs(need).then(function(){
 SITE_URL = "https://alexisrondeau.me/airloom/"
 
 
-def write_share_card(results_dir: Path, champ_png: str | None,
+def write_share_card(results_dir: Path, store, run_id: str,
+                     cands: dict, champ_hash: str,
                      improvement: float | None, champ_fit: float,
-                     n_gens: int, n_cands: int) -> Path | None:
-    """share.png (1200x630): the social card, rebuilt with the landing
-    so it always shows the CURRENT champion. Paper background, the
-    title, the headline stat, and the champion's render."""
+                     n_gens: int) -> Path | None:
+    """share.png (1200x630): a Tufte-style small-multiples plate --
+    the run AS a grid of real candidates, one discreet caption line.
+    Setters invert to ink, claude-designed frames carry the purple
+    ring, the champion the accent ring."""
     try:
         from PIL import Image, ImageDraw, ImageFont
     except ImportError:
         return None
+    import math as _math
 
     paper, ink = (255, 255, 248), (17, 17, 17)
     muted, accent = (107, 106, 96), (140, 47, 31)
-    rule = (217, 213, 195)
+    rule, claude = (222, 218, 202), (106, 74, 138)
 
     def font(size: int, face: int = 0):
         for path, idx in (("/System/Library/Fonts/Palatino.ttc", face),
@@ -224,33 +227,76 @@ def write_share_card(results_dir: Path, champ_png: str | None,
     im = Image.new("RGB", (W, H), paper)
     dr = ImageDraw.Draw(im)
 
-    # the champion render fills the right half (its background IS paper)
-    if champ_png and Path(champ_png).exists():
-        r = Image.open(champ_png).convert("RGB")
-        r.thumbnail((640, 560))
-        im.paste(r, (W - r.width - 30, (H - r.height) // 2))
+    ordered, seen = [], set()
+    setters, best = set(), _math.inf
+    for c in store.candidates_in_eval_order(run_id):
+        h = c["hash"]
+        if h in seen or not c["png_path"]:
+            continue
+        seen.add(h)
+        ordered.append(h)
+        f = store.fitness_of(c)
+        if _math.isfinite(f) and f < best:
+            best = f
+            setters.add(h)
 
-    x = 64
-    dr.text((x, 74), "“The snuggle is real”",
-            font=font(64), fill=ink)
-    sub = ["evolving quadcopter frame geometry",
-           "for Wh/km, with Claude as an",
-           "occasional co-designer"]
-    for i, line in enumerate(sub):
-        dr.text((x, 175 + i * 40), line, font=font(30, 1), fill=muted)
-    y = 355
-    if improvement is not None:
-        dr.text((x, y), f"{improvement:.0f}% more efficient",
-                font=font(46, 2), fill=accent)
-        y += 62
-    dr.text((x, y), f"{champ_fit:.3f} Wh/km champion, bred over "
-            f"{n_gens} generations", font=font(26), fill=ink)
-    dr.text((x, y + 40), f"{n_cands} candidates · six weather "
-            "scenarios · real CFD streamlines",
-            font=font(26), fill=ink)
-    dr.text((x, H - 74), "alexisrondeau.me/airloom · free software, "
-            "GPLv3", font=font(22, 1), fill=muted)
-    dr.rectangle([12, 12, W - 13, H - 13], outline=rule, width=2)
+    COLS, ROWS, gap = 14, 6, 5
+    margin, cap_h = 26, 44
+    cell = min((W - 2 * margin - (COLS - 1) * gap) // COLS,
+               (H - 2 * margin - cap_h - (ROWS - 1) * gap) // ROWS)
+    gw = COLS * cell + (COLS - 1) * gap
+    gh = ROWS * cell + (ROWS - 1) * gap
+    gx0 = (W - gw) // 2
+    gy0 = (H - cap_h - gh) // 2
+    n_cells = COLS * ROWS
+
+    def sample(pool, k):
+        if len(pool) <= k:
+            return list(pool)
+        return [pool[int(i * len(pool) / k)] for i in range(k)]
+
+    setter_pick = sample([h for h in ordered
+                          if h in setters and h != champ_hash], 10)
+    claude_pick = sample([h for h in ordered
+                          if cands[h]["operator"] == "designer"
+                          and h not in setters and h != champ_hash], 6)
+    forced = set(setter_pick) | set(claude_pick) | {champ_hash}
+    rest = [h for h in ordered if h not in forced]
+    fill = sample(rest, n_cells - len(forced))
+    order_idx = {h: i for i, h in enumerate(ordered)}
+    sel = sorted(forced | set(fill), key=lambda h: order_idx[h])
+    sel = sel[:n_cells]
+
+    for i, h in enumerate(sel):
+        r, c9 = divmod(i, COLS)
+        x = gx0 + c9 * (cell + gap)
+        y = gy0 + r * (cell + gap)
+        try:
+            th = Image.open(cands[h]["png_path"]).convert("RGB")
+            th.thumbnail((cell, cell - 8))
+            im.paste(th, (x + (cell - th.width) // 2,
+                          y + (cell - 8 - th.height) // 2))
+        except OSError:
+            continue
+        # data-ink only: a small dot beneath marks the special frames
+        mark = (accent if h == champ_hash
+                else ink if h in setters
+                else claude if cands[h]["operator"] == "designer"
+                else None)
+        if mark:
+            mx, my = x + cell // 2, y + cell - 4
+            dr.ellipse([mx - 3, my - 3, mx + 3, my + 3], fill=mark)
+
+    # one discreet caption line, the Tufte way
+    cap_y = gy0 + gh + 16
+    cap = ("\u201cThe snuggle is real\u201d \u2014 "
+           f"{len(cands)} quadcopter frames, evolved"
+           + (f" {improvement:.0f}% more efficient"
+              if improvement is not None else "")
+           + " \u00b7 alexisrondeau.me/airloom")
+    fnt = font(23, 1)
+    tw = dr.textlength(cap, font=fnt)
+    dr.text(((W - tw) / 2, cap_y), cap, font=fnt, fill=muted)
 
     out = results_dir / "share.png"
     im.save(out)
@@ -297,8 +343,8 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
                          and math.isfinite(base_fit) and base_fit > 0
                          else None)
     if champ_hash is not None:
-        write_share_card(results_dir, champ_png_path, improvement_early,
-                         champ_fit, n_gens, len(cands))
+        write_share_card(results_dir, store, run_id, cands, champ_hash,
+                         improvement_early, champ_fit, n_gens)
     og_title = ("\u201cThe snuggle is real\u201d \u2014 evolving "
                 "quadcopter frame geometry for Wh/km")
     og_desc = ("A genetic algorithm with Claude as an occasional "
