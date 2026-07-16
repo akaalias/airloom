@@ -497,7 +497,9 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
   "float d=abs(dot(normalize(vN),L));float s=0.45+0.55*d;"+
   "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a*uF);}";
 
-var DEF_YAW=-0.9,DEF_PITCH=0.8;
+// default camera: nose-side three-quarter view (the FPV camera faces the
+// viewer); the pre-flip back view was DEF_YAW=-0.9
+var DEF_YAW=Math.PI-0.9,DEF_PITCH=0.8;
 var blobCache={};
 // ---- on-demand mesh loading: payloads live in per-candidate
 // frames/gen_XXXX/<hash>.mesh.js files (JSONP-style: they call
