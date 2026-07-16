@@ -2771,7 +2771,6 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                         "g": c["generation_born"],
                         "f": f"{fit:.3f}" if math.isfinite(fit) else None,
                         "i": _rel(results_dir, c["png_path"])}
-    parts.append(GH_RIBBON_HTML)
     # viewport-driven image loading: thousands of heavy stills, so only
     # those near the viewport get fetched (1600px lookahead keeps
     # scrolling seamless). Native loading=lazy proved unreliable --
@@ -2802,6 +2801,9 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts.append(f"<script>{DOVL_JS}</script>")
     parts.append(f"<script>{VIEWER_JS}</script>")
     parts.append("</div>")
+    # ribbon last, OUTSIDE every container: an ancestor like the
+    # display:none #ovl would keep it from rendering on plain page loads
+    parts.append(GH_RIBBON_HTML)
 
     out = results_dir / "index.html"
     out.write_text("\n".join(parts))
