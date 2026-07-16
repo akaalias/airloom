@@ -1277,7 +1277,10 @@ function makeViewer(canvas,state,opts){
         gl.uniform2f(f2.uA,asp[0],asp[1]);
         gl.uniform2f(f2.uPn,state.panX||0,state.panY||0);
         gl.uniform2f(f2.uVP,canvas.width,canvas.height);
-        gl.uniform1f(f2.uW,1.2*dpr); // ribbon half-width, device px
+        // ribbon half-width scales with the viewport: full-screen gets
+        // the full ribbon, the small scenario boxes near-hairlines
+        gl.uniform1f(f2.uW,
+          1.2*dpr*Math.max(0.45,Math.min(1,canvas.clientHeight/420)));
         gl.uniform1f(f2.uPh,flow.phase);
         gl.uniform1f(f2.uPer,0.7*frame.r);
         gl.uniform3f(f2.uCol,0.55,0.72,0.67);  // light emerald
