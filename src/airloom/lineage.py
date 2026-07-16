@@ -436,29 +436,39 @@ function clear(){
   svgs.forEach(function(svg){svg.classList.remove("focus")});
   card.style.display="none";
 }
+// the pinned lineage is the resting state: hover previews any node's
+// ancestry on top of it, and mouseleave falls back to the pin
+var pinnedG=0,pinnedQuiet=false;
+function restore(){
+  if(pinned)show(pinned,true,pinnedG,pinnedQuiet);
+  else clear();
+}
 function unpin(){
   if(pinned){pinned=null;clear()}
 }
 svgs.forEach(function(svg){
   svg.querySelectorAll(".hit").forEach(function(hit){
     hit.addEventListener("mouseenter",function(){
-      if(!pinned)show(hit.dataset.h,false,+hit.dataset.g)});
-    hit.addEventListener("mouseleave",function(){
-      if(!pinned)clear()});
+      show(hit.dataset.h,false,+hit.dataset.g)});
+    hit.addEventListener("mouseleave",restore);
     hit.addEventListener("click",function(ev){
       ev.stopPropagation();
       if(pinned===hit.dataset.h){unpin()}
-      else{pinned=hit.dataset.h;show(pinned,true,+hit.dataset.g)}
+      else{pinned=hit.dataset.h;pinnedG=+hit.dataset.g;
+        pinnedQuiet=false;show(pinned,true,pinnedG)}
     });
   });
 });
 document.addEventListener("click",unpin);
 document.addEventListener("keydown",function(ev){
   if(ev.key==="Escape")unpin()});
-// a page may open with one lineage already lit (the landing pins its champion)
+// a page may open with one lineage already lit (the landing pins its
+// champion); the quiet flag keeps the hover card closed at rest
 if(typeof window.TREE_PIN==="string"&&META[window.TREE_PIN]){
   pinned=window.TREE_PIN;
-  show(pinned,true,META[pinned].g,true);
+  pinnedG=META[pinned].g;
+  pinnedQuiet=true;
+  show(pinned,true,pinnedG,true);
 }
 })();
 """
