@@ -632,7 +632,9 @@ function trailSpecs(chain){
 // from the baseline to the candidate, cross-fading between steps. Pages
 // hand it their own canvas/timeline/label/prev/next elements.
 function makeReplay(o){
-  var state=makeState(o.pitch===undefined?1.2:o.pitch);
+  // default camera tilt (nose-side three-quarter), same as every other
+  // viewer; pass pitch to override (e.g. 1.2 for a top-down plan view)
+  var state=makeState(o.pitch);
   var viewer=null,anim=null,timer=null,playBtn=null;
   var rep={state:state,chain:[],all:[],frame:null,idx:0};
   rep.redraw=function(){state.redraw()};
