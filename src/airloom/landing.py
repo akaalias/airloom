@@ -43,6 +43,17 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.08em;color:var(--faint)}
 .stats .stat b .up{color:#2e6e63}
+/* build it: the champion's flat part templates, drawn to one scale */
+#tpl-row{display:flex;gap:40px 48px;margin:30px auto 0;flex-wrap:wrap;
+  justify-content:center;align-items:flex-end;max-width:1040px}
+#tpl-row figure{margin:0;text-align:center}
+#tpl-row img{display:block;margin:0 auto 10px;max-width:100%}
+#tpl-row figcaption{font-size:13.5px;color:var(--muted);line-height:1.55}
+#tpl-row figcaption b{color:var(--ink);font-weight:600}
+#tpl-row .dim{font-variant-numeric:lining-nums tabular-nums}
+#tpl-row .bnote{font-style:italic;color:var(--faint)}
+.buildfoot{text-align:center;font-size:14.5px;font-style:italic;
+  color:var(--muted);margin:26px auto 0;max-width:760px;line-height:1.7}
 /* the replay panel */
 .panel{margin:22px 0 0;border-top:1px solid var(--rule);padding-top:18px}
 .panel h3{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
@@ -320,6 +331,69 @@ INTRO_TEXT = (
     'airloom">GPLv3</a>.')
 
 
+def _build_section_html(results_dir: Path, champ) -> list[str]:
+    """The "build it" card: the champion's five flat templates drawn to
+    one shared scale (the true-scale SVGs the parts export writes), each
+    with its dimensions, quantity and STL/SVG download links. Renders
+    nothing if the parts export (parts.json) is missing."""
+    if not champ["png_path"]:
+        return []
+    pdir = Path(champ["png_path"]).parent / f"{champ['hash']}.parts"
+    try:
+        spec = json.loads((pdir / "parts.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+    plist = [p for p in spec.get("parts", []) if p.get("svg")]
+    if not plist:
+        return []
+    # one shared scale: the longest part sets px-per-mm, capped for print
+    longest = max(p["length_mm"] for p in plist)
+    k = min(1.8, 500.0 / longest)
+    figs = []
+    for p in plist:
+        rel_svg = _rel(results_dir, str(pdir / p["svg"]))
+        rel_stl = _rel(results_dir, str(pdir / p["file"]))
+        w_px = (p["length_mm"] + 4.0) * k  # + the SVG's 2 mm margins
+        note = (f'<br><span class="bnote">{html.escape(p["note"])}</span>'
+                if p.get("note") else "")
+        figs.append(
+            f'<figure><img src="{rel_svg}" alt="{html.escape(p["label"])} '
+            f'outline" style="width:{w_px:.0f}px" decoding="async">'
+            f'<figcaption><b>{p["qty"]}&times; {html.escape(p["label"])}'
+            f'</b> &middot; <span class="dim">{p["length_mm"]:g}&times;'
+            f'{p["width_mm"]:g}&thinsp;mm</span> &middot; '
+            f'<a href="{rel_stl}" download>STL</a> / '
+            f'<a href="{rel_svg}" download>SVG</a>{note}</figcaption>'
+            f"</figure>")
+    foot = (f"Print or cut every part in <b>"
+            f'{html.escape(spec["material_label"])}</b> &mdash; arms '
+            f"{spec['arm_thickness_mm']}&thinsp;mm thick, deck plates "
+            f"{spec['plate_thickness_mm']}&thinsp;mm. The STLs are "
+            "already extruded to final thickness; the SVGs are "
+            "true-scale (mm) for CNC or laser cutting. Standoffs, "
+            "screws and electronics are the stock Source One kit&rsquo;s.")
+    if spec.get("clamp_holes_recut"):
+        foot += (" The arm-clamp bolt holes in the main and mid plates "
+                 "are re-cut where the swept arms actually sit, so the "
+                 "arms bolt straight on.")
+    if spec.get("assembled"):
+        rel_asm = _rel(results_dir, str(pdir / spec["assembled"]))
+        foot += (f' Also: the <a href="{rel_asm}" download>assembled '
+                 "frame</a> as one solid, for reference and scale checks")
+        rel_readme = _rel(results_dir, str(pdir / "README.txt"))
+        if (pdir / "README.txt").exists():
+            foot += (f', and a <a href="{rel_readme}" download>build '
+                     "README</a>")
+        foot += "."
+    return [
+        "<h2>build it: the champion as five flat templates</h2>",
+        '<p class="sub">the exact parts the champion scored with, laid '
+        "flat in print/cut orientation and drawn to one shared scale "
+        "&mdash; bolt holes, lightening cutouts and all.</p>",
+        f'<div id="tpl-row">{"".join(figs)}</div>',
+        f'<p class="buildfoot">{foot}</p>']
+
+
 def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
     """index.html: the result-first landing page. Fail-soft: with no
     valid candidates it still writes a page pointing at the log."""
@@ -521,6 +595,9 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         'story, and the <a href="log.html">research log</a> has every '
         "candidate in full.</p>",
         tree_section_html(store, run_id, results_dir, pin=champ_hash)]
+
+    # build it: the champion's flat templates, the very end of the page
+    parts += _build_section_html(results_dir, champ)
 
 
     # data payloads for the shared engine: only the champion's ancestry

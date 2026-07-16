@@ -18,7 +18,7 @@ with an _INVALID suffix) but never simulated: fitness = inf.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import trimesh
@@ -28,9 +28,9 @@ from .config import Material, Platform
 from .genome import Genome
 from functools import lru_cache
 
-from .realgeo import (STOCK_ANCHORS, ArmOutline, extrude, load_outlines,
-                      min_web_width, mirror_y, morph_arm, morph_plate,
-                      shaft_min_width)
+from .realgeo import (STOCK_ANCHORS, ArmOutline, Outline, extrude,
+                      load_outlines, min_web_width, mirror_y, morph_arm,
+                      morph_plate, shaft_min_width)
 
 MOTOR_H = 0.026            # motor stack height above the arm mount
 STACK_H = 0.0216           # FC + ESC stack height inside the gap
@@ -401,10 +401,106 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                                              batt_l * batt_w * 1e6) * 1e-6)
 
 
+# human-readable names for the material gene's choices, keyed by the
+# platform library names (config/platform.yaml)
+MATERIAL_LABELS = {
+    "cf_plate": "CNC-cut carbon-fiber laminate",
+    "pa12_cf": "PA12-CF (carbon-fiber nylon)",
+    "pet_cf": "PET-CF (carbon-fiber PET)",
+    "pla_plus": "PLA+",
+    "petg": "PETG",
+    "asa": "ASA",
+}
+
+# the five flat templates and how many of each a complete frame needs
+PART_SPECS = (
+    ("arm_front", "front arm", 2, "print one mirrored"),
+    ("arm_rear", "rear arm", 2, "print one mirrored"),
+    ("plate_main", "main plate", 1, None),
+    ("plate_mid", "mid plate", 1, None),
+    ("plate_top", "top plate", 1, None),
+)
+
+
+def _arm_clamp_holes(arm_front: ArmOutline, arm_rear: ArmOutline,
+                     g: dict) -> list[tuple[float, float, float]]:
+    """The eight tongue-bolt positions in main-plate mm coordinates,
+    with the arms placed exactly as build_frame places them (drawing
+    anchors scaled by the plate morph, sweep genes rotating each arm
+    about its anchor, left/right mirrored chirality)."""
+    sx, sy = g["plate_length_scale"], g["plate_width_scale"]
+    az_f = math.radians(g["front_sweep_deg"])
+    az_r = math.pi - math.radians(g["rear_sweep_deg"])
+    tfx, tfy = STOCK_ANCHORS["front"][1]
+    trx, try_ = STOCK_ANCHORS["rear"][1]
+    placements = [
+        (arm_front, az_f, (tfx * sx, tfy * sy)),
+        (mirror_y(arm_front), -az_f, (tfx * sx, -tfy * sy)),
+        (mirror_y(arm_rear), az_r, (trx * sx, try_ * sy)),
+        (arm_rear, -az_r, (trx * sx, -try_ * sy)),
+    ]
+    holes = []
+    for outline, az, (ax, ay) in placements:
+        c, s = math.cos(az), math.sin(az)
+        for bx, by, r in outline.holes:
+            if bx < outline.tongue_end and r < 1.6:
+                holes.append((ax + bx * c - by * s,
+                              ay + bx * s + by * c, r))
+    return holes
+
+
+def _recut_clamp_holes(plate: Outline,
+                       clamp: list[tuple[float, float, float]]) -> Outline:
+    """Re-cut the arm-clamp bolt holes into a deck plate template where
+    the placed arms actually sit. Stale holes that would overlap a
+    re-cut one (the scaled stock clamp pattern) are dropped so the
+    template gets clean round holes instead of figure-eight slots; holes
+    that would fall on or over the plate edge are skipped."""
+    from shapely.geometry import Point, Polygon
+
+    shell = Polygon(plate.shell)
+    added = [h for h in clamp
+             if shell.contains(Point(h[0], h[1]).buffer(h[2] + 0.8))]
+    kept = [h for h in plate.holes
+            if all(math.hypot(h[0] - a[0], h[1] - a[1]) > h[2] + a[2] + 0.8
+                   for a in added)]
+    return replace(plate, holes=tuple(kept) + tuple(added))
+
+
+def _outline_svg(outline: Outline) -> str:
+    """A flat part as a true-scale SVG template (mm units): shell and
+    lightening cutouts as paths, bolt holes as circles. Y is flipped so
+    the drawing matches the top view of the assembled frame."""
+    def path_d(poly) -> str:
+        return ("M" + " L".join(f"{x:.2f},{-y:.2f}" for x, y in poly)
+                + " Z")
+
+    paths = "".join(f'<path d="{path_d(p)}"/>'
+                    for p in (outline.shell, *outline.cutouts))
+    circles = "".join(f'<circle cx="{x:.2f}" cy="{-y:.2f}" r="{r:.2f}"/>'
+                      for x, y, r in outline.holes)
+    m = 2.0  # mm of quiet margin around the part
+    x0 = float(outline.shell[:, 0].min()) - m
+    y0 = float(-outline.shell[:, 1].max()) - m
+    w = outline.length + 2 * m
+    hgt = outline.width + 2 * m
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.1f}mm" '
+            f'height="{hgt:.1f}mm" '
+            f'viewBox="{x0:.1f} {y0:.1f} {w:.1f} {hgt:.1f}">'
+            f'<g fill="none" stroke="#111" stroke-width="0.35" '
+            f'stroke-linejoin="round">{paths}{circles}</g></svg>')
+
+
 def export_printable_parts(genome: Genome, platform: Platform,
-                           out_dir) -> list[str]:
+                           out_dir, assembled_stl=None) -> list[str]:
     """The champion's individual pieces, flat in print/cut orientation --
-    real morphed Source One outlines with their bolt holes and cutouts."""
+    real morphed Source One outlines with their bolt holes and cutouts.
+    Each part is written as an STL (extruded to final thickness) and a
+    true-scale SVG template; parts.json (material + thickness build spec,
+    rendered by the landing's build-it card) and a README.txt round out
+    the set. Optionally copies the assembled full-frame STL alongside."""
+    import json
+    import shutil
     from pathlib import Path
 
     g = genome.as_dict()
@@ -414,18 +510,70 @@ def export_printable_parts(genome: Genome, platform: Platform,
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     written = []
-    for name, solid in (
-        ("arm_front", extrude(morph_arm(outlines["arm_front"], g["arm_length_scale"],
-                                        g["arm_width_scale"], g["arm_waist_scale"]),
-                              g["arm_thickness"])),
-        ("arm_rear", extrude(morph_arm(outlines["arm_rear"], g["arm_length_scale"],
-                                       g["arm_width_scale"], g["arm_waist_scale"]),
-                             g["arm_thickness"])),
-        ("plate_main", extrude(morph_plate(outlines["plate_main"], sx, sy), tp)),
-        ("plate_mid", extrude(morph_plate(outlines["plate_mid"], sx, sy), tp)),
-        ("plate_top", extrude(morph_plate(outlines["plate_top"], sx, sy), tp)),
-    ):
+    flats = {
+        "arm_front": morph_arm(outlines["arm_front"], g["arm_length_scale"],
+                               g["arm_width_scale"], g["arm_waist_scale"]),
+        "arm_rear": morph_arm(outlines["arm_rear"], g["arm_length_scale"],
+                              g["arm_width_scale"], g["arm_waist_scale"]),
+        "plate_main": morph_plate(outlines["plate_main"], sx, sy),
+        "plate_mid": morph_plate(outlines["plate_mid"], sx, sy),
+        "plate_top": morph_plate(outlines["plate_top"], sx, sy),
+    }
+    # buildability: the sweep genes rotate the arms away from the stock
+    # clamp pattern, so re-cut the arm-clamp bolt holes into the deck
+    # plates where the placed tongues actually sit (build_frame only
+    # requires bolts to land on plate material -- frame_gen.py's tongue
+    # bolt check -- because the plates regenerate per candidate)
+    clamp = _arm_clamp_holes(flats["arm_front"], flats["arm_rear"], g)
+    for pname in ("plate_main", "plate_mid"):
+        flats[pname] = _recut_clamp_holes(flats[pname], clamp)
+    thickness = {"arm_front": g["arm_thickness"],
+                 "arm_rear": g["arm_thickness"],
+                 "plate_main": tp, "plate_mid": tp, "plate_top": tp}
+    for name, _, _, _ in PART_SPECS:
         p = out / f"{name}.stl"
-        solid.export(p)
+        extrude(flats[name], thickness[name]).export(p)
+        (out / f"{name}.svg").write_text(_outline_svg(flats[name]))
         written.append(str(p))
+
+    material = platform.material_for(g["material"])
+    spec = {
+        "material": material.name,
+        "material_label": MATERIAL_LABELS.get(material.name, material.name),
+        "arm_thickness_mm": round(g["arm_thickness"] * 1e3, 1),
+        "plate_thickness_mm": round(tp * 1e3, 1),
+        "clamp_holes_recut": True,
+        "parts": [{"file": f"{name}.stl", "svg": f"{name}.svg",
+                   "label": label, "qty": qty,
+                   "length_mm": round(flats[name].length, 1),
+                   "width_mm": round(flats[name].width, 1),
+                   **({"note": note} if note else {})}
+                  for name, label, qty, note in PART_SPECS],
+    }
+    if assembled_stl and Path(assembled_stl).exists():
+        shutil.copyfile(assembled_stl, out / "frame_assembled.stl")
+        spec["assembled"] = "frame_assembled.stl"
+    (out / "parts.json").write_text(json.dumps(spec, indent=2))
+    qty_lines = "\n".join(
+        f"  {qty}x {label} ({name}.stl / {name}.svg)"
+        + (f" -- {note}" if note else "")
+        for name, label, qty, note in PART_SPECS)
+    (out / "README.txt").write_text(
+        "Airloom evolved frame -- printable/cuttable templates\n\n"
+        f"Material: {spec['material_label']}\n"
+        f"Arm thickness: {spec['arm_thickness_mm']} mm "
+        "(the STLs are already extruded to thickness)\n"
+        f"Deck plate thickness: {spec['plate_thickness_mm']} mm\n\n"
+        "Parts to produce:\n" + qty_lines + "\n\n"
+        "STLs are ready to print; SVGs are true-scale (mm) outlines\n"
+        "for CNC/laser cutting. All parts are flat in print/cut\n"
+        "orientation. Bolt holes and cutouts come from the real\n"
+        "Source One V6 outlines; hardware (standoffs, screws, stack,\n"
+        "motors) is the stock kit's.\n\n"
+        "The arm-clamp bolt holes in the main and mid plates are\n"
+        "RE-CUT to match this candidate's actual arm sweep and plate\n"
+        "scale (stock clamp holes that would overlap were removed), so\n"
+        "the arms bolt straight on. Note the simulated frame carried\n"
+        "the scaled stock hole pattern instead -- the difference is a\n"
+        "few M3 holes' worth of material.\n")
     return written

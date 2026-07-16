@@ -180,6 +180,9 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     if glossary.exists():
         import shutil
         shutil.copyfile(glossary, results / "glossary.html")
+    # the champion's flat templates + build spec, before the cards that
+    # link to them render
+    gallery.export_champion_parts(store, run_id, cfg.platform)
     gallery.write_gallery(store, run_id, results, cfg.aggregation.target_whkm,
                           cfg.aggregation.record_whkm, cfg.evolution, cfg=cfg)
     gallery.write_leaderboard(store, run_id, results,

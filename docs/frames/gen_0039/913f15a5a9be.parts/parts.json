@@ -1,0 +1,52 @@
+{
+  "material": "pa12_cf",
+  "material_label": "PA12-CF (carbon-fiber nylon)",
+  "arm_thickness_mm": 4.3,
+  "plate_thickness_mm": 1.6,
+  "clamp_holes_recut": true,
+  "parts": [
+    {
+      "file": "arm_front.stl",
+      "svg": "arm_front.svg",
+      "label": "front arm",
+      "qty": 2,
+      "length_mm": 165.6,
+      "width_mm": 31.3,
+      "note": "print one mirrored"
+    },
+    {
+      "file": "arm_rear.stl",
+      "svg": "arm_rear.svg",
+      "label": "rear arm",
+      "qty": 2,
+      "length_mm": 142.9,
+      "width_mm": 29.4,
+      "note": "print one mirrored"
+    },
+    {
+      "file": "plate_main.stl",
+      "svg": "plate_main.svg",
+      "label": "main plate",
+      "qty": 1,
+      "length_mm": 110.3,
+      "width_mm": 49.9
+    },
+    {
+      "file": "plate_mid.stl",
+      "svg": "plate_mid.svg",
+      "label": "mid plate",
+      "qty": 1,
+      "length_mm": 110.8,
+      "width_mm": 49.9
+    },
+    {
+      "file": "plate_top.stl",
+      "svg": "plate_top.svg",
+      "label": "top plate",
+      "qty": 1,
+      "length_mm": 165.0,
+      "width_mm": 43.7
+    }
+  ],
+  "assembled": "frame_assembled.stl"
+}

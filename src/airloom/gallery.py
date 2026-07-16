@@ -3404,6 +3404,26 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     return out
 
 
+def export_champion_parts(store: Store, run_id: str, platform) -> Path | None:
+    """Export the run champion's flat printable pieces (plus the
+    parts.json build spec the candidate card renders as download links)
+    into frames/gen_XXXX/<hash>.parts/, next to its other artifacts."""
+    from .frame_gen import export_printable_parts
+    from .genome import Genome
+
+    rows = [r for r in store.candidates_for_run(run_id)
+            if r["fitness"] is not None and r["stl_path"]]
+    if not rows:
+        return None
+    best = min(rows, key=lambda r: r["fitness"])
+    stl = Path(best["stl_path"])
+    out = stl.parent / f"{best['hash']}.parts"
+    genome = Genome.from_dict(json.loads(best["genome_json"]))
+    export_printable_parts(genome, platform, out,
+                           assembled_stl=stl if stl.exists() else None)
+    return out
+
+
 def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     """Mirror the report into docs/ -- the GitHub Pages root -- so the
     published site always tracks the latest generated pages. Copies the
@@ -3427,7 +3447,8 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     if dst_frames.exists():  # drop stills of previous runs' candidates
         shutil.rmtree(dst_frames)
     if src_frames.exists():
-        for pattern in ("*.png", "*.mesh.js", "*.flight.js", "*.flow.js"):
+        for pattern in ("*.png", "*.mesh.js", "*.flight.js", "*.flow.js",
+                        "*.parts/*"):
             for f in sorted(src_frames.rglob(pattern)):
                 dst = docs_dir / f.relative_to(results_dir)
                 dst.parent.mkdir(parents=True, exist_ok=True)

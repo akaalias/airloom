@@ -433,6 +433,10 @@ class EvolutionLoop:
         glossary = self.cfg.root / "docs" / "glossary.html"
         if glossary.exists():  # keep the gallery's glossary link file://-local
             shutil.copyfile(glossary, self.results / "glossary.html")
+        # the champion's flat templates + build spec, before the cards
+        # that link to them render
+        gallery_mod.export_champion_parts(self.store, self.run_id,
+                                          self.cfg.platform)
         gallery_mod.write_gallery(self.store, self.run_id, self.results,
                                   self.cfg.aggregation.target_whkm,
                                   self.cfg.aggregation.record_whkm,
