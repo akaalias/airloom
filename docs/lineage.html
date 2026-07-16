@@ -52,9 +52,10 @@ svg.lens-breed .bs,svg.lens-breed .ch,svg.lens-breed .xm{display:none}
 /* hover interactivity: dim everything outside the hovered ancestry */
 .nd,.ed,.el,.bs,.ch,.cl,.im,.xm{transition:opacity .12s ease}
 .hit{cursor:pointer}
-svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit),
-svg.focus .bs:not(.lit),svg.focus .ch:not(.lit),svg.focus .cl:not(.lit),
-svg.focus .im:not(.lit),svg.focus .xm:not(.lit){opacity:.12}
+svg.focus .nd:not(.lit),svg.focus .bs:not(.lit),svg.focus .ch:not(.lit),
+svg.focus .cl:not(.lit),svg.focus .im:not(.lit),
+svg.focus .xm:not(.lit){opacity:.45}
+svg.focus .ed:not(.lit),svg.focus .el:not(.lit){opacity:.12}
 svg.focus .ed.lit{stroke-width:2;opacity:1}
 svg.focus .el.lit{stroke-width:2;opacity:1}
 svg.focus .nd.lit{stroke:var(--ink);stroke-width:1.6}
