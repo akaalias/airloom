@@ -368,6 +368,49 @@ function makeViewer(canvas,state,opts){
     gl.bindBuffer(gl.ARRAY_BUFFER,flow.bufs.aC);
     gl.bufferData(gl.ARRAY_BUFFER,flow.Cb.subarray(0,co),gl.DYNAMIC_DRAW);
   }
+  // build the ribbon-quad buffers for one set of streamlines
+  function buildRibbon(lines,umag){
+    var segs=0;
+    lines.forEach(function(l){segs+=l.p.length/3-1});
+    var V=segs*6; // 6 verts per segment: two triangles of the ribbon
+    var P=new Float32Array(V*3),Q=new Float32Array(V*3),
+        E=new Float32Array(V*2),F=new Float32Array(V*3);
+    var CORNERS=[[0,-1],[0,1],[1,1],[0,-1],[1,1],[1,-1]];
+    var vi=0;
+    lines.forEach(function(l){
+      var n=l.p.length/3,total=0,acc=[0];
+      for(var i=1;i<n;i++){
+        total+=Math.hypot(l.p[3*i]-l.p[3*i-3],l.p[3*i+1]-l.p[3*i-2],
+                          l.p[3*i+2]-l.p[3*i-1]);
+        acc.push(total);
+      }
+      total=total||1;
+      for(var i2=1;i2<n;i2++){
+        var fA=0.45+0.55*Math.min(1.4,(l.s[i2-1]||0)/umag);
+        var fB=0.45+0.55*Math.min(1.4,(l.s[i2]||0)/umag);
+        for(var c9=0;c9<6;c9++){
+          var e=CORNERS[c9];
+          for(var q=0;q<3;q++){
+            P[3*vi+q]=l.p[3*(i2-1)+q];
+            Q[3*vi+q]=l.p[3*i2+q];
+          }
+          E[2*vi]=e[0];E[2*vi+1]=e[1];
+          F[3*vi]=e[0]?acc[i2]:acc[i2-1];
+          F[3*vi+1]=total;
+          F[3*vi+2]=e[0]?fB:fA;
+          vi++;
+        }
+      }
+    });
+    var bufs={aP:gl.createBuffer(),aQ:gl.createBuffer(),
+              aE:gl.createBuffer(),aF:gl.createBuffer()};
+    [[bufs.aP,P],[bufs.aQ,Q],[bufs.aE,E],[bufs.aF,F]]
+      .forEach(function(b){
+        gl.bindBuffer(gl.ARRAY_BUFFER,b[0]);
+        gl.bufferData(gl.ARRAY_BUFFER,b[1],gl.STATIC_DRAW);
+      });
+    return {nv:V,bufs:bufs};
+  }
   var view={
     canvas:canvas,
     loadBlob:function(id){view.load([{id:id}])},
@@ -510,48 +553,26 @@ function makeViewer(canvas,state,opts){
     // line geometry is static per scenario; only the traveling ripple
     // is animated. null falls back to the analytic field.
     setFlowLines:function(data,pose){
-      if(!data||!data.lines||!data.lines.length){flow.cfd=null;return}
-      var segs=0;
-      data.lines.forEach(function(l){segs+=l.p.length/3-1});
-      var umag=Math.hypot(data.u[0],data.u[1],data.u[2])||1;
-      var V=segs*6; // 6 verts per segment: two triangles of the ribbon
-      var P=new Float32Array(V*3),Q=new Float32Array(V*3),
-          E=new Float32Array(V*2),F=new Float32Array(V*3);
-      var CORNERS=[[0,-1],[0,1],[1,1],[0,-1],[1,1],[1,-1]];
-      var vi=0;
-      data.lines.forEach(function(l){
-        var n=l.p.length/3,total=0,acc=[0];
-        for(var i=1;i<n;i++){
-          total+=Math.hypot(l.p[3*i]-l.p[3*i-3],l.p[3*i+1]-l.p[3*i-2],
-                            l.p[3*i+2]-l.p[3*i-1]);
-          acc.push(total);
-        }
-        total=total||1;
-        for(var i2=1;i2<n;i2++){
-          var fA=0.45+0.55*Math.min(1.4,(l.s[i2-1]||0)/umag);
-          var fB=0.45+0.55*Math.min(1.4,(l.s[i2]||0)/umag);
-          for(var c9=0;c9<6;c9++){
-            var e=CORNERS[c9];
-            for(var q=0;q<3;q++){
-              P[3*vi+q]=l.p[3*(i2-1)+q];
-              Q[3*vi+q]=l.p[3*i2+q];
-            }
-            E[2*vi]=e[0];E[2*vi+1]=e[1];
-            F[3*vi]=e[0]?acc[i2]:acc[i2-1];
-            F[3*vi+1]=total;
-            F[3*vi+2]=e[0]?fB:fA;
-            vi++;
-          }
-        }
-      });
-      var bufs={aP:gl.createBuffer(),aQ:gl.createBuffer(),
-                aE:gl.createBuffer(),aF:gl.createBuffer()};
-      [[bufs.aP,P],[bufs.aQ,Q],[bufs.aE,E],[bufs.aF,F]]
-        .forEach(function(b){
-          gl.bindBuffer(gl.ARRAY_BUFFER,b[0]);
-          gl.bufferData(gl.ARRAY_BUFFER,b[1],gl.STATIC_DRAW);
+      if(!data||(!data.lines&&!data.sets)){flow.cfd=null;return}
+      // a SWEEP payload carries one field per attitude: the draw pass
+      // blends the two nearest by the live angle of attack, so the
+      // near field re-wraps as the craft pitches (quasi-steady)
+      if(data.sets&&data.sets.length){
+        var sets=[];
+        data.sets.forEach(function(st2){
+          if(!st2.lines.length)return;
+          var um=Math.hypot(st2.u[0],st2.u[1],st2.u[2])||1;
+          var b=buildRibbon(st2.lines,um);
+          sets.push({a:st2.a,nv:b.nv,bufs:b.bufs});
         });
-      flow.cfd={nv:V,bufs:bufs,umag:umag,pose:pose||null};
+        if(!sets.length){flow.cfd=null;return}
+        flow.cfd={sets:sets,u0:data.u,
+          umag:Math.hypot(data.u[0],data.u[1],data.u[2])||1};
+        return;
+      }
+      var um=Math.hypot(data.u[0],data.u[1],data.u[2])||1;
+      var b=buildRibbon(data.lines,um);
+      flow.cfd={nv:b.nv,bufs:b.bufs,umag:um,pose:pose||null};
     },
     // feed the wind-channel layer: wv = the telemetry's relative wind
     // (world frame, m/s); dt advances the dash trains at real speed
@@ -574,7 +595,18 @@ function makeViewer(canvas,state,opts){
       // real-speed advection would strobe across a whole period a frame
       flow.phase+=(dt||0)*m/8;
       flow.liveM=m;
-      if(flow.cfd)return; // CFD geometry is static; only phase animates
+      if(flow.cfd){
+        if(flow.cfd.sets&&view.modelR){
+          // instantaneous incoming-flow angle vs the sweep's mean,
+          // in the body x-z plane (same formula the extractor used)
+          var MR=view.modelR,aw=flow.sw,u0=flow.cfd.u0;
+          var abx=MR[0]*aw[0]+MR[1]*aw[1]+MR[2]*aw[2];
+          var abz=MR[6]*aw[0]+MR[7]*aw[1]+MR[8]*aw[2];
+          flow.alpha=Math.atan2(u0[0]*abz-u0[2]*abx,
+                                u0[0]*abx+u0[2]*abz)*57.2958;
+        }
+        return; // CFD geometry is static; only phase/blend animate
+      }
       flowRebuild(flow.sw,m);
     },
     // release the GL context (card viewers churn as the page scrolls;
@@ -674,9 +706,11 @@ function makeViewer(canvas,state,opts){
       // ribbons live in BODY coordinates and pose with the craft; the
       // analytic fallback lives in world frame (weather ignores pose)
       var FB=flow.cfd;
-      if(flow.on&&FB&&FB.nv){
+      if(flow.on&&FB&&(FB.nv||FB.sets)){
         var FR=Rb;
-        var MRf=FB.pose||view.modelR;
+        // sweep fields pose with the LIVE craft (they re-wrap by
+        // blending); a single field anchors at its mean attitude
+        var MRf=FB.sets?view.modelR:(FB.pose||view.modelR);
         if(MRf){
           var MR2=MRf,Cm2=new Array(9);
           for(var mc2=0;mc2<3;mc2++)for(var mr2=0;mr2<3;mr2++)
@@ -694,16 +728,34 @@ function makeViewer(canvas,state,opts){
         gl.uniform1f(f2.uW,1.2*dpr); // ribbon half-width, device px
         gl.uniform1f(f2.uPh,flow.phase);
         gl.uniform1f(f2.uPer,0.7*frame.r);
-        gl.uniform1f(f2.uAl,
-          0.55+0.3*Math.min(1,(flow.liveM||FB.umag)/12));
         gl.uniform3f(f2.uCol,0.55,0.72,0.67);  // light emerald
         gl.uniform3f(f2.uCol2,0.09,0.30,0.26); // dark emerald
-        bind2(FB.bufs.aP,"aP",3);bind2(FB.bufs.aQ,"aQ",3);
-        bind2(FB.bufs.aE,"aE",2);bind2(FB.bufs.aF,"aF",3);
+        var baseAl=0.55+0.3*Math.min(1,(flow.liveM||FB.umag)/12);
+        var drawSet=function(bs,wgt){
+          if(!bs||!bs.nv||wgt<=0.02)return;
+          gl.uniform1f(f2.uAl,baseAl*wgt);
+          bind2(bs.bufs.aP,"aP",3);bind2(bs.bufs.aQ,"aQ",3);
+          bind2(bs.bufs.aE,"aE",2);bind2(bs.bufs.aF,"aF",3);
+          gl.drawArrays(gl.TRIANGLES,0,bs.nv);
+        };
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
         gl.depthMask(false);
-        gl.drawArrays(gl.TRIANGLES,0,FB.nv);
+        if(FB.sets){
+          // blend the two attitude fields bracketing the live angle
+          var al=flow.alpha||0,ss=FB.sets;
+          var lo=ss[0],hi=ss[0];
+          if(al>=ss[ss.length-1].a){lo=hi=ss[ss.length-1]}
+          else if(al>ss[0].a)
+            for(var si=0;si<ss.length-1;si++)
+              if(al>=ss[si].a&&al<=ss[si+1].a){
+                lo=ss[si];hi=ss[si+1];break}
+          var wb=(lo===hi)?0:(al-lo.a)/(hi.a-lo.a);
+          drawSet(lo,1-wb);
+          drawSet(hi,wb);
+        }else{
+          drawSet(FB,1);
+        }
         gl.depthMask(true);
         gl.disable(gl.BLEND);
         ["aP","aQ","aE","aF"].forEach(function(a){

@@ -869,6 +869,22 @@ def _parse_tracks_vtp(path: Path) -> list[dict[str, list[float]]]:
     return out
 
 
+def _interacting_lines(lines: list, u: list) -> list:
+    """Keep only streamlines that measurably interact with the body."""
+    umag = float(np.linalg.norm(u)) or 1.0
+    kept = []
+    for li in lines:
+        pts = np.array(li["p"]).reshape(-1, 3)
+        spd = np.array(li["s"])
+        arc = float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
+        chord = float(np.linalg.norm(pts[-1] - pts[0]))
+        straight = chord / arc if arc > 0 else 1.0
+        sdev = float(np.max(np.abs(spd - umag)) / umag)
+        if straight < FLOW_MIN_BEND or sdev > FLOW_MIN_SPEED_DEV:
+            kept.append(li)
+    return kept
+
+
 def extract_flow(out_root: Path, store, run_id: str, h: str) -> list[Path]:
     """Parse each solved case's streamlines and write the gallery JSONP
     payloads next to the candidate's renders."""
@@ -884,21 +900,10 @@ def extract_flow(out_root: Path, store, run_id: str, h: str) -> list[Path]:
             continue
         lines = _parse_tracks_vtp(vtks[-1])
         meta = json.loads((root / f"{scen}.freestream.json").read_text())
-        umag = float(np.linalg.norm(meta["u"])) or 1.0
-        kept = []
-        for li in lines:
-            pts = np.array(li["p"]).reshape(-1, 3)
-            spd = np.array(li["s"])
-            arc = float(np.sum(np.linalg.norm(np.diff(pts, axis=0),
-                                              axis=1)))
-            chord = float(np.linalg.norm(pts[-1] - pts[0]))
-            straight = chord / arc if arc > 0 else 1.0
-            sdev = float(np.max(np.abs(spd - umag)) / umag)
-            if straight < FLOW_MIN_BEND or sdev > FLOW_MIN_SPEED_DEV:
-                kept.append(li)
-        print(f"  flow: {scen}: {len(kept)}/{len(lines)} lines "
+        n_all = len(lines)
+        lines = _interacting_lines(lines, meta["u"])
+        print(f"  flow: {scen}: {len(lines)}/{n_all} lines "
               "interact with the body")
-        lines = kept
         payload = json.dumps({"u": meta["u"], "lines": lines},
                              separators=(",", ":"))
         out = png.parent / f"{h}.{scen}.flow.js"
@@ -930,3 +935,85 @@ def run_flow(cfg: Config, out_root: Path, h: str | None = None,
         solve_flow(cases)
     if extract or solve:
         extract_flow(out_root, store, run_id, h)
+
+
+# --------------------------------------------- quasi-steady flow sweep ----
+# One steady field per attitude cannot re-wrap as the craft pitches, so
+# a scenario can carry a SWEEP: the same mesh solved at several angles
+# of attack around the mean. The gallery blends between the two nearest
+# fields per replay frame -- the near field re-wraps, the far field
+# stays world-consistent by construction.
+FLOW_SWEEP_DEG = (-10.0, -5.0, 5.0, 10.0)  # around the mean (0 = base)
+
+
+def _rot_y(u: list, deg: float) -> list:
+    th = math.radians(deg)
+    c, si = math.cos(th), math.sin(th)
+    return [c * u[0] + si * u[2], u[1], -si * u[0] + c * u[2]]
+
+
+def _xz_angle(u0: list, u: list) -> float:
+    """Signed angle (deg) from u0 to u in the body x-z plane -- the SAME
+    formula the viewer applies to the live relative wind."""
+    return math.degrees(math.atan2(u0[0] * u[2] - u0[2] * u[0],
+                                   u0[0] * u[0] + u0[2] * u[2]))
+
+
+def generate_flow_sweep(out_root: Path, h: str,
+                        scen: str) -> list[tuple[str, Path]]:
+    """Sweep cases for one scenario, reusing its geometry + mesh box."""
+    import trimesh
+    root = flow_case_dirs(out_root, h)
+    stl = root / "assembly.stl"
+    bounds = [list(map(float, b)) for b in trimesh.load(stl).bounds]
+    u0 = json.loads((root / f"{scen}.freestream.json").read_text())["u"]
+    cases = []
+    for d in FLOW_SWEEP_DEG:
+        u = _rot_y(u0, d)
+        name = f"{scen}@{d:+05.1f}"
+        case = root / name
+        write_case(case, stl, bounds, u, iters=FLOW_ITERS)
+        (case / "system" / "blockMeshDict").write_text(
+            _flow_block_mesh_dict(bounds, max(
+                (bounds[1][0] - bounds[0][0]) / 6.0, 0.05)))
+        (case / "system" / "controlDict").write_text(
+            _flow_control_dict(FLOW_ITERS, _flow_seeds(bounds, u)))
+        (case / "system" / "fvSolution").write_text(_FLOW_FV_SOLUTION)
+        (root / f"{name}.freestream.json").write_text(json.dumps({"u": u}))
+        cases.append((name, case))
+    return cases
+
+
+def extract_flow_sweep(out_root: Path, store, run_id: str, h: str,
+                       scen: str) -> Path | None:
+    """Combine the base case + solved sweep cases into ONE payload:
+    {u, sets:[{a, u, lines}...]} sorted by angle. Replaces the
+    scenario's single-field flow.js."""
+    cand = store.get_candidate(run_id, h)
+    png = Path(cand["png_path"])
+    root = flow_case_dirs(out_root, h)
+    u0 = json.loads((root / f"{scen}.freestream.json").read_text())["u"]
+    names = [scen] + [f"{scen}@{d:+05.1f}" for d in FLOW_SWEEP_DEG]
+    sets = []
+    for name in names:
+        case = root / name
+        vtks = sorted(case.glob("postProcessing/**/streamlines/*/*.vtp"))
+        if not vtks:
+            print(f"  sweep: {name}: no streamline output, skipping")
+            continue
+        u = json.loads((root / f"{name}.freestream.json").read_text())["u"]
+        lines = _parse_tracks_vtp(vtks[-1])
+        n_all = len(lines)
+        lines = _interacting_lines(lines, u)
+        print(f"  sweep: {name}: {len(lines)}/{n_all} lines at "
+              f"{_xz_angle(u0, u):+.1f} deg")
+        sets.append({"a": round(_xz_angle(u0, u), 2), "u": u,
+                     "lines": lines})
+    if not sets:
+        return None
+    sets.sort(key=lambda x: x["a"])
+    payload = json.dumps({"u": u0, "sets": sets}, separators=(",", ":"))
+    out = png.parent / f"{h}.{scen}.flow.js"
+    out.write_text(f'airloomFlow("{h}","{scen}",{payload})\n')
+    print(f"  sweep: {scen}: {len(sets)} attitude sets -> {out.name}")
+    return out
