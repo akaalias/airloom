@@ -241,11 +241,231 @@ def _legend_html(kind: str) -> str:
     return '<div class="lgd">' + "".join(items) + "</div>"
 
 
-def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
-    """A dedicated Tufte-styled page for the family tree, linked from the
-    gallery. Embeds lineage.svg inline plus per-candidate metadata so that
-    hovering a node shows a small candidate card and lights up the full
-    ancestor lineage (nodes and edges) of that candidate."""
+# family tree double column: extracted so any page (the lineage page,
+# the landing) can embed the same interactive component
+TREE_CSS = """
+.trees{display:flex;gap:28px;align-items:flex-start;
+  border-top:1px solid var(--rule);padding-top:16px}
+.tree{flex:1;min-width:0}
+.tree svg{display:block;width:100%;height:auto}
+.colhead{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  text-align:center;margin-bottom:10px}
+@media(max-width:1000px){.trees{flex-direction:column;gap:40px}}
+/* both columns keep the forest quiet: edges muted at rest, lit on hover */
+.tree svg .ed{opacity:.12}
+.tree svg .el{opacity:.15}
+/* performance column: the gallery chart's marks, no fitness shading;
+   edges lose their operator colors here -- that story belongs to the
+   breeding column */
+svg.lens-perf .ed{stroke:#a8a598}
+svg.lens-perf .nd{fill:#b9b6a6;stroke:none}
+svg.lens-perf .nd.st-set{fill:#111111}
+svg.lens-perf .nd.inv{display:none}
+svg.lens-perf .bs{display:none}
+svg.lens-perf .im{display:none}
+/* breeding column: operators & provenance only, no outcomes */
+svg.lens-breed .nd{fill:#e7e4d6;stroke:#c9c5b4}
+svg.lens-breed .bs,svg.lens-breed .ch,svg.lens-breed .xm{display:none}
+.note{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}
+/* hover interactivity: dim everything outside the hovered ancestry */
+.nd,.ed,.el,.bs,.ch,.cl,.im,.xm{transition:opacity .12s ease}
+.hit{cursor:pointer}
+svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit),
+svg.focus .bs:not(.lit),svg.focus .ch:not(.lit),svg.focus .cl:not(.lit),
+svg.focus .im:not(.lit),svg.focus .xm:not(.lit){opacity:.12}
+svg.focus .ed.lit{stroke-width:2;opacity:1}
+svg.focus .el.lit{stroke-width:2;opacity:1}
+svg.focus .nd.lit{stroke:var(--ink);stroke-width:1.6}
+/* the candidate card (matches the gallery detail block), always docked at
+   the right edge of the screen */
+.ncard{position:fixed;top:50%;transform:translateY(-50%);right:18px;
+  z-index:10;width:340px;max-height:calc(100vh - 32px);overflow:hidden;
+  background:var(--paper);border:1px solid var(--ink);
+  padding:14px 16px 14px;pointer-events:none;
+  box-shadow:6px 6px 0 rgba(17,17,17,.07);display:none}
+.ncard img{width:100%;aspect-ratio:4/3;object-fit:contain;display:block;
+  mix-blend-mode:multiply}
+.ncard .imgw{position:relative}
+/* invalid candidates: same red diagonal cross as the gallery */
+.ncard .imgw.x::after{content:"";position:absolute;inset:0;
+  pointer-events:none;background:
+  linear-gradient(to top right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px)),
+  linear-gradient(to bottom right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px))}
+.ncard .dhead{font:400 16px var(--serif);margin-top:8px}
+.ncard .dhead .h{font:13px var(--mono);color:var(--muted);word-break:break-all}
+.ncard .head{font-size:14.5px;line-height:1.5;margin-top:3px;
+  font-variant-numeric:lining-nums tabular-nums}
+.ncard .head b{font-size:18px}
+.ncard .fail{color:var(--accent);font-size:13.5px;font-style:italic;line-height:1.4;margin-top:3px}
+.ncard table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:9px;
+  font-variant-numeric:lining-nums tabular-nums}
+.ncard th{text-align:left;font:600 10px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  border-bottom:1.5px solid var(--ink);padding:2px 10px 3px 0;white-space:nowrap}
+.ncard td{padding:2.5px 10px 2.5px 0;border-bottom:1px solid var(--rule-soft);
+  color:var(--ink)}
+.ncard td:first-child{color:var(--muted)}
+.ncard .anc{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}
+.ncard .nb{font-size:12.5px;line-height:1.45;margin-top:7px;color:#33312b}
+.ncard .nb b{display:block;margin-bottom:1px;
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:10.5px;color:var(--muted)}
+.ncard .nb.res b{color:var(--accent)}
+/* interactive legend (replaces the SVG's baked-in one) */
+.tree svg .svg-legend{display:none}
+.lgd{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
+  align-items:center;font-size:13.5px;color:var(--muted);
+  max-width:1080px;margin:0 auto 16px}
+.lg{position:relative;display:inline-flex;align-items:center;gap:7px;
+  cursor:help;padding:2px 0}
+.lg:hover{color:var(--ink)}
+.lg .sw{display:inline-flex;align-items:center}
+.lg .tip{display:none;position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
+  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
+  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07);
+  font-style:normal}
+.lg:hover .tip{display:block}
+.lg:nth-last-child(-n+3) .tip{left:auto;right:calc(100% + 12px)}
+.lg .tip b{font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}
+/* per-column legends sit under their tree */
+.tree .lgd{margin:16px auto 0;padding-top:12px;
+  border-top:1px solid var(--rule-soft);font-size:13px;max-width:none}
+/* the right column's tips open leftward so they stay on screen */
+.tree:last-child .lg .tip{left:auto;right:calc(100% + 12px)}
+"""
+
+TREE_JS = r"""
+(function(){
+"use strict";
+var META=JSON.parse(document.getElementById("cand-meta").textContent);
+var svgs=[].slice.call(document.querySelectorAll(".tree svg"));
+if(!svgs.length)return;
+var card=document.createElement("div");
+card.className="ncard";
+document.body.appendChild(card);
+function esc(s){var d=document.createElement("i");d.textContent=s==null?"":s;
+  return d.innerHTML}
+function ancestors(h,hovg){
+  // hovered candidate + every ancestor, via parent walk. Value = the
+  // ancestor's CUTOFF generation: the last row where it contributed to
+  // this lineage (parents are selected from the previous generation, so
+  // a child born at g means its parents acted at g-1). Carry-over copies
+  // beyond that row are parallel survival, not ancestry -- kept dim.
+  var cut={};cut[h]=hovg;var q=[h];
+  while(q.length){
+    var x=q.pop(),c=META[x];
+    if(!c)continue;
+    [c.a,c.b].forEach(function(p){
+      if(!p)return;
+      var pc=c.g-1;
+      if(cut[p]===undefined){cut[p]=pc;q.push(p)}
+      else if(pc>cut[p])cut[p]=pc;
+    });
+  }
+  return cut;
+}
+var pinned=null;
+window.treePinned=function(){return pinned};
+function show(h,pin,hovg,quiet){
+  var c=META[h];
+  var set=ancestors(h,hovg);
+  // light each ancestor only through its own cutoff row: the last
+  // generation where it actually fed this lineage
+  function back(n){
+    var cu=set[n.dataset.h];
+    return cu!==undefined&&
+      (n.dataset.g===undefined||+n.dataset.g<=cu);
+  }
+  svgs.forEach(function(svg){ // both columns light the same ancestry
+    svg.classList.add("focus");
+    svg.querySelectorAll(".nd,.bs,.ch,.cl,.im,.xm,.el").forEach(function(n){
+      n.classList.toggle("lit",back(n))});
+    svg.querySelectorAll(".ed").forEach(function(e){
+      e.classList.toggle("lit",set[e.dataset.c]!==undefined)});
+  });
+  if(!c){card.style.display="none";return}
+  var nAnc=Object.keys(set).length-1;
+  var head;
+  if(c.fit!=null){ // same headline language as the gallery detail block
+    head='<div class="head"><b>'+c.fit.toFixed(3)+"</b>&thinsp;Wh/km"
+      +(c.mean!=null?" &middot; mean "+c.mean.toFixed(3):"")
+      +(c.worst!=null?" &middot; worst "+c.worst.toFixed(3):"")
+      +(c.mass?" &middot; "+c.mass.toFixed(1)+"&thinsp;g":"")
+      +(c.mat?" &middot; "+esc(c.mat):"")
+      +" &middot; born g"+c.g+" via "+esc(c.op)
+      +(c.mut?" (mut "+c.mut+")":"")+"</div>";
+  }else{
+    head='<div class="fail">invalid &mdash; '+esc(c.fail||"unknown")
+      +" &middot; never flew</div>"
+      +'<div class="head">born g'+c.g+" via "+esc(c.op)
+      +(c.mat?" &middot; "+esc(c.mat):"")+"</div>";
+  }
+  var table="";
+  if(c.sc&&c.sc.length){
+    table='<table><tr><th>scenario</th><th>wh/km</th>'
+      +"<th>avg power, w</th><th>max tilt</th></tr>"
+      +c.sc.map(function(s){
+        return "<tr><td>"+esc(s.n)+"</td>"
+          +"<td>"+(s.ok&&s.w!=null?s.w.toFixed(3):"fail")+"</td>"
+          +"<td>"+(s.ok&&s.p!=null?s.p.toFixed(1):"&mdash;")+"</td>"
+          +"<td>"+(s.ok&&s.t!=null?s.t.toFixed(1)+"&deg;":"&mdash;")+"</td></tr>";
+      }).join("")+"</table>";
+  }
+  var notes="";
+  if(c.hyp)notes+='<div class="nb"><b>hypothesis</b> '+esc(c.hyp)+"</div>";
+  if(c.res)notes+='<div class="nb res"><b>result</b> '+esc(c.res)+"</div>";
+  card.innerHTML=(c.png?'<div class="imgw'+(c.fit==null?" x":"")+'">'
+      +'<img src="'+esc(c.png)+'" alt=""></div>':"")
+    +'<div class="dhead">candidate <span class="h">'+esc(h)+"</span></div>"
+    +head+notes+table
+    +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
+      +" highlighted":"seed / immigrant &mdash; no ancestors")
+    +(pin?" &middot; pinned &mdash; click again or press esc to release":"")
+    +"</div>";
+  card.style.display=quiet?"none":"block";
+}
+function clear(){
+  svgs.forEach(function(svg){svg.classList.remove("focus")});
+  card.style.display="none";
+}
+function unpin(){
+  if(pinned){pinned=null;clear()}
+}
+svgs.forEach(function(svg){
+  svg.querySelectorAll(".hit").forEach(function(hit){
+    hit.addEventListener("mouseenter",function(){
+      if(!pinned)show(hit.dataset.h,false,+hit.dataset.g)});
+    hit.addEventListener("mouseleave",function(){
+      if(!pinned)clear()});
+    hit.addEventListener("click",function(ev){
+      ev.stopPropagation();
+      if(pinned===hit.dataset.h){unpin()}
+      else{pinned=hit.dataset.h;show(pinned,true,+hit.dataset.g)}
+    });
+  });
+});
+document.addEventListener("click",unpin);
+document.addEventListener("keydown",function(ev){
+  if(ev.key==="Escape")unpin()});
+// a page may open with one lineage already lit (the landing pins its champion)
+if(typeof window.TREE_PIN==="string"&&META[window.TREE_PIN]){
+  pinned=window.TREE_PIN;
+  show(pinned,true,META[pinned].g,true);
+}
+})();
+"""
+
+
+def _tree_columns(results_dir: Path) -> tuple[str, str]:
+    """lineage.svg split into the two lens columns (performance /
+    breeding), stripped of its baked background and tooltips."""
     svg_path = results_dir / "lineage.svg"
     svg = svg_path.read_text() if svg_path.exists() else "<p>no tree yet</p>"
     # drop the paper-colored background rect: the page supplies the paper
@@ -257,8 +477,13 @@ def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
     # language, right column the breeding/operator language
     svg_perf = svg.replace("<svg ", '<svg class="lens-perf" ', 1)
     svg_breed = svg.replace("<svg ", '<svg class="lens-breed" ', 1)
+    return svg_perf, svg_breed
 
-    # per-candidate metadata for the hover card + ancestor walk
+
+def _cand_meta(store: Store, run_id: str,
+               results_dir: Path) -> dict:
+    """Per-candidate metadata for the tree's hover card + ancestor
+    walk (shared by the lineage page and the landing's embed)."""
     meta: dict[str, dict] = {}
     for r in store.candidates_for_run(run_id):
         fit = store.fitness_of(r)
@@ -282,6 +507,36 @@ def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
                    for s in store.scenario_results_for(run_id, r["hash"])],
         }
 
+    return meta
+
+
+def tree_section_html(store: Store, run_id: str, results_dir: Path,
+                      pin: str | None = None) -> str:
+    """The two-lens family tree with hover cards and ancestry
+    highlighting. pin lights that candidate's lineage on load
+    (quietly: no hover card until the user interacts)."""
+    svg_perf, svg_breed = _tree_columns(results_dir)
+    meta = _cand_meta(store, run_id, results_dir)
+    return (
+        '<div class="trees">'
+        '<div class="tree"><div class="colhead">performance '
+        '&mdash; who&rsquo;s good</div>'
+        f'{svg_perf}{_legend_html("perf")}</div>'
+        '<div class="tree"><div class="colhead">breeding &mdash; '
+        'how they were made</div>'
+        f'{svg_breed}{_legend_html("breed")}</div>'
+        '</div>'
+        '<script type="application/json" id="cand-meta">'
+        f'{json.dumps(meta)}</script>'
+        f'<script>window.TREE_PIN={json.dumps(pin)};</script>'
+        f'<script>{TREE_JS}</script>')
+
+
+def write_lineage_page(store: Store, run_id: str, results_dir: Path) -> Path:
+    """A dedicated Tufte-styled page for the family tree, linked from the
+    gallery. Embeds lineage.svg inline plus per-candidate metadata so that
+    hovering a node shows a small candidate card and lights up the full
+    ancestor lineage (nodes and edges) of that candidate."""
     page = f"""<style>
 :root{{--paper:#fffff8;--ink:#111111;--muted:#6b6a60;--faint:#9b998c;
   --rule:#d9d5c3;--rule-soft:#ece9da;--accent:#8c2f1f;
@@ -298,101 +553,7 @@ h1{{font-weight:400;font-size:34px;letter-spacing:-.01em;margin:0 0 6px;text-ali
 h1 code{{font:400 26px var(--mono);color:var(--muted)}}
 .sub{{font-size:15px;color:var(--muted);margin:0 auto 22px;max-width:820px;text-align:center}}
 a{{color:var(--accent);text-decoration:none}}
-.trees{{display:flex;gap:28px;align-items:flex-start;
-  border-top:1px solid var(--rule);padding-top:16px}}
-.tree{{flex:1;min-width:0}}
-.tree svg{{display:block;width:100%;height:auto}}
-.colhead{{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
-  text-align:center;margin-bottom:10px}}
-@media(max-width:1000px){{.trees{{flex-direction:column;gap:40px}}}}
-/* both columns keep the forest quiet: edges muted at rest, lit on hover */
-.tree svg .ed{{opacity:.12}}
-.tree svg .el{{opacity:.15}}
-/* performance column: the gallery chart's marks, no fitness shading;
-   edges lose their operator colors here -- that story belongs to the
-   breeding column */
-svg.lens-perf .ed{{stroke:#a8a598}}
-svg.lens-perf .nd{{fill:#b9b6a6;stroke:none}}
-svg.lens-perf .nd.st-set{{fill:#111111}}
-svg.lens-perf .nd.inv{{display:none}}
-svg.lens-perf .bs{{display:none}}
-svg.lens-perf .im{{display:none}}
-/* breeding column: operators & provenance only, no outcomes */
-svg.lens-breed .nd{{fill:#e7e4d6;stroke:#c9c5b4}}
-svg.lens-breed .bs,svg.lens-breed .ch,svg.lens-breed .xm{{display:none}}
-.note{{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}}
-/* hover interactivity: dim everything outside the hovered ancestry */
-.nd,.ed,.el,.bs,.ch,.cl,.im,.xm{{transition:opacity .12s ease}}
-.hit{{cursor:pointer}}
-svg.focus .nd:not(.lit),svg.focus .ed:not(.lit),svg.focus .el:not(.lit),
-svg.focus .bs:not(.lit),svg.focus .ch:not(.lit),svg.focus .cl:not(.lit),
-svg.focus .im:not(.lit),svg.focus .xm:not(.lit){{opacity:.12}}
-svg.focus .ed.lit{{stroke-width:2;opacity:1}}
-svg.focus .el.lit{{stroke-width:2;opacity:1}}
-svg.focus .nd.lit{{stroke:var(--ink);stroke-width:1.6}}
-/* the candidate card (matches the gallery detail block), always docked at
-   the right edge of the screen */
-.ncard{{position:fixed;top:50%;transform:translateY(-50%);right:18px;
-  z-index:10;width:340px;max-height:calc(100vh - 32px);overflow:hidden;
-  background:var(--paper);border:1px solid var(--ink);
-  padding:14px 16px 14px;pointer-events:none;
-  box-shadow:6px 6px 0 rgba(17,17,17,.07);display:none}}
-.ncard img{{width:100%;aspect-ratio:4/3;object-fit:contain;display:block;
-  mix-blend-mode:multiply}}
-.ncard .imgw{{position:relative}}
-/* invalid candidates: same red diagonal cross as the gallery */
-.ncard .imgw.x::after{{content:"";position:absolute;inset:0;
-  pointer-events:none;background:
-  linear-gradient(to top right,transparent calc(50% - 1px),
-    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
-    transparent calc(50% + 1px)),
-  linear-gradient(to bottom right,transparent calc(50% - 1px),
-    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
-    transparent calc(50% + 1px))}}
-.ncard .dhead{{font:400 16px var(--serif);margin-top:8px}}
-.ncard .dhead .h{{font:13px var(--mono);color:var(--muted);word-break:break-all}}
-.ncard .head{{font-size:14.5px;line-height:1.5;margin-top:3px;
-  font-variant-numeric:lining-nums tabular-nums}}
-.ncard .head b{{font-size:18px}}
-.ncard .fail{{color:var(--accent);font-size:13.5px;font-style:italic;line-height:1.4;margin-top:3px}}
-.ncard table{{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:9px;
-  font-variant-numeric:lining-nums tabular-nums}}
-.ncard th{{text-align:left;font:600 10px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
-  border-bottom:1.5px solid var(--ink);padding:2px 10px 3px 0;white-space:nowrap}}
-.ncard td{{padding:2.5px 10px 2.5px 0;border-bottom:1px solid var(--rule-soft);
-  color:var(--ink)}}
-.ncard td:first-child{{color:var(--muted)}}
-.ncard .anc{{font-size:12.5px;font-style:italic;color:var(--faint);margin-top:8px}}
-.ncard .nb{{font-size:12.5px;line-height:1.45;margin-top:7px;color:#33312b}}
-.ncard .nb b{{display:block;margin-bottom:1px;
-  font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.05em;font-size:10.5px;color:var(--muted)}}
-.ncard .nb.res b{{color:var(--accent)}}
-/* interactive legend (replaces the SVG's baked-in one) */
-.tree svg .svg-legend{{display:none}}
-.lgd{{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
-  align-items:center;font-size:13.5px;color:var(--muted);
-  max-width:1080px;margin:0 auto 16px}}
-.lg{{position:relative;display:inline-flex;align-items:center;gap:7px;
-  cursor:help;padding:2px 0}}
-.lg:hover{{color:var(--ink)}}
-.lg .sw{{display:inline-flex;align-items:center}}
-.lg .tip{{display:none;position:absolute;left:calc(100% + 12px);top:50%;
-  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
-  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
-  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07);
-  font-style:normal}}
-.lg:hover .tip{{display:block}}
-.lg:nth-last-child(-n+3) .tip{{left:auto;right:calc(100% + 12px)}}
-.lg .tip b{{font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}}
-/* per-column legends sit under their tree */
-.tree .lgd{{margin:16px auto 0;padding-top:12px;
-  border-top:1px solid var(--rule-soft);font-size:13px;max-width:none}}
-/* the right column's tips open leftward so they stay on screen */
-.tree:last-child .lg .tip{{left:auto;right:calc(100% + 12px)}}
+{TREE_CSS}
 </style>
 <meta charset="utf-8">
 <title>Airloom — family tree</title>
@@ -412,133 +573,17 @@ dashed rules for pivot generations. Edges rest muted in both columns
 click to pin (esc releases). Node size everywhere:
 large&thinsp;=&thinsp;born that generation,
 small&thinsp;=&thinsp;elite carried over.</p>
-<div class="trees">
-<div class="tree"><div class="colhead">performance &mdash; who&rsquo;s good
-</div>{svg_perf}{_legend_html("perf")}</div>
-<div class="tree"><div class="colhead">breeding &mdash; how they were made
-</div>{svg_breed}{_legend_html("breed")}</div>
-</div>
+{tree_section_html(store, run_id, results_dir)}
 <p class="note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
 (<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
 <code style="font-size:13px">airloom lineage &lt;hash&gt;</code>.</p>
 </div>
-<script type="application/json" id="cand-meta">{json.dumps(meta)}</script>
 <script>
-(function(){{
-"use strict";
-var META=JSON.parse(document.getElementById("cand-meta").textContent);
-var svgs=[].slice.call(document.querySelectorAll(".tree svg"));
-if(!svgs.length)return;
-var card=document.createElement("div");
-card.className="ncard";
-document.body.appendChild(card);
-function esc(s){{var d=document.createElement("i");d.textContent=s==null?"":s;
-  return d.innerHTML}}
-function ancestors(h,hovg){{
-  // hovered candidate + every ancestor, via parent walk. Value = the
-  // ancestor's CUTOFF generation: the last row where it contributed to
-  // this lineage (parents are selected from the previous generation, so
-  // a child born at g means its parents acted at g-1). Carry-over copies
-  // beyond that row are parallel survival, not ancestry -- kept dim.
-  var cut={{}};cut[h]=hovg;var q=[h];
-  while(q.length){{
-    var x=q.pop(),c=META[x];
-    if(!c)continue;
-    [c.a,c.b].forEach(function(p){{
-      if(!p)return;
-      var pc=c.g-1;
-      if(cut[p]===undefined){{cut[p]=pc;q.push(p)}}
-      else if(pc>cut[p])cut[p]=pc;
-    }});
-  }}
-  return cut;
-}}
-var pinned=null;
-function show(h,pin,hovg){{
-  var c=META[h];
-  var set=ancestors(h,hovg);
-  // light each ancestor only through its own cutoff row: the last
-  // generation where it actually fed this lineage
-  function back(n){{
-    var cu=set[n.dataset.h];
-    return cu!==undefined&&
-      (n.dataset.g===undefined||+n.dataset.g<=cu);
-  }}
-  svgs.forEach(function(svg){{ // both columns light the same ancestry
-    svg.classList.add("focus");
-    svg.querySelectorAll(".nd,.bs,.ch,.cl,.im,.xm,.el").forEach(function(n){{
-      n.classList.toggle("lit",back(n))}});
-    svg.querySelectorAll(".ed").forEach(function(e){{
-      e.classList.toggle("lit",set[e.dataset.c]!==undefined)}});
-  }});
-  if(!c){{card.style.display="none";return}}
-  var nAnc=Object.keys(set).length-1;
-  var head;
-  if(c.fit!=null){{ // same headline language as the gallery detail block
-    head='<div class="head"><b>'+c.fit.toFixed(3)+"</b>&thinsp;Wh/km"
-      +(c.mean!=null?" &middot; mean "+c.mean.toFixed(3):"")
-      +(c.worst!=null?" &middot; worst "+c.worst.toFixed(3):"")
-      +(c.mass?" &middot; "+c.mass.toFixed(1)+"&thinsp;g":"")
-      +(c.mat?" &middot; "+esc(c.mat):"")
-      +" &middot; born g"+c.g+" via "+esc(c.op)
-      +(c.mut?" (mut "+c.mut+")":"")+"</div>";
-  }}else{{
-    head='<div class="fail">invalid &mdash; '+esc(c.fail||"unknown")
-      +" &middot; never flew</div>"
-      +'<div class="head">born g'+c.g+" via "+esc(c.op)
-      +(c.mat?" &middot; "+esc(c.mat):"")+"</div>";
-  }}
-  var table="";
-  if(c.sc&&c.sc.length){{
-    table='<table><tr><th>scenario</th><th>wh/km</th>'
-      +"<th>avg power, w</th><th>max tilt</th></tr>"
-      +c.sc.map(function(s){{
-        return "<tr><td>"+esc(s.n)+"</td>"
-          +"<td>"+(s.ok&&s.w!=null?s.w.toFixed(3):"fail")+"</td>"
-          +"<td>"+(s.ok&&s.p!=null?s.p.toFixed(1):"&mdash;")+"</td>"
-          +"<td>"+(s.ok&&s.t!=null?s.t.toFixed(1)+"&deg;":"&mdash;")+"</td></tr>";
-      }}).join("")+"</table>";
-  }}
-  var notes="";
-  if(c.hyp)notes+='<div class="nb"><b>hypothesis</b> '+esc(c.hyp)+"</div>";
-  if(c.res)notes+='<div class="nb res"><b>result</b> '+esc(c.res)+"</div>";
-  card.innerHTML=(c.png?'<div class="imgw'+(c.fit==null?" x":"")+'">'
-      +'<img src="'+esc(c.png)+'" alt=""></div>':"")
-    +'<div class="dhead">candidate <span class="h">'+esc(h)+"</span></div>"
-    +head+notes+table
-    +'<div class="anc">'+(nAnc?nAnc+" ancestor"+(nAnc>1?"s":"")
-      +" highlighted":"seed / immigrant &mdash; no ancestors")
-    +(pin?" &middot; pinned &mdash; click again or press esc to release":"")
-    +"</div>";
-  card.style.display="block";
-}}
-function clear(){{
-  svgs.forEach(function(svg){{svg.classList.remove("focus")}});
-  card.style.display="none";
-}}
-function unpin(){{
-  if(pinned){{pinned=null;clear()}}
-}}
-svgs.forEach(function(svg){{
-  svg.querySelectorAll(".hit").forEach(function(hit){{
-    hit.addEventListener("mouseenter",function(){{
-      if(!pinned)show(hit.dataset.h,false,+hit.dataset.g)}});
-    hit.addEventListener("mouseleave",function(){{
-      if(!pinned)clear()}});
-    hit.addEventListener("click",function(ev){{
-      ev.stopPropagation();
-      if(pinned===hit.dataset.h){{unpin()}}
-      else{{pinned=hit.dataset.h;show(pinned,true,+hit.dataset.g)}}
-    }});
-  }});
-}});
-document.addEventListener("click",unpin);
-document.addEventListener("keydown",function(ev){{
-  if(ev.key==="Escape")unpin()}});
-// auto-refresh (was a meta tag): hold off while a lineage is pinned
-setInterval(function(){{if(!pinned)location.reload()}},30000);
-}})();
+// auto-refresh while the run is live -- hold off while a lineage is
+// pinned so exploration survives the tick
+setInterval(function(){{if(!window.treePinned||!window.treePinned())
+  location.reload()}},30000);
 </script>"""
     out = results_dir / "lineage.html"
     out.write_text(page + GH_RIBBON_HTML)

@@ -17,11 +17,13 @@ from pathlib import Path
 
 from .dbstore import Store
 from .gallery import (CARD_CSS, GH_RIBBON_HTML, LAZY_IMG_JS, NAV_CSS,
-                      OVERLAY_CSS, TUFTE_TOKENS, VIEWER_JS, _bottom_png_for,
-                      _fmt, _mesh_js_for, _parts_legend_html, _rel,
-                      candidate_card_html, nav_html, overlay_html)
+                      OVERLAY_CSS, TUFTE_TOKENS, VIEWER_JS, _fmt,
+                      _mesh_js_for, _rel, candidate_card_html, nav_html,
+                      overlay_html)
+from .lineage import TREE_CSS, tree_section_html
 
-LANDING_CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + OVERLAY_CSS + """
+LANDING_CSS = (TUFTE_TOKENS + NAV_CSS + CARD_CSS + OVERLAY_CSS
+               + TREE_CSS + """
 .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
 h1{font-weight:400;font-size:30px;line-height:1.3;letter-spacing:-.01em;
   margin:0 0 14px;text-align:center}
@@ -29,13 +31,6 @@ h1 .hash{font:26px var(--mono);color:var(--muted)}
 p.sub{text-align:center;font-style:italic;color:var(--muted);
   font-size:15.5px;line-height:1.7;margin:0 auto 8px;max-width:760px}
 h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
-/* hero: the champion, live (hint pinned to the canvas, not the legend) */
-.hero{margin:26px 0 0}
-.hero .cw{position:relative}
-.hero canvas{width:100%;height:520px;display:block;cursor:grab}
-.hero .hint{position:absolute;right:6px;bottom:6px;
-  font:italic 11.5px var(--serif);color:var(--faint);pointer-events:none}
-.hero .lgd{justify-content:center;font-size:12.5px;gap:4px 14px}
 /* headline stats strip; the label rule targets DIRECT children only so
    the highlighted %-figure inside <b> keeps the big number size */
 .stats{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;
@@ -46,7 +41,7 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
   font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.08em;color:var(--faint)}
 .stats .stat b .up{color:#2e6e63}
-/* the three how-we-got-here panels */
+/* the replay panel */
 .panel{margin:22px 0 0;border-top:1px solid var(--rule);padding-top:18px}
 .panel h3{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
@@ -64,19 +59,7 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
   cursor:pointer;margin-right:6px}
 .wbtn:hover:not(:disabled){color:var(--ink);border-color:var(--ink)}
 .wbtn:disabled{opacity:.35;cursor:default}
-/* footer pointer into the process */
-.more{margin:70px 0 0;border-top:1px solid var(--rule);padding-top:22px;
-  text-align:center;font-size:15px;font-style:italic;color:var(--muted);
-  line-height:1.8}
-.baseline-figs{display:flex;justify-content:center;gap:40px;
-  align-items:flex-end;flex-wrap:wrap;margin:18px 0 0}
-.baseline-figs figure{margin:0;text-align:center;width:300px}
-.baseline-figs img{width:100%;border-radius:6px;mix-blend-mode:multiply}
-.baseline-figs figcaption{font:12px var(--mono);color:var(--faint);
-  margin-top:4px}
-.baseline-figs .arrow{font-size:30px;color:var(--faint);
-  align-self:center;padding-bottom:40px}
-"""
+""")
 
 # the landing's inline replay: the timeline docks inside the panel, so
 # the overlay's fixed-chrome spacing is trimmed back to the flow
@@ -98,39 +81,19 @@ LANDING_JS = r"""
 "use strict";
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
-var chain=AL.walkChainFor(CH).steps;
-var need=["m-"+CH];
-chain.forEach(function(h){need.push("m-"+h)});
+var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
 AL.ensureBlobs(need).then(function(){
-  var states=[];
-  function view(id,pitch,specs,frame){
-    var el=document.getElementById(id);
-    if(!el)return null;
-    var st=AL.makeState(pitch),v=AL.makeViewer(el,st);
-    if(!v)return null;
-    v.load(specs,frame||undefined);
-    states.push(st);
-    return st;
-  }
-  view("hero-canvas",undefined,[{id:"m-"+CH}]);
-  if(AL.BASELINE&&AL.BASELINE!==CH)
-    view("diff-canvas",1.2,[{id:"m-"+CH,evolved:true},
-      {id:"m-"+AL.BASELINE,evolved:true,ghost:true}]);
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
     timeline:document.getElementById("replay-tl"),
     label:document.getElementById("replay-lab"),
     prev:document.getElementById("replay-prev"),
     next:document.getElementById("replay-next")});
-  if(rep.open(CH)){
-    states.push(rep.state);
-    view("trail-canvas",1.2,AL.trailSpecs(rep.chain),rep.frame);
-  }else{
+  if(!rep.open(CH)){
     var rp=document.getElementById("replay-panel");
     if(rp)rp.style.display="none";
-    var tp=document.getElementById("trail-panel");
-    if(tp)tp.style.display="none";
+    return;
   }
-  function redraw(){states.forEach(function(s){s.redraw()})}
+  function redraw(){rep.redraw()}
   requestAnimationFrame(redraw);
   setTimeout(redraw,80);
   window.addEventListener("resize",redraw);
@@ -237,78 +200,37 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         baseline_hash=base_hash, baseline_fit=base_fit,
         href_base="log.html"))
 
-    # hero: the champion, live
+    # the evolution: replay the champion's own line
     parts += [
-        "<h2>the champion, live</h2>",
+        "<h2>the evolution</h2>",
         '<p class="sub">'
         f"{len(cands)} candidate frames flown through six weather "
         f"scenarios across {n_gens} generations, breeding lower-energy "
-        "designs each round. This is the winner &mdash; drag it around; "
-        "it is the real simulated geometry.</p>",
-        '<div class="hero"><div class="cw">'
-        '<canvas id="hero-canvas"></canvas>'
-        '<div class="hint">drag to rotate &middot; scroll to zoom &middot; '
-        "double-click resets</div></div>"
-        f"{_parts_legend_html()}</div>"]
-
-    # vs baseline stills
-    if base_hash and base_hash != champ_hash:
-        base = cands[base_hash]
-        bimg = (_bottom_png_for(results_dir, base["png_path"])
-                or _rel(results_dir, base["png_path"]))
-        cimg = (_bottom_png_for(results_dir, champ["png_path"])
-                or _rel(results_dir, champ["png_path"]))
-        parts += [
-            "<h2>the baseline vs the champion</h2>",
-            '<p class="sub">left: the best design of generation 0, where '
-            "the run started. Right: the champion evolution arrived at "
-            f"&mdash; {_fmt(base_fit)} &rarr; {_fmt(champ_fit)} Wh/km "
-            "across the same six weather scenarios.</p>",
-            '<div class="baseline-figs">',
-            f'<figure><img src="{html.escape(bimg)}" alt="{base_hash}" '
-            'decoding="async">'
-            f"<figcaption>baseline &middot; {base_hash} &middot; "
-            f"{_fmt(base_fit)} Wh/km</figcaption></figure>",
-            '<div class="arrow">&rarr;</div>',
-            f'<figure><img src="{html.escape(cimg)}" alt="{champ_hash}" '
-            'decoding="async">'
-            f"<figcaption>champion &middot; {champ_hash} &middot; "
-            f"{_fmt(champ_fit)} Wh/km</figcaption></figure>",
-            "</div>"]
-
-    # how we got here: replay, net change, trail (shared 3D components)
-    parts += [
-        "<h2>how we got here</h2>",
-        '<p class="sub">the same interactive views the research log uses, '
-        "focused on the champion&rsquo;s own ancestry.</p>",
-        '<div class="panel" id="replay-panel">'
-        "<h3>evolution replay</h3>"
-        "<p>step generation by generation from the baseline to the "
-        "champion; the current step is solid, the next in line a gray "
+        "designs each round. Replay the champion&rsquo;s own line: step "
+        "generation by generation from the baseline to the winner "
+        "&mdash; the current step solid, the next in line a gray "
         "ghost. Press play, click a thumbnail, or step with the "
-        "buttons.</p>"
+        "buttons.</p>",
+        '<div class="panel" id="replay-panel">'
         '<div><button class="wbtn" id="replay-prev">&#8249; older</button>'
         '<button class="wbtn" id="replay-next">newer &#8250;</button>'
         '<span class="cap" id="replay-lab"></span></div>'
         '<canvas id="replay-canvas"></canvas>'
-        '<div class="wtl" id="replay-tl"></div></div>',
-        '<div class="panel">'
-        "<h3>net change</h3>"
-        "<p>the champion&rsquo;s evolved parts (deck + arms) solid, the "
-        "baseline&rsquo;s as a gray ghost, superimposed &mdash; the total "
-        "geometric distance evolution covered. Fixed kit hidden.</p>"
-        '<canvas id="diff-canvas"></canvas></div>',
-        '<div class="panel" id="trail-panel">'
-        "<h3>lineage trail</h3>"
-        "<p>every ancestor ghosted at once, fainter the older it is "
-        "&mdash; a motion trail of the whole lineage converging on the "
-        "champion.</p>"
-        '<canvas id="trail-canvas"></canvas></div>',
-        '<p class="more">obsessed with the process too? the '
-        '<a href="log.html">research log</a> has every candidate, every '
-        "generation, flight replays in every weather scenario, and the "
-        'full <a href="lineage.html">family tree</a>. terms live in the '
-        '<a href="glossary.html">glossary</a>.</p>']
+        '<div class="wtl" id="replay-tl"></div></div>']
+
+    # the family tree, champion lineage lit -- the same component the
+    # dedicated lineage page renders
+    parts += [
+        "<h2>the family tree</h2>",
+        '<p class="sub">every candidate of the run in two lenses '
+        "&mdash; performance on the left, breeding on the right &mdash; "
+        "with the champion&rsquo;s full ancestry highlighted. Hover any "
+        "node to inspect it, click to pin another lineage (esc "
+        'releases); the <a href="lineage.html">family tree page</a> '
+        "tells the whole story, and the "
+        '<a href="log.html">research log</a> has every candidate in '
+        "full.</p>",
+        tree_section_html(store, run_id, results_dir, pin=champ_hash)]
 
     # data payloads for the shared engine: only the champion's ancestry
     walk_meta: dict[str, dict] = {}
