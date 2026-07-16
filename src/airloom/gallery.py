@@ -950,7 +950,7 @@ function redrawAll(){soloState.redraw();evoState.redraw();
   fullState.redraw();flState.redraw()}
 
 // ---- lineage replay: step through the candidate's full ancestry from
-// the oldest ancestor to the candidate; the current step is solid, the
+// the baseline to the candidate; the current step is solid, the
 // next in line a gray ghost, and each step cross-fades
 var wmetaEl=document.getElementById("walk-meta");
 var WMETA=wmetaEl?JSON.parse(wmetaEl.textContent):{};
@@ -1004,11 +1004,16 @@ function walkChainFor(h){
     if(m.q)stack.push(m.q);
   }
   delete seen[h];
+  // the baseline (gen-0 winner) leads every chain: it is the reference
+  // the replay starts from and the trail is drawn against
+  if(BASELINE&&BASELINE!==h)seen[BASELINE]=1;
   var anc=Object.keys(seen);
   anc.sort(function(a,b){
     var ga=(WMETA[a]||{}).g||0,gb=(WMETA[b]||{}).g||0;
     return ga-gb||(a<b?-1:1);
   });
+  var bi=anc.indexOf(BASELINE);
+  if(bi>0){anc.splice(bi,1);anc.unshift(BASELINE)}
   walkAll=anc.concat([h]);
   return walkAll.filter(hasEvBlob);
 }
@@ -1021,6 +1026,7 @@ function walkSpecs(k){
 function walkLabel(){
   var h=walkChain[walkIdx],m=WMETA[h]||{};
   var t="step "+(walkIdx+1)+" of "+walkChain.length+" · g"+m.g+
+    (h===BASELINE?" · baseline":"")+
     " · "+h+(m.f?" · "+m.f+" Wh/km":" · invalid");
   if(walkIdx+1<walkChain.length){
     var h2=walkChain[walkIdx+1],m2=WMETA[h2]||{};
@@ -1091,7 +1097,7 @@ function walkGo(k){
 // actually experienced, gusts included.
 var FL={hash:null,data:null,scen:null,defScen:null,t:0,playing:false,
         speed:8,last:null,hx:1,hy:0};
-// second channel: the oldest ancestor flying the SAME scenario (identical
+// second channel: the baseline flying the SAME scenario (identical
 // gust seeds), posed from its own telemetry but driven by the shared
 // clock FL.t so the two replays stay in sync
 var FLB={hash:null,data:null,on:false,loaded:null,hx:1,hy:0,theta:0,
@@ -1201,7 +1207,7 @@ function flSplitSet(on){
   var pane=body?body.querySelector(".fl-b"):null;
   var b=document.getElementById("fl-split-btn");
   if(b){b.classList.toggle("on",on);
-    b.textContent=on?"hide ancestor":"vs oldest ancestor"}
+    b.textContent=on?"hide baseline":"vs baseline"}
   if(on)flbLoad();
   if(!body||!pane)return;
   body.classList.toggle("fl-split",on);
@@ -1349,16 +1355,17 @@ function openOverlay(d,mode){
             +"&#9654;</button>"];
     walkAll.forEach(function(th){
       var tm=WMETA[th]||{},ti=stepIdx[th];
+      var lab=th===BASELINE?"base":"g"+tm.g;
+      var tt=th+(th===BASELINE?" · baseline":"")+
+        (tm.f?" · "+tm.f+" Wh/km":" · invalid");
       var inner=(tm.i?'<img src="'+tm.i+'" alt="'+th+'">':"")+
-        "<span>g"+tm.g+"</span>";
+        "<span>"+lab+"</span>";
       if(ti===undefined){ // ancestor without an embedded 3D model
-        tp.push('<span class="wthumb off" title="'+th+
-          (tm.f?" · "+tm.f+" Wh/km":" · invalid")+
+        tp.push('<span class="wthumb off" title="'+tt+
           ' · no 3D model">'+inner+"</span>");
       }else{
-        tp.push('<button class="wthumb" data-k="'+ti+'" title="'+th+
-          (tm.f?" · "+tm.f+" Wh/km":" · invalid")+'">'+inner+
-          "</button>");
+        tp.push('<button class="wthumb" data-k="'+ti+'" title="'+tt+
+          '">'+inner+"</button>");
       }
     });
     tl.innerHTML=tp.join("");
@@ -1384,7 +1391,8 @@ function openOverlay(d,mode){
     fullV.load(fspecs,walkFrame);
     var nAll=walkAll.length-1;
     document.getElementById("full-hash").textContent=(d.title||"")+
-      (d.fit?" · "+d.fit:"")+"  vs  "+nAll+" ancestor"+(nAll>1?"s":"")+
+      (d.fit?" · "+d.fit:"")+"  vs  "+nAll+" prior frame"+(nAll>1?"s":"")+
+      (BASELINE&&BASELINE!==wh?" incl. the baseline":"")+
       (nAll>n-1?" ("+(n-1)+" with 3D)":"");
     fullState.reset();
   }else{
@@ -1397,8 +1405,9 @@ function openOverlay(d,mode){
   //    champions/setters have telemetry payloads; the detail-card button
   //    is disabled for everyone else)
   FL.hash=d.mesh.slice(2);FL.data=null;FL.scen=null;flPause();
-  // ancestor split view: needs the oldest ancestor's mesh AND telemetry
-  // (rendered alongside the curated candidates'); starts slid away
+  // baseline split view: needs the baseline's mesh AND telemetry (the
+  // baseline is a best-so-far setter, so its flights are always
+  // curated); starts slid away
   var ancH=(hasAnc&&d.ancestor!==d.mesh)?d.ancestor.slice(2):null;
   FLB.hash=(ancH&&FLIGHT_SRC[ancH])?ancH:null;
   FLB.data=null;FLB.on=false;FLB.loaded=null;
@@ -1413,10 +1422,10 @@ function openOverlay(d,mode){
   if(splitBtn){
     splitBtn.disabled=!FLB.hash;
     splitBtn.classList.remove("on");
-    splitBtn.textContent="vs oldest ancestor";
+    splitBtn.textContent="vs baseline";
     splitBtn.title=FLB.hash?
-      "slide in the oldest ancestor flying the same weather, in sync":
-      "no flight telemetry for this candidate's oldest ancestor";
+      "slide in the baseline flying the same weather, in sync":
+      "no flight telemetry for the baseline";
   }
   var ancCap=document.getElementById("flb-anc");
   if(ancCap)ancCap.textContent=FLB.hash?(d.anctitle||""):"";
@@ -1767,7 +1776,7 @@ def progress_chart_svg(store: Store, run_id: str,
                      f'<title>g{g}: pivot generation (plateau broken up with '
                      f'far-parent crossovers)</title></line>')
             s.append(f'<text x="{x0 + 3:.1f}" y="{mt + ph + 16}" font-size="11" '
-                     f'font-weight="700" fill="#2e6e63">g{g} &#10227;'
+                     f'font-weight="700" fill="#2e6e63">g{g}'
                      f'<title>pivot generation: plateau broken up with '
                      f'far-parent crossovers</title></text>')
         elif x1 - x0 >= 24.0:
@@ -1943,8 +1952,8 @@ def _chart_legend_html() -> str:
              "A purple halo marks candidates proposed by the Claude "
              "designer; a light purple generation band means Claude had "
              "input that generation (designer round)."),
-        item('<span style="color:#2e6e63;font-weight:700">g&#8202;&#10227;'
-             "</span>", "pivot generation",
+        item('<span style="color:#2e6e63;font-weight:700">g</span>',
+             "pivot generation",
              "Patience ran out on a plateau: this generation was bred from "
              "far-apart parents to re-diversify the pool."),
     ]
@@ -2379,15 +2388,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts.append('<p class="sub" style="font-style:italic">click a model or '
                  "its <b>view candidate evolution</b> button to open it "
                  "full-screen: the full-kit model, its evolved "
-                 "components alone, a side-by-side with the oldest ancestor "
-                 "of its lineage rotating in sync, the net change vs that "
-                 "ancestor, the lineage trail (every ancestor ghosted), and "
-                 "a replay that steps generation by generation from the "
-                 "oldest ancestor to the candidate. "
+                 "components alone, a side-by-side with the baseline "
+                 "(the gen-0 winner) rotating in sync, the net change vs "
+                 "the baseline, the lineage trail (baseline + every "
+                 "ancestor ghosted), and a replay that steps generation "
+                 "by generation from the baseline to the candidate. "
                  "<b>view candidate performance</b> replays the scored "
                  "flights, one tab per weather scenario (champions and "
-                 "best-so-far setters only), and can slide in the oldest "
-                 "ancestor flying the same weather in sync "
+                 "best-so-far setters only), and can slide in the baseline "
+                 "flying the same weather in sync "
                  "(3D models load on demand when an overlay opens)</p>")
     for h in detail_ids:
         c = cands[h]
@@ -2399,13 +2408,14 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         img = _rel(results_dir, c["png_path"])
         bottom = _bottom_png_for(results_dir, c["png_path"]) or img
         if h in viewer_hashes:
-            root = _oldest_ancestor(cands, h)
+            # the 3D comparison views (side-by-side, net change, flight
+            # split) all reference the baseline: the gen-0 winner
             anc_attr = ""
-            if root and root in viewer_hashes and root != h:
-                rfit = store.fitness_of(cands[root])
-                anc_attr = (f' data-ancestor="m-{root}" data-anctitle='
-                            f'"{root} · g{cands[root]["generation_born"]}'
-                            f' · {_fmt(rfit)}"')
+            if (baseline_hash and baseline_hash != h
+                    and baseline_hash in viewer_hashes):
+                anc_attr = (f' data-ancestor="m-{baseline_hash}" '
+                            f'data-anctitle="{baseline_hash} · g0 · '
+                            f'{_fmt(baseline_fit)} · baseline"')
             setter_attr = ' data-setter="1"' if is_setter else ""
             claude_attr = ' data-claude="1"' \
                 if c["operator"] == "designer" else ""
@@ -2558,7 +2568,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="ovl-tabs" id="evo-tabs">'
         '<button data-tab="solo" class="on">full kit</button>'
         '<button data-tab="evolved">evolved parts</button>'
-        '<button data-tab="compare">vs oldest ancestor</button>'
+        '<button data-tab="compare">vs baseline</button>'
         '<button data-tab="diff">net change</button>'
         '<button data-tab="fulldiff">lineage trail</button>'
         '<button data-tab="walk">replay</button>'
@@ -2577,7 +2587,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div class="ovl-hint">only the evolved parts (deck + arms) are '
         "shown &middot; fixed kit hidden</div></div>"
         '<div class="ovl-body" data-tab="compare" style="position:relative">'
-        '<div class="pane"><div class="cap">oldest ancestor '
+        '<div class="pane"><div class="cap">baseline '
         '<span class="hash" id="anc-hash"></span></div>'
         '<canvas id="ovl-anc"></canvas></div>'
         '<div class="pane"><div class="cap">this candidate '
@@ -2591,7 +2601,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="hash" id="diff-hash"></span>'
         '<span style="font-style:italic;text-transform:none;'
         'letter-spacing:0;font-weight:400">solid color = this candidate '
-        "&middot; gray ghost = oldest ancestor &middot; fixed kit hidden"
+        "&middot; gray ghost = baseline &middot; fixed kit hidden"
         "</span></div>"
         '<canvas id="ovl-diff"></canvas></div>'
         '<div class="ovl-hint">only the parts evolution changes are shown, '
@@ -2601,7 +2611,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="hash" id="full-hash"></span>'
         '<span style="font-style:italic;text-transform:none;'
         'letter-spacing:0;font-weight:400">solid color = this candidate '
-        "&middot; gray ghosts = every ancestor, fainter = older</span></div>"
+        "&middot; gray ghosts = the baseline + every ancestor, "
+        "fainter = older</span></div>"
         '<canvas id="ovl-full"></canvas></div>'
         '<div class="ovl-hint">the whole lineage superimposed &middot; '
         "evolved parts only</div></div>"
@@ -2618,7 +2629,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div class="ovl-body" data-tab="flight" style="position:relative">'
         '<div class="pane" style="position:relative"><div class="cap">'
         '<span class="hash" id="fl-lab"></span>'
-        '<button class="wbtn" id="fl-split-btn">vs oldest ancestor</button>'
+        '<button class="wbtn" id="fl-split-btn">vs baseline</button>'
         "</div>"
         '<canvas id="ovl-flight"></canvas>'
         '<div class="fl-hud" id="fl-hud"></div>'
@@ -2629,7 +2640,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<span class="fl-time" id="fl-time"></span></div>'
         "</div>"
         '<div class="pane fl-b" style="position:relative"><div class="cap">'
-        'oldest ancestor <span class="hash" id="flb-anc"></span>'
+        'baseline <span class="hash" id="flb-anc"></span>'
         '<span class="hash" id="flb-lab"></span></div>'
         '<canvas id="ovl-flight-b"></canvas>'
         '<div class="fl-hud" id="flb-hud"></div>'
@@ -2637,7 +2648,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div class="ovl-hint">the actual scored flight, replayed from '
         "simulation telemetry &middot; attitude = thrust vector &middot; "
         "rotors at telemetry rpm &middot; drag to orbit &middot; "
-        "<b>vs oldest ancestor</b> slides in a second replay flying the "
+        "<b>vs baseline</b> slides in a second replay flying the "
         "same weather in sync</div></div>"
         '<div class="ovl-views">'
         '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
@@ -2659,6 +2670,10 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                         "i": _rel(results_dir, c["png_path"])}
     parts.append('<script type="application/json" id="walk-meta">'
                  f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
+    # the baseline hash (gen-0 winner): the reference every comparison
+    # view, replay, and trail is anchored to
+    parts.append(f"<script>var BASELINE={json.dumps(baseline_hash)};"
+                 "</script>")
     parts.append('<script type="application/json" id="blob-src">'
                  f"{json.dumps(blob_src, separators=(',', ':'))}</script>")
     parts.append('<script type="application/json" id="flight-src">'
