@@ -227,10 +227,12 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
               f'<p class="sub lead">{INTRO_TEXT}</p>']
 
     # the champion's own header, then headline stats and the full card
-    parts += [
-        "<h2>the result: champion "
-        f'<span class="hash">{champ_hash}</span> &mdash; '
-        f"{_fmt(champ_fit)} Wh/km after {n_gens} generations</h2>"]
+    if improvement is not None:
+        parts.append(f"<h2>we evolved the champion candidate to "
+                     f"{improvement:.0f}% better than the baseline</h2>")
+    else:
+        parts.append(f"<h2>we evolved a champion candidate across "
+                     f"{n_gens} generations</h2>")
     parts += [
         '<div class="stats">',
         f'<div class="stat"><b>{_fmt(champ_fit)}</b>'
