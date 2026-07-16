@@ -420,10 +420,20 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             "<span>better than the baseline</span></div>")
     parts += [
         f'<div class="stat"><b>{mass}&thinsp;g</b>'
-        "<span>frame mass</span></div>",
-        f'<div class="stat"><b>{len(cands)}</b>'
-        "<span>candidates evaluated</span></div>",
-        "</div>"]
+        "<span>frame mass</span></div>"]
+    base_mass = cands[base_hash]["frame_mass"] if base_hash else None
+    mass_saving = ((base_mass - champ["frame_mass"]) / base_mass * 100
+                   if base_mass and champ["frame_mass"] else None)
+    if mass_saving is not None:
+        parts.append(
+            f'<div class="stat"><b><span class="up">'
+            f"{mass_saving:.0f}%</span></b>"
+            "<span>lighter than the baseline</span></div>")
+    else:
+        parts.append(
+            f'<div class="stat"><b>{len(cands)}</b>'
+            "<span>candidates evaluated</span></div>")
+    parts.append("</div>")
 
     # the champion's full detail card -- the same component the research
     # log renders for every candidate; the shared overlay embedded below
