@@ -1,9 +1,10 @@
 """Flight-telemetry payloads for the gallery's flight tab.
 
-Curation: the champion and every best-so-far setter of a run get their six
-scenario flights re-simulated with the telemetry tap on (fixed gust seeds
-make this an exact replay of the scored flight) and written as JSONP files
-next to the mesh payloads:
+Curation: the champion and every best-so-far setter of a run -- plus each
+one's oldest ancestor, so the flight tab's split view can replay both in
+sync -- get their six scenario flights re-simulated with the telemetry tap
+on (fixed gust seeds make this an exact replay of the scored flight) and
+written as JSONP files next to the mesh payloads:
 
     frames/gen_XXXX/<hash>.<scenario>.flight.js
         -> airloomFlight("<hash>", "<scenario>", {hz, x[], y[], z[], ...})
@@ -73,10 +74,13 @@ def write_flights_for(cfg, genome_dict: dict[str, float], h: str,
 def ensure_flights(cfg, store, run_id: str,
                    results_dir: Path) -> dict[str, dict[str, str]]:
     """Flights for the run's champion + all best-so-far setters (the
-    curation rule). Returns {hash: {scenario: gallery-relative path}}."""
-    from .gallery import _rel
+    curation rule), plus each one's oldest ancestor so the flight tab
+    can slide in a synced ancestor replay next to the candidate.
+    Returns {hash: {scenario: gallery-relative path}}."""
+    from .gallery import _oldest_ancestor, _rel
 
     cands = list(store.candidates_in_eval_order(run_id))
+    by_hash = {c["hash"]: c for c in cands}
     setters: list[Any] = []
     best = math.inf
     for c in cands:
@@ -85,8 +89,14 @@ def ensure_flights(cfg, store, run_id: str,
             best = f
             setters.append(c)
 
-    flight_src: dict[str, dict[str, str]] = {}
+    targets = {c["hash"]: c for c in setters}
     for c in setters:
+        root = _oldest_ancestor(by_hash, c["hash"])
+        if root and root not in targets and by_hash[root]["valid"]:
+            targets[root] = by_hash[root]
+
+    flight_src: dict[str, dict[str, str]] = {}
+    for c in targets.values():
         if not c["png_path"]:
             continue
         try:

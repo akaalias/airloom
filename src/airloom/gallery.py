@@ -127,12 +127,25 @@ img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
   height:11px;border-radius:50%;background:var(--ink);cursor:pointer}
 .fl-time{font:11px var(--mono);color:var(--faint);flex:0 0 auto;
   min-width:100px;text-align:right;align-self:center}
-.fl-pill{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;background:none;
-  border:1px solid var(--rule);border-radius:2px;color:var(--muted);
-  padding:2px 8px;margin-right:5px;cursor:pointer}
-.fl-pill:hover{color:var(--ink);border-color:var(--ink)}
-.fl-pill.on{color:var(--paper);background:var(--ink);border-color:var(--ink)}
+/* flight tab: the ancestor split view slides a second synced replay in
+   from the right (flex-basis driven per-frame from JS, so the canvases
+   resize in lockstep); specificity beats the generic .pane+.pane divider */
+.ovl-body .pane+.pane.fl-b{flex:0 0 0%;overflow:hidden;border-left:none}
+.ovl-body.fl-split .pane+.pane.fl-b{flex-basis:50%;
+  border-left:1px solid var(--rule)}
+.fl-b .cap{white-space:nowrap}
+#fl-split-btn{margin-left:auto}
+/* detail-card viewer buttons: open the evolution / performance overlays */
+.vbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.vbtns button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  background:none;border:1px solid var(--rule);border-radius:2px;
+  padding:6px 10px;cursor:pointer}
+.vbtns button:hover:not(:disabled){color:var(--ink);border-color:var(--ink)}
+.vbtns button:disabled{opacity:.35;cursor:default}
+.detail.setter .vbtns button{color:var(--disc);border-color:#3a382f}
+.detail.setter .vbtns button:hover:not(:disabled){color:var(--paper);
+  border-color:var(--paper)}
 .board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
 .knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
 .knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
@@ -177,9 +190,9 @@ img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
 .dprops li.rej{color:#8c2f1f;opacity:.85}
 .dprops .pbody{min-width:0}
 .dprops .pthumbw{position:relative;flex:none;display:block;width:104px;
-  border:1px solid var(--rule);background:var(--paper)}
+  border:1px solid var(--rule);border-radius:4px;background:var(--paper)}
 .dprops .pthumb{display:block;width:100%;aspect-ratio:4/3;
-  object-fit:contain;mix-blend-mode:multiply}
+  object-fit:contain;mix-blend-mode:multiply;border-radius:4px}
 .dprops li.rej .pthumb{opacity:.75}
 .dprops li.none{font-style:italic;color:var(--faint)}
 .dprops .fate{display:block;font-size:12.5px;font-style:italic;
@@ -245,7 +258,8 @@ h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
 .card.best{border:1.5px solid var(--ink)}
 .card.invalid{color:var(--muted)}
 .card.invalid img{opacity:.55}
-.card img{width:100%;height:auto;display:block;mix-blend-mode:multiply}
+.card img{width:100%;height:auto;display:block;mix-blend-mode:multiply;
+  border-radius:6px}
 .card .hash{font:12px var(--mono);color:var(--faint);margin-top:4px}
 .card .agg{font-size:19px;font-weight:700;margin-top:2px}
 .card .agg .unit{font:600 10.5px var(--serif);font-feature-settings:"smcp" 1;
@@ -263,7 +277,8 @@ table.sc td:last-child{text-align:right;color:var(--ink)}
   cursor:grab;touch-action:none}
 /* static fallback renders are 360px wide: never upscale them past
    natural size or they pixelate */
-.viewer img{object-fit:contain;width:auto;max-width:100%;cursor:default}
+.viewer img{object-fit:contain;width:100%;aspect-ratio:auto;cursor:default;
+  border-radius:6px}
 .viewer .vr{position:relative}
 .viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
   color:var(--faint);pointer-events:none}
@@ -284,7 +299,7 @@ table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
 .parents .lab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px}
 .parents figure{margin:0 0 10px}
-.parents img{width:100%;mix-blend-mode:multiply}
+.parents img{width:100%;mix-blend-mode:multiply;border-radius:6px}
 .parents figcaption{font:12px var(--mono);color:var(--faint)}
 .viewer img.peek{cursor:zoom-in}
 .chart-card svg [data-h]{cursor:pointer}
@@ -359,6 +374,10 @@ table.dt.hd b{font-size:17px}
 .ovl-tabs button:hover:not(:disabled){color:var(--ink)}
 .ovl-tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
 .ovl-tabs button:disabled{opacity:.3;cursor:default}
+/* the performance overlay swaps the model tabs for weather-scenario tabs */
+#perf-tabs{display:none}
+#ovl.perf #perf-tabs{display:flex}
+#ovl.perf #evo-tabs{display:none}
 #ovl-close{margin-left:auto;font:26px/1 var(--serif);background:none;
   border:none;color:var(--muted);cursor:pointer;padding:0 6px}
 #ovl-close:hover{color:var(--ink)}
@@ -430,7 +449,8 @@ table.dt.hd b{font-size:17px}
   padding:2px;cursor:pointer;flex:0 0 auto;width:66px}
 .wthumb.off{opacity:.4;cursor:default}
 .wthumb.off:hover{border-color:var(--rule)}
-.wthumb img{width:100%;display:block;mix-blend-mode:multiply}
+.wthumb img{width:100%;display:block;mix-blend-mode:multiply;
+  border-radius:4px}
 .wthumb span{display:block;font:10.5px var(--mono);color:var(--faint);
   text-align:center;margin-top:1px}
 .wthumb:hover{border-color:var(--muted)}
@@ -910,7 +930,7 @@ var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
     walkState=makeState(1.2),fullState=makeState(1.2),
     flState=makeState(0.35);  // low chase-cam pitch: tilt reads best
 var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,walkV=null,
-    fullV=null,flV=null,current=null;
+    fullV=null,flV=null,flVB=null,current=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
   if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
@@ -920,6 +940,8 @@ function ensureViewers(){
   if(!walkV)walkV=makeViewer(document.getElementById("ovl-walk"),walkState);
   if(!fullV)fullV=makeViewer(document.getElementById("ovl-full"),fullState);
   if(!flV)flV=makeViewer(document.getElementById("ovl-flight"),flState);
+  // the ancestor split pane shares flState -> both replays orbit in sync
+  if(!flVB)flVB=makeViewer(document.getElementById("ovl-flight-b"),flState);
 }
 function redrawAll(){soloState.redraw();evoState.redraw();
   cmpState.redraw();diffState.redraw();walkState.redraw();
@@ -1067,7 +1089,11 @@ function walkGo(k){
 // actually experienced, gusts included.
 var FL={hash:null,data:null,scen:null,defScen:null,t:0,playing:false,
         speed:8,last:null,hx:1,hy:0};
-function flLerp(ch,f0,i,j){var a=FL.data[ch];return a[i]*(1-f0)+a[j]*f0}
+// second channel: the oldest ancestor flying the SAME scenario (identical
+// gust seeds), posed from its own telemetry but driven by the shared
+// clock FL.t so the two replays stay in sync
+var FLB={hash:null,data:null,on:false,loaded:null,hx:1,hy:0,theta:0,
+         anim:null};
 function flPlaySet(on){
   FL.playing=on;
   var b=document.getElementById("fl-play");
@@ -1087,68 +1113,128 @@ function flTick(ts){
   flShow(dtf);
   requestAnimationFrame(flTick);
 }
-function flShow(dtf){
-  var d=FL.data;if(!d)return;
+// pose one channel's viewer from its telemetry at the shared clock FL.t
+// (each flight clamps to its own length -- durations can differ slightly)
+function flPoseData(d,V,S,dtf){
   var n=d.x.length,fx=Math.min(FL.t*d.hz,n-1.001);
   var i=Math.floor(fx),j=Math.min(i+1,n-1),f0=fx-i;
+  function L(ch){var a=d[ch];return a[i]*(1-f0)+a[j]*f0}
   // -- attitude: body z = thrust vector, body x follows the motion
-  var tx=flLerp("tx",f0,i,j),ty=flLerp("ty",f0,i,j),tz=flLerp("tz",f0,i,j);
+  var tx=L("tx"),ty=L("ty"),tz=L("tz");
   var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
   var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
   var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
-  if(hm<1e-4){hx=FL.hx;hy=FL.hy}else{hx/=hm;hy/=hm;FL.hx=hx;FL.hy=hy}
+  if(hm<1e-4){hx=S.hx;hy=S.hy}else{hx/=hm;hy/=hm;S.hx=hx;S.hy=hy}
   var dot=hx*tx+hy*ty;
   var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
   var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
   bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
   var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
-  flV.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
-  var wx=flLerp("wx",f0,i,j),wy=flLerp("wy",f0,i,j),wz=flLerp("wz",f0,i,j);
+  V.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
   // -- spinning rotors: display rate proportional to the telemetry RPM,
   //    diagonal pairs counter-rotating. Fast enough to strobe like a
   //    filmed prop; true 9k rpm would only alias worse.
-  var rpmNow=flLerp("rpm",f0,i,j);
-  FL.theta=(FL.theta||0)+rpmNow*0.0035*(dtf||0.016);
-  flV.setPropAngle(FL.theta);
-  flState.redraw();
-  // -- HUD
-  var air=Math.hypot(wx,wy,wz);
+  S.theta=(S.theta||0)+L("rpm")*0.0035*(dtf||0.016);
+  V.setPropAngle(S.theta);
+  return {i:i,i0:i0,i1:i1,fx:fx,L:L,tz:tz};
+}
+function flHudHTML(d,p,withT){
+  var L=p.L,i=p.i,i0=p.i0,i1=p.i1;
+  var air=Math.hypot(L("wx"),L("wy"),L("wz"));
   var gs=0;
   if(i1>i0)gs=Math.hypot(d.x[i1]-d.x[i0],d.y[i1]-d.y[i0])*d.hz/(i1-i0);
   var dist=0,px=d.x[0];
   for(var k2=1;k2<=i;k2++){dist+=Math.abs(d.x[k2]-px);px=d.x[k2]}
-  var tilt=Math.acos(Math.max(-1,Math.min(1,tz)))*57.296;
-  var hud=document.getElementById("fl-hud");
-  if(hud)hud.innerHTML=
-    "t <b>"+FL.t.toFixed(1)+"</b> s · "+Math.round(dist)+" m flown\n"+
+  var tilt=Math.acos(Math.max(-1,Math.min(1,p.tz)))*57.296;
+  return (withT?"t <b>"+FL.t.toFixed(1)+"</b> s · ":"")+
+    Math.round(dist)+" m flown\n"+
     "ground <b>"+gs.toFixed(1)+"</b> m/s · air <b>"+air.toFixed(1)+
     "</b> m/s · tilt <b>"+tilt.toFixed(0)+"&deg;</b>\n"+
-    "rotors <b>"+Math.round(flLerp("rpm",f0,i,j)).toLocaleString()+
-    "</b> rpm · <b>"+Math.round(flLerp("pw",f0,i,j))+"</b> W · pack <b>"+
-    flLerp("vt",f0,i,j).toFixed(1)+"</b> V\n"+
+    "rotors <b>"+Math.round(L("rpm")).toLocaleString()+
+    "</b> rpm · <b>"+Math.round(L("pw"))+"</b> W · pack <b>"+
+    L("vt").toFixed(1)+"</b> V\n"+
     (d.lim[i]?'<span class="warn">THRUST LIMITED</span>':"");
+}
+function flShow(dtf){
+  var d=FL.data;if(!d)return;
+  var p=flPoseData(d,flV,FL,dtf);
+  var pb=(FLB.on&&FLB.data&&flVB)?flPoseData(FLB.data,flVB,FLB,dtf):null;
+  flState.redraw();
+  // -- HUD (one per pane; the ancestor omits the shared clock line)
+  var hud=document.getElementById("fl-hud");
+  if(hud)hud.innerHTML=flHudHTML(d,p,true);
+  var hudB=document.getElementById("flb-hud");
+  if(hudB)hudB.innerHTML=pb?flHudHTML(FLB.data,pb,false):"";
   var sc=document.getElementById("fl-scrub");
-  if(sc&&document.activeElement!==sc)sc.value=Math.round(999*fx/(n-1));
+  if(sc&&document.activeElement!==sc)
+    sc.value=Math.round(999*p.fx/(d.x.length-1));
   var tl=document.getElementById("fl-time");
   if(tl){
-    var du=n/d.hz;
+    var du=d.x.length/d.hz;
     var fmt=function(s9){var m9=Math.floor(s9/60);
       return m9+":"+("0"+Math.floor(s9-m9*60)).slice(-2)};
     tl.textContent=fmt(FL.t)+" / "+fmt(du);
   }
 }
+function flbLab(){
+  var el=document.getElementById("flb-lab");
+  if(!el)return;
+  var pd=FLB.data;
+  el.textContent=!FLB.hash?"":
+    pd?(pd.valid?(pd.whkm!=null?"· "+pd.whkm.toFixed(2)+" Wh/km":""):
+        "· FAILED: "+(pd.reason||"")):
+    "· no replay for this scenario";
+}
+function flbLoad(){ // the ancestor mesh is scenario-independent: load once
+  if(!FLB.hash||!flVB)return;
+  if(FLB.loaded!==FLB.hash){
+    flVB.load([{id:"m-"+FLB.hash,propSpin:true}]);
+    FLB.loaded=FLB.hash;
+  }
+  flbLab();
+}
+function flSplitSet(on){
+  FLB.on=on;
+  var body=ovl.querySelector('.ovl-body[data-tab="flight"]');
+  var pane=body?body.querySelector(".fl-b"):null;
+  var b=document.getElementById("fl-split-btn");
+  if(b){b.classList.toggle("on",on);
+    b.textContent=on?"hide ancestor":"vs oldest ancestor"}
+  if(on)flbLoad();
+  if(!body||!pane)return;
+  body.classList.toggle("fl-split",on);
+  // slide driven from JS, not a CSS transition: the replay's rAF loop
+  // can starve the main-thread style recalc a transition needs, leaving
+  // the pane stuck mid-slide -- and per-frame inline flex-basis keeps
+  // both canvases resizing and redrawing in lockstep anyway
+  if(FLB.anim){cancelAnimationFrame(FLB.anim);FLB.anim=null}
+  var from=parseFloat(pane.style.flexBasis)||0,to=on?50:0,t0=null,DUR=380;
+  function anim(ts){
+    if(t0===null)t0=ts;
+    var t=Math.min(1,(ts-t0)/DUR),e=t*(2-t); // ease-out
+    pane.style.flexBasis=(from+(to-from)*e)+"%";
+    if(!FL.playing)flShow(0);else flState.redraw();
+    FLB.anim=t<1?requestAnimationFrame(anim):null;
+  }
+  FLB.anim=requestAnimationFrame(anim);
+}
 function flOpen(scen){
-  ensureFlight(FL.hash,scen).then(function(){
+  var jobs=[ensureFlight(FL.hash,scen)];
+  if(FLB.hash)jobs.push(ensureFlight(FLB.hash,scen));
+  Promise.all(jobs).then(function(){
     var pd=FLIGHTS[FL.hash+"|"+scen];
     if(!pd)return;
     FL.data=pd;FL.scen=scen;FL.t=0;FL.hx=1;FL.hy=0;
-    document.querySelectorAll("#fl-scens .fl-pill").forEach(function(b){
+    document.querySelectorAll("#perf-tabs button").forEach(function(b){
       b.classList.toggle("on",b.dataset.scen===scen)});
     flV.load([{id:"m-"+FL.hash,propSpin:true}]);
     FL.theta=0;
     var lab=pd.valid?(pd.whkm!=null?pd.whkm.toFixed(2)+" Wh/km":""):
       "FAILED: "+(pd.reason||"");
     document.getElementById("fl-lab").textContent=lab;
+    FLB.data=FLB.hash?(FLIGHTS[FLB.hash+"|"+scen]||null):null;
+    FLB.hx=1;FLB.hy=0;FLB.theta=0;
+    if(FLB.on)flbLoad();else flbLab();
     flPlaySet(true);
   });
 }
@@ -1166,6 +1252,9 @@ function flOpen(scen){
     FL.t=(+sc.value/999)*(FL.data.x.length/FL.data.hz);
     if(!FL.playing)flShow(0.016);
   });
+  var sb2=document.getElementById("fl-split-btn");
+  if(sb2)sb2.addEventListener("click",function(){
+    if(!sb2.disabled)flSplitSet(!FLB.on)});
 })();
 function setTab(name){
   if(name!=="walk")playStop();
@@ -1180,11 +1269,13 @@ function setTab(name){
   setTimeout(redrawAll,60);
   setTimeout(redrawAll,200);
 }
-function openOverlay(d){
+function openOverlay(d,mode){
   current=d;
+  var perf=mode==="perf";
   ensureViewers();
   if(!soloV)return; // no webgl
   ovl.classList.add("open");
+  ovl.classList.toggle("perf",perf);
   ovl.classList.toggle("inv",d.setter==="1");
   ovl.classList.toggle("claude",d.claude==="1");
   ovl.classList.toggle("failed",d.failed==="1");
@@ -1300,28 +1391,49 @@ function openOverlay(d){
     walkChain=[];
     walkFrame=null;
   }
-  // -- flight tab: only champions/setters have telemetry payloads
-  var flBtn=ovl.querySelector('button[data-tab="flight"]');
+  // -- performance overlay: the weather scenarios ARE the tabs (only
+  //    champions/setters have telemetry payloads; the detail-card button
+  //    is disabled for everyone else)
   FL.hash=d.mesh.slice(2);FL.data=null;FL.scen=null;flPause();
+  // ancestor split view: needs the oldest ancestor's mesh AND telemetry
+  // (rendered alongside the curated candidates'); starts slid away
+  var ancH=(hasAnc&&d.ancestor!==d.mesh)?d.ancestor.slice(2):null;
+  FLB.hash=(ancH&&FLIGHT_SRC[ancH])?ancH:null;
+  FLB.data=null;FLB.on=false;FLB.loaded=null;
+  if(FLB.anim){cancelAnimationFrame(FLB.anim);FLB.anim=null}
+  var flBody=ovl.querySelector('.ovl-body[data-tab="flight"]');
+  if(flBody){
+    flBody.classList.remove("fl-split");
+    var flbPane=flBody.querySelector(".fl-b");
+    if(flbPane)flbPane.style.flexBasis="";
+  }
+  var splitBtn=document.getElementById("fl-split-btn");
+  if(splitBtn){
+    splitBtn.disabled=!FLB.hash;
+    splitBtn.classList.remove("on");
+    splitBtn.textContent="vs oldest ancestor";
+    splitBtn.title=FLB.hash?
+      "slide in the oldest ancestor flying the same weather, in sync":
+      "no flight telemetry for this candidate's oldest ancestor";
+  }
+  var ancCap=document.getElementById("flb-anc");
+  if(ancCap)ancCap.textContent=FLB.hash?(d.anctitle||""):"";
+  flbLab();
   var fsc=FLIGHT_SRC[FL.hash]||{},fkeys=Object.keys(fsc);
-  var scDiv=document.getElementById("fl-scens");
+  var pt=document.getElementById("perf-tabs");
   if(flV&&fkeys.length){
-    flBtn.disabled=false;
-    flBtn.title="";
     FL.defScen=fkeys.indexOf("calm_warm")>=0?"calm_warm":fkeys[0];
-    scDiv.innerHTML=fkeys.map(function(s2){
-      return '<button class="fl-pill" data-scen="'+s2+'">'+
+    pt.innerHTML=fkeys.map(function(s2){
+      return '<button data-scen="'+s2+'">'+
         s2.replace(/_/g," ")+"</button>"}).join("");
-    scDiv.querySelectorAll(".fl-pill").forEach(function(b){
+    pt.querySelectorAll("button").forEach(function(b){
       b.addEventListener("click",function(){flOpen(b.dataset.scen)});
     });
   }else{
-    flBtn.disabled=true;
-    flBtn.title="flights are rendered for the champion and "+
-      "best-so-far setters";
-    scDiv.innerHTML="";
+    FL.defScen=null;
+    pt.innerHTML="";
   }
-  setTab("solo");
+  setTab(perf?"flight":"solo");
 }
 function closeOverlay(){
   playStop();
@@ -1335,21 +1447,28 @@ ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
 document.getElementById("ovl-close").addEventListener("click",closeOverlay);
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape")closeOverlay()});
+function openFromPeek(img,mode){
+  var d={mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
+         title:img.dataset.title,anctitle:img.dataset.anctitle,
+         fit:img.dataset.fit,setter:img.dataset.setter,
+         claude:img.dataset.claude,failed:img.dataset.failed};
+  // prefetch everything the overlay's tabs will decode synchronously:
+  // the candidate, its lineage root, and the full replay chain
+  var need=[d.mesh,d.ancestor];
+  walkChainFor(d.mesh.slice(2)).forEach(function(h){need.push("m-"+h)});
+  img.classList.add("busy");
+  ensureBlobs(need).then(function(){
+    img.classList.remove("busy");
+    openOverlay(d,mode);
+  });
+}
 document.querySelectorAll("img.peek").forEach(function(img){
-  img.addEventListener("click",function(){
-    var d={mesh:img.dataset.mesh,ancestor:img.dataset.ancestor,
-           title:img.dataset.title,anctitle:img.dataset.anctitle,
-           fit:img.dataset.fit,setter:img.dataset.setter,
-           claude:img.dataset.claude,failed:img.dataset.failed};
-    // prefetch everything the overlay's tabs will decode synchronously:
-    // the candidate, its lineage root, and the full replay chain
-    var need=[d.mesh,d.ancestor];
-    walkChainFor(d.mesh.slice(2)).forEach(function(h){need.push("m-"+h)});
-    img.classList.add("busy");
-    ensureBlobs(need).then(function(){
-      img.classList.remove("busy");
-      openOverlay(d);
-    });
+  img.addEventListener("click",function(){openFromPeek(img,"evo")});
+});
+document.querySelectorAll(".vbtns button").forEach(function(bt){
+  bt.addEventListener("click",function(){
+    var img=bt.closest(".viewer").querySelector("img.peek");
+    if(img)openFromPeek(img,bt.dataset.mode);
   });
 });
 // quick view presets act on whichever tab is showing
@@ -1358,11 +1477,12 @@ document.querySelectorAll("img.peek").forEach(function(img){
 var VIEWS={front:[Math.PI/2,0],left:[Math.PI,0],right:[0,0],
            top:[-Math.PI/2,Math.PI/2],bottom:[Math.PI/2,-Math.PI/2]};
 function activeState(){
+  if(ovl.classList.contains("perf"))return flState;
   var b=ovl.querySelector(".ovl-tabs button.on");
   var t=b?b.dataset.tab:"solo";
   return t==="compare"?cmpState:t==="diff"?diffState:
          t==="walk"?walkState:t==="fulldiff"?fullState:
-         t==="evolved"?evoState:t==="flight"?flState:soloState;
+         t==="evolved"?evoState:soloState;
 }
 document.getElementById("walk-prev").addEventListener("click",
   function(){playStop();walkGo(walkIdx-1)});
@@ -2248,13 +2368,18 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             flight_src = {}
 
     parts.append("<h2>candidate details &amp; parentage</h2>")
-    parts.append('<p class="sub" style="font-style:italic">click a model to '
-                 "open it full-screen: the full-kit model, its evolved "
+    parts.append('<p class="sub" style="font-style:italic">click a model or '
+                 "its <b>view candidate evolution</b> button to open it "
+                 "full-screen: the full-kit model, its evolved "
                  "components alone, a side-by-side with the oldest ancestor "
                  "of its lineage rotating in sync, the net change vs that "
                  "ancestor, the lineage trail (every ancestor ghosted), and "
                  "a replay that steps generation by generation from the "
-                 "oldest ancestor to the candidate "
+                 "oldest ancestor to the candidate. "
+                 "<b>view candidate performance</b> replays the scored "
+                 "flights, one tab per weather scenario (champions and "
+                 "best-so-far setters only), and can slide in the oldest "
+                 "ancestor flying the same weather in sync "
                  "(3D models load on demand when an overlay opens)</p>")
     for h in detail_ids:
         c = cands[h]
@@ -2277,12 +2402,22 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
             claude_attr = ' data-claude="1"' \
                 if c["operator"] == "designer" else ""
             failed_attr = "" if c["valid"] else ' data-failed="1"'
+            # performance button needs flight telemetry, which the
+            # curation rule renders for champions/setters only
+            perf_attr = "" if flight_src.get(h) else (
+                ' disabled title="flights are rendered for the champion '
+                'and best-so-far setters"')
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
                       f'<img class="peek" src="{bottom}" '
                       f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
                       f'data-fit="{_fmt(fit)}"{setter_attr}{claude_attr}'
                       f'{failed_attr}{anc_attr}>{xc}'
                       f'<div class="hint">click to open the 3D model</div></div>'
+                      f'<div class="vbtns">'
+                      f'<button data-mode="evo">view candidate evolution'
+                      f"</button>"
+                      f'<button data-mode="perf"{perf_attr}>view candidate '
+                      f"performance</button></div>"
                       f"{_parts_legend_html()}</div>")
         else:
             viewer = (f'<div class="viewer"><div class="vr">{xo}'
@@ -2395,15 +2530,15 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<div id="ovl">'
         '<div class="ovl-bar">'
         '<span class="hash"></span>'
-        '<span class="ovl-tabs">'
+        '<span class="ovl-tabs" id="evo-tabs">'
         '<button data-tab="solo" class="on">full kit</button>'
         '<button data-tab="evolved">evolved parts</button>'
         '<button data-tab="compare">vs oldest ancestor</button>'
         '<button data-tab="diff">net change</button>'
         '<button data-tab="fulldiff">lineage trail</button>'
         '<button data-tab="walk">replay</button>'
-        '<button data-tab="flight">flight</button>'
         "</span>"
+        '<span class="ovl-tabs" id="perf-tabs"></span>'
         '<button id="ovl-close" title="close (esc)">&#215;</button>'
         "</div>"
         f'<div class="ovl-lgd">{_parts_legend_html()}</div>'
@@ -2457,8 +2592,9 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         "&#8592;/&#8594; step &middot; evolved parts only</div></div>"
         '<div class="ovl-body" data-tab="flight" style="position:relative">'
         '<div class="pane" style="position:relative"><div class="cap">'
-        '<span id="fl-scens"></span>'
-        '<span class="hash" id="fl-lab"></span></div>'
+        '<span class="hash" id="fl-lab"></span>'
+        '<button class="wbtn" id="fl-split-btn">vs oldest ancestor</button>'
+        "</div>"
         '<canvas id="ovl-flight"></canvas>'
         '<div class="fl-hud" id="fl-hud"></div>'
         '<div class="wtl fl-bar">'
@@ -2467,9 +2603,17 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
         '<input type="range" id="fl-scrub" min="0" max="999" value="0">'
         '<span class="fl-time" id="fl-time"></span></div>'
         "</div>"
+        '<div class="pane fl-b" style="position:relative"><div class="cap">'
+        'oldest ancestor <span class="hash" id="flb-anc"></span>'
+        '<span class="hash" id="flb-lab"></span></div>'
+        '<canvas id="ovl-flight-b"></canvas>'
+        '<div class="fl-hud" id="flb-hud"></div>'
+        "</div>"
         '<div class="ovl-hint">the actual scored flight, replayed from '
         "simulation telemetry &middot; attitude = thrust vector &middot; "
-        "rotors at telemetry rpm &middot; drag to orbit</div></div>"
+        "rotors at telemetry rpm &middot; drag to orbit &middot; "
+        "<b>vs oldest ancestor</b> slides in a second replay flying the "
+        "same weather in sync</div></div>"
         '<div class="ovl-views">'
         '<button data-view="fit" title="zoom to fit, keep orientation">fit</button>'
         '<button data-view="front">front</button>'

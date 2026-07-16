@@ -44,9 +44,46 @@ DRAW_ORDER = ("deck", "battery", "stack", "wiring", "camera", "antennas",
               "motors", "arms", "props")
 
 
+def trim_to_content(path: Path, margin_frac: float = 0.05) -> None:
+    """Crop a saved still to its content bounding box (plus a small margin),
+    then pad back out to the original aspect ratio on the paper background.
+    The fixed world scale leaves a lot of empty paper around the frame;
+    trimming lets the drone fill its thumbnail while every image keeps the
+    same shape. Idempotent: re-trimming an already-trimmed still only
+    reclaims the margin it added."""
+    from PIL import Image
+
+    with Image.open(path) as im:
+        rgb = im.convert("RGB")
+    w, h = rgb.size
+    a = np.asarray(rgb, dtype=np.int16)
+    paper = np.asarray(Image.new("RGB", (1, 1), PAPER),
+                       dtype=np.int16)[0, 0]
+    # tolerance: antialiasing leaves faint (diff <= 8) speckle across the
+    # whole canvas that would defeat an exact-match bounding box
+    ys, xs = np.nonzero(np.abs(a - paper).max(axis=2) > 8)
+    if not len(xs):
+        return
+    bbox = (int(xs.min()), int(ys.min()), int(xs.max()) + 1,
+            int(ys.max()) + 1)
+    m = int(round(max(w, h) * margin_frac))
+    x0, y0 = max(0, bbox[0] - m), max(0, bbox[1] - m)
+    x1, y1 = min(w, bbox[2] + m), min(h, bbox[3] + m)
+    cw, ch = x1 - x0, y1 - y0
+    if cw <= 0 or ch <= 0 or (cw >= w * 0.98 and ch >= h * 0.98):
+        return
+    if cw * h > ch * w:  # crop wider than the target aspect: pad height
+        tw, th = cw, -(-cw * h // w)
+    else:                # crop taller: pad width
+        tw, th = -(-ch * w // h), ch
+    out = Image.new("RGB", (tw, th), PAPER)
+    out.paste(rgb.crop((x0, y0, x1, y1)), ((tw - cw) // 2, (th - ch) // 2))
+    out.save(path)
+
+
 def render_parts(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
                  valid: bool = True,
-                 size_px: tuple[int, int] = (720, 540)) -> None:
+                 size_px: tuple[int, int] = (1440, 1080)) -> None:
     dpi = 90
     fig = plt.figure(figsize=(size_px[0] / dpi, size_px[1] / dpi), dpi=dpi)
     ax = fig.add_subplot(111, projection="3d")
@@ -72,11 +109,12 @@ def render_parts(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=dpi, facecolor=PAPER)
     plt.close(fig)
+    trim_to_content(path)
 
 
 def render_bottom_view(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
                        valid: bool = True,
-                       size_px: tuple[int, int] = (440, 440)) -> None:
+                       size_px: tuple[int, int] = (2400, 2400)) -> None:
     """The gallery's detail-block still: from under the drone looking up --
     the view that shows the evolved arm/plate geometry best."""
     dpi = 90
@@ -105,6 +143,7 @@ def render_bottom_view(parts: dict[str, "trimesh.Trimesh | None"], path: Path,
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=dpi, facecolor=PAPER)
     plt.close(fig)
+    trim_to_content(path)
 
 
 def render_thumbnail(mesh: trimesh.Trimesh, path: Path, valid: bool = True,
