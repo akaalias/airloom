@@ -393,12 +393,14 @@ svg.focus .nd.lit{stroke:var(--ink);stroke-width:1.6}
 .tree:last-child .lg .tip{left:auto;right:calc(100% + 12px)}
 
 .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
-h1{font-weight:400;font-size:30px;line-height:1.3;letter-spacing:-.01em;
-  margin:0 0 14px;text-align:center}
+h1{font-weight:400;font-size:60px;line-height:1.15;letter-spacing:-.01em;
+  margin:0 0 22px;text-align:center}
 h1 .hash{font:26px var(--mono);color:var(--muted)}
 p.sub{text-align:center;font-style:italic;color:var(--muted);
   font-size:15.5px;line-height:1.7;margin:0 auto 8px;max-width:760px}
+p.sub.lead{font-size:19px;max-width:880px}
 h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
+h2 .hash{font:400 21px var(--mono);color:var(--muted)}
 /* headline stats strip; the label rule targets DIRECT children only so
    the highlighted %-figure inside <b> keeps the big number size */
 .stats{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;
@@ -444,7 +446,8 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
 <div class="wrap">
 <nav class="topnav"><span class="brand">Airloom</span><a href="index.html" class="on">the result</a><a href="log.html">research log</a><a href="lineage.html">family tree</a><a href="glossary.html">glossary</a></nav>
 <h1>&ldquo;The snuggle is real&rdquo;: &mdash; evolving quadcopter frame geometry for Wh/km, with Claude as an occasional co-designer</h1>
-<p class="sub">I let a genetic algorithm loose on the geometry of a 7-inch quadcopter frame &mdash; the real, GPLv3 Source One V6 plate drawings, morphed by twelve genes and flown through six simulated weather scenarios, with Claude sitting in every few generations to propose designs from the run&rsquo;s own telemetry. Every candidate ever flown is in the <a href="log.html">gallery</a>, failures included: click one to spin the 3D model, superimpose its whole lineage as ghosts, or replay its evolution generation by generation. Free software, <a href="https://github.com/akaalias/airloom">GPLv3</a>.</p>
+<p class="sub lead">I let a genetic algorithm loose on the geometry of a 7-inch quadcopter frame &mdash; the real, GPLv3 Source One V6 plate drawings, morphed by twelve genes and flown through six simulated weather scenarios, with Claude sitting in every few generations to propose designs from the run&rsquo;s own telemetry. Every candidate ever flown is in the <a href="log.html">gallery</a>, failures included: click one to spin the 3D model, superimpose its whole lineage as ghosts, or replay its evolution generation by generation. Free software, <a href="https://github.com/akaalias/airloom">GPLv3</a>.</p>
+<h2>the result: champion <span class="hash">913f15a5a9be</span> &mdash; 6.051 Wh/km after 40 generations</h2>
 <div class="stats">
 <div class="stat"><b>6.051</b><span>Wh/km energy score</span></div>
 <div class="stat"><b><span class="up">12.1%</span></b><span>better than the baseline</span></div>

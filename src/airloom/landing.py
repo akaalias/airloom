@@ -25,12 +25,14 @@ from .lineage import TREE_CSS, tree_section_html
 LANDING_CSS = (TUFTE_TOKENS + NAV_CSS + CARD_CSS + OVERLAY_CSS
                + TREE_CSS + """
 .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
-h1{font-weight:400;font-size:30px;line-height:1.3;letter-spacing:-.01em;
-  margin:0 0 14px;text-align:center}
+h1{font-weight:400;font-size:60px;line-height:1.15;letter-spacing:-.01em;
+  margin:0 0 22px;text-align:center}
 h1 .hash{font:26px var(--mono);color:var(--muted)}
 p.sub{text-align:center;font-style:italic;color:var(--muted);
   font-size:15.5px;line-height:1.7;margin:0 auto 8px;max-width:760px}
+p.sub.lead{font-size:19px;max-width:880px}
 h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
+h2 .hash{font:400 21px var(--mono);color:var(--muted)}
 /* headline stats strip; the label rule targets DIRECT children only so
    the highlighted %-figure inside <b> keeps the big number size */
 .stats{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;
@@ -222,9 +224,13 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
 
     # intro: what this project is, for someone landing cold
     parts += [f"<h1>{INTRO_TITLE}</h1>",
-              f'<p class="sub">{INTRO_TEXT}</p>']
+              f'<p class="sub lead">{INTRO_TEXT}</p>']
 
-    # headline stats, then the champion's full detail card
+    # the champion's own header, then headline stats and the full card
+    parts += [
+        "<h2>the result: champion "
+        f'<span class="hash">{champ_hash}</span> &mdash; '
+        f"{_fmt(champ_fit)} Wh/km after {n_gens} generations</h2>"]
     parts += [
         '<div class="stats">',
         f'<div class="stat"><b>{_fmt(champ_fit)}</b>'
