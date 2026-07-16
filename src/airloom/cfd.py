@@ -547,3 +547,386 @@ def run_calibration(cfg: Config, out_root: Path, solve: bool = False,
     if report or solve:
         out = write_report(out_root)
         print(f"report: {out}")
+
+
+# ------------------------------------------------- per-candidate flow -----
+# Real streamlines for the gallery's flight views: the candidate's full
+# assembly (minus the prop disks -- rotors are NOT modeled) is meshed
+# once, then solved with simpleFoam at each weather scenario's MEAN
+# relative wind, rotated into the body frame with the same attitude
+# reconstruction the web replay uses. A streamLine function object
+# seeds an upwind disc and the tracks are shipped to the gallery as
+# <hash>.<scenario>.flow.js JSONP payloads (body-frame coordinates, so
+# they pose WITH the model).
+FLOW_ITERS = 400
+FLOW_SEEDS = 180
+# only DISTURBED streamlines ship: a line earns its place by bending
+# (arc vs straight chord) or by carrying a real speed disturbance
+# relative to the freestream -- the far field is uniform and boring
+FLOW_MIN_BEND = 0.996      # chord/arc below this = visibly curved
+FLOW_MIN_SPEED_DEV = 0.18  # max |speed-U|/U above this = disturbed
+
+
+def _flow_assembly(cfg: Config, genome_dict: dict[str, float]):
+    import trimesh
+    frame = _frame_for(genome_dict, cfg)
+    parts = [m for name, m in frame.parts.items()
+             if name != "props" and m is not None]
+    return trimesh.util.concatenate(parts)
+
+
+def _body_frame_wind(flight_js: Path) -> list[float]:
+    """Mean relative wind in BODY coordinates -> the CFD freestream.
+    Telemetry stores the craft's velocity through the air (world frame);
+    the attitude basis (body z = thrust vector, body x follows the
+    motion heading) is reconstructed exactly like the web replay, and
+    the freestream is the NEGATED mean (air streaming past the craft)."""
+    txt = flight_js.read_text()
+    data = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+    tx, ty, tz = (np.array(data[k], float) for k in ("tx", "ty", "tz"))
+    wx, wy, wz = (np.array(data[k], float) for k in ("wx", "wy", "wz"))
+    x, y = np.array(data["x"], float), np.array(data["y"], float)
+    hx, hy = np.gradient(x), np.gradient(y)
+    acc = np.zeros(3)
+    used = 0
+    lhx, lhy = 1.0, 0.0
+    for i in range(len(tx)):
+        bz = np.array([tx[i], ty[i], tz[i]])
+        bz /= np.linalg.norm(bz) or 1.0
+        hm = math.hypot(hx[i], hy[i])
+        if hm > 1e-4:
+            lhx, lhy = hx[i] / hm, hy[i] / hm
+        h = np.array([lhx, lhy, 0.0])
+        bx = h - np.dot(h, bz) * bz
+        nb = np.linalg.norm(bx)
+        if nb < 1e-6:
+            continue
+        bx /= nb
+        by = np.cross(bz, bx)
+        w = np.array([wx[i], wy[i], wz[i]])
+        acc += np.array([np.dot(w, bx), np.dot(w, by), np.dot(w, bz)])
+        used += 1
+    mean_body = acc / max(used, 1)
+    return [-float(v) for v in mean_body]
+
+
+def _flow_block_mesh_dict(bounds, cell: float) -> str:
+    """A symmetric, generous box: ONE mesh must serve every scenario's
+    wind direction, so no side gets a short wake."""
+    (x0, y0, z0), (x1, y1, z1) = bounds
+    lx = x1 - x0
+    lo = (x0 - 3.0 * lx, y0 - 2.5 * lx, z0 - 2.0 * lx)
+    hi = (x1 + 3.0 * lx, y1 + 2.5 * lx, z1 + 2.0 * lx)
+    n = [max(int((h - l) / cell), 10) for l, h in zip(lo, hi)]
+    vs = [(lo[0], lo[1], lo[2]), (hi[0], lo[1], lo[2]),
+          (hi[0], hi[1], lo[2]), (lo[0], hi[1], lo[2]),
+          (lo[0], lo[1], hi[2]), (hi[0], lo[1], hi[2]),
+          (hi[0], hi[1], hi[2]), (lo[0], hi[1], hi[2])]
+    verts = "\n".join(f"    {_fmt_vec(v)}" for v in vs)
+    return (_header("dictionary", "blockMeshDict") +
+            "scale 1;\n\nvertices\n(\n" + verts + "\n);\n\n"
+            "blocks\n(\n    hex (0 1 2 3 4 5 6 7) "
+            f"({n[0]} {n[1]} {n[2]}) simpleGrading (1 1 1)\n);\n\n"
+            "boundary\n(\n    farfield\n    {\n        type patch;\n"
+            "        faces\n        (\n"
+            "            (0 3 2 1) (4 5 6 7) (0 1 5 4)\n"
+            "            (2 3 7 6) (1 2 6 5) (0 4 7 3)\n"
+            "        );\n    }\n);\n")
+
+
+def _flow_seeds(bounds, u_vec) -> list[tuple[float, float, float]]:
+    """Seed points on the upwind disc, biased toward the craft's core so
+    the interesting streamlines pass close to the body (matches the
+    gallery's visual language)."""
+    (x0, y0, z0), (x1, y1, z1) = bounds
+    c = np.array([(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2])
+    rb = max(x1 - x0, y1 - y0, z1 - z0) / 2
+    u = np.array(u_vec, float)
+    u /= np.linalg.norm(u) or 1.0
+    e1 = np.cross(u, [0.0, 0.0, 1.0])
+    if np.linalg.norm(e1) < 1e-4:
+        e1 = np.cross(u, [1.0, 0.0, 0.0])
+    e1 /= np.linalg.norm(e1)
+    e2 = np.cross(u, e1)
+    rng = np.random.default_rng(7)  # stable seeds across regenerations
+    pts = []
+    radii = [0.15, 0.30, 0.45, 0.62, 0.80]
+    for i in range(FLOW_SEEDS):
+        r = radii[i % len(radii)] * rb * (0.9 + 0.2 * rng.random())
+        th = i * 2.39996 + rng.random() * 0.4
+        p = (c - u * 1.6 * rb
+             + e1 * r * math.cos(th) + e2 * r * math.sin(th))
+        pts.append((float(p[0]), float(p[1]), float(p[2])))
+    return pts
+
+
+def _flow_control_dict(iters: int, seeds) -> str:
+    pts = "\n".join(f"            ({p[0]:.5g} {p[1]:.5g} {p[2]:.5g})"
+                    for p in seeds)
+    return (_header("dictionary", "controlDict") + f"""
+application     simpleFoam;
+startFrom       latestTime;
+startTime       0;
+stopAt          endTime;
+endTime         {iters};
+deltaT          1;
+writeControl    timeStep;
+writeInterval   {iters};
+purgeWrite      2;
+
+functions
+{{
+    streamlines
+    {{
+        type            streamLine;
+        libs            (fieldFunctionObjects);
+        writeControl    onEnd;
+        setFormat       vtk;
+        U               U;
+        fields          (U);
+        direction       forward;
+        lifeTime        4000;
+        nSubCycle       5;
+        cloud           particleTracks;
+        seedSampleSet
+        {{
+            type        cloud;
+            axis        xyz;
+            points
+            (
+{pts}
+            );
+        }}
+    }}
+}}
+""")
+
+
+_FLOW_FV_SOLUTION = _header("dictionary", "fvSolution") + """
+solvers
+{
+    p
+    {
+        solver          GAMG;
+        smoother        GaussSeidel;
+        tolerance       1e-7;
+        relTol          0.01;
+    }
+    Phi
+    {
+        solver          GAMG;
+        smoother        GaussSeidel;
+        tolerance       1e-6;
+        relTol          0.01;
+    }
+    "(U|k|omega)"
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-8;
+        relTol          0.1;
+    }
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors 3;
+}
+
+SIMPLE
+{
+    nNonOrthogonalCorrectors 1;
+    consistent      no;
+    residualControl { p 1e-4; U 1e-5; "(k|omega)" 1e-5; }
+}
+
+relaxationFactors
+{
+    fields    { p 0.25; }
+    equations { U 0.6; k 0.6; omega 0.6; }
+}
+"""
+
+
+def flow_case_dirs(out_root: Path, h: str) -> Path:
+    return out_root / "flow" / h
+
+
+def generate_flow(cfg: Config, out_root: Path, store, run_id: str,
+                  h: str) -> list[tuple[str, Path]]:
+    """Write one case per scenario for candidate `h` (freestream from its
+    flight payloads). Returns [(scenario, case_dir)] in solve order."""
+    cand = store.get_candidate(run_id, h)
+    if cand is None or not cand["png_path"]:
+        raise SystemExit(f"no candidate/render for {h}")
+    png = Path(cand["png_path"])
+    flights = sorted(png.parent.glob(f"{h}.*.flight.js"))
+    if not flights:
+        raise SystemExit(f"no flight payloads for {h} -- flow freestreams "
+                         "come from them (run `airloom gallery` first)")
+    import json as _json
+    assembly = _flow_assembly(cfg, _json.loads(cand["genome_json"]))
+    root = flow_case_dirs(out_root, h)
+    root.mkdir(parents=True, exist_ok=True)
+    stl = root / "assembly.stl"
+    assembly.export(stl)
+    bounds = [list(map(float, b)) for b in assembly.bounds]
+    cases: list[tuple[str, Path]] = []
+    for fl in flights:
+        scen = fl.name.split(".")[1]
+        u_vec = _body_frame_wind(fl)
+        case = root / scen
+        write_case(case, stl, bounds, u_vec, iters=FLOW_ITERS)
+        # flow-specific: symmetric box (one mesh, six wind directions)
+        # and streamline extraction instead of the forces object
+        (case / "system" / "blockMeshDict").write_text(
+            _flow_block_mesh_dict(bounds, max(
+                (bounds[1][0] - bounds[0][0]) / 6.0, 0.05)))
+        (case / "system" / "controlDict").write_text(
+            _flow_control_dict(FLOW_ITERS, _flow_seeds(bounds, u_vec)))
+        (case / "system" / "fvSolution").write_text(_FLOW_FV_SOLUTION)
+        (root / f"{scen}.freestream.json").write_text(
+            _json.dumps({"u": u_vec}))
+        cases.append((scen, case))
+    return cases
+
+
+def solve_flow(cases: list[tuple[str, Path]],
+               image: str = DOCKER_IMAGE) -> None:
+    """Mesh ONCE (first case), copy polyMesh into the rest, solve all."""
+    first = True
+    mesh_src: Path | None = None
+    for scen, case in cases:
+        print(f"  flow: {scen} ...", flush=True)
+        if first:
+            cmd = ["docker", "run", "--rm",
+                   "-v", f"{case.resolve()}:/case", "-w", "/case",
+                   "--entrypoint", "/bin/bash", image, "-lc",
+                   "source /openfoam/bash.rc 2>/dev/null || "
+                   "source /usr/lib/openfoam/openfoam*/etc/bashrc; "
+                   "blockMesh && snappyHexMesh -overwrite && "
+                   "potentialFoam && simpleFoam"]
+            with open(case / "run.log", "w") as f:
+                subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT,
+                               check=True)
+            mesh_src = case / "constant" / "polyMesh"
+            first = False
+        else:
+            dst = case / "constant" / "polyMesh"
+            if dst.exists():
+                shutil.rmtree(dst)
+            shutil.copytree(mesh_src, dst)
+            cmd = ["docker", "run", "--rm",
+                   "-v", f"{case.resolve()}:/case", "-w", "/case",
+                   "--entrypoint", "/bin/bash", image, "-lc",
+                   "source /openfoam/bash.rc 2>/dev/null || "
+                   "source /usr/lib/openfoam/openfoam*/etc/bashrc; "
+                   "potentialFoam && simpleFoam"]
+            with open(case / "run.log", "w") as f:
+                subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT,
+                               check=True)
+        print(f"  flow: {scen} done", flush=True)
+
+
+def _parse_tracks_vtp(path: Path) -> list[dict[str, list[float]]]:
+    """OpenFOAM streamLine .vtp (XML, inline-binary base64 DataArrays
+    with a UInt64 byte-count header) -> [{p:[x,y,z...], s:[speed...]}]."""
+    import base64
+    import re
+
+    _DTYPE = {"Float32": np.float32, "Float64": np.float64,
+              "Int32": np.int32, "Int64": np.int64,
+              "UInt32": np.uint32, "UInt64": np.uint64}
+    txt = path.read_text()
+    arrays: dict[str, np.ndarray] = {}
+    for m in re.finditer(r"<DataArray[^>]*type='(\w+)'[^>]*Name='(\w+)'"
+                         r"[^>]*>([^<]*)</DataArray>", txt, re.S):
+        dtype, name, body = m.group(1), m.group(2), m.group(3)
+        raw = base64.b64decode("".join(body.split()))
+        # inline binary: UInt64 payload length, then the payload
+        arrays[name] = np.frombuffer(raw[8:], dtype=_DTYPE[dtype])
+    pts = arrays["Points"].reshape(-1, 3)
+    speeds = np.linalg.norm(arrays["U"].reshape(-1, 3), axis=1) \
+        if "U" in arrays else np.zeros(len(pts))
+    conn = arrays["connectivity"].astype(int)
+    offsets = arrays["offsets"].astype(int)
+    out = []
+    start = 0
+    for end in offsets:
+        idx = conn[start:end]
+        start = int(end)
+        if len(idx) < 6:
+            continue
+        stride = max(1, len(idx) // 48)  # <=48 points per shipped line
+        keep = list(idx[::stride])
+        if keep[-1] != idx[-1]:
+            keep.append(int(idx[-1]))
+        p, s = [], []
+        for k in keep:
+            p += [round(float(v), 4) for v in pts[k]]
+            s.append(round(float(speeds[k]), 2))
+        out.append({"p": p, "s": s})
+    return out
+
+
+def extract_flow(out_root: Path, store, run_id: str, h: str) -> list[Path]:
+    """Parse each solved case's streamlines and write the gallery JSONP
+    payloads next to the candidate's renders."""
+    cand = store.get_candidate(run_id, h)
+    png = Path(cand["png_path"])
+    root = flow_case_dirs(out_root, h)
+    written = []
+    for case in sorted(p for p in root.iterdir() if p.is_dir()):
+        scen = case.name
+        vtks = sorted(case.glob("postProcessing/**/streamlines/*/*.vtp"))
+        if not vtks:
+            print(f"  flow: {scen}: no streamline output, skipping")
+            continue
+        lines = _parse_tracks_vtp(vtks[-1])
+        meta = json.loads((root / f"{scen}.freestream.json").read_text())
+        umag = float(np.linalg.norm(meta["u"])) or 1.0
+        kept = []
+        for li in lines:
+            pts = np.array(li["p"]).reshape(-1, 3)
+            spd = np.array(li["s"])
+            arc = float(np.sum(np.linalg.norm(np.diff(pts, axis=0),
+                                              axis=1)))
+            chord = float(np.linalg.norm(pts[-1] - pts[0]))
+            straight = chord / arc if arc > 0 else 1.0
+            sdev = float(np.max(np.abs(spd - umag)) / umag)
+            if straight < FLOW_MIN_BEND or sdev > FLOW_MIN_SPEED_DEV:
+                kept.append(li)
+        print(f"  flow: {scen}: {len(kept)}/{len(lines)} lines "
+              "interact with the body")
+        lines = kept
+        payload = json.dumps({"u": meta["u"], "lines": lines},
+                             separators=(",", ":"))
+        out = png.parent / f"{h}.{scen}.flow.js"
+        out.write_text(f'airloomFlow("{h}","{scen}",{payload})\n')
+        written.append(out)
+        print(f"  flow: {scen}: {len(lines)} lines -> {out.name}")
+    return written
+
+
+def run_flow(cfg: Config, out_root: Path, h: str | None = None,
+             solve: bool = False, extract: bool = False) -> None:
+    from .dbstore import Store
+    results = cfg.evolution.results_dir
+    store = Store(results / "run.db")
+    run_id = store.latest_run_id(with_data=True)
+    if run_id is None:
+        raise SystemExit("no runs found")
+    if h is None:  # default: the run champion
+        cands = store.candidates_for_run(run_id)
+        fits = {c["hash"]: store.fitness_of(c) for c in cands}
+        h = min((k for k, f in fits.items() if math.isfinite(f)),
+                key=lambda k: fits[k], default=None)
+        if h is None:
+            raise SystemExit("no valid candidates")
+    print(f"flow candidate: {h}")
+    cases = generate_flow(cfg, out_root, store, run_id, h)
+    print(f"cases: {', '.join(s for s, _ in cases)}")
+    if solve:
+        solve_flow(cases)
+    if extract or solve:
+        extract_flow(out_root, store, run_id, h)

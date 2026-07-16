@@ -116,13 +116,18 @@ AL.ensureBlobs(need).then(function(){
   var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
   var views=[];
   boxes.forEach(function(cv){
-    var v=AL.makeViewer(cv,pst);
+    var v=AL.makeViewer(cv,pst,{flowLines:30});
     if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
   });
   if(!views.length)return;
   Promise.all(views.map(function(w){return AL.ensureFlight(CH,w.scen)}))
   .then(function(){
-    views.forEach(function(w){w.v.load([{id:"m-"+CH,propSpin:true}])});
+    views.forEach(function(w){
+      w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
+      // real CFD streamlines where solved; analytic field otherwise
+      AL.ensureFlowLines(CH,w.scen).then(function(d){
+        w.v.setFlowLines(d)});
+    });
     var row=document.getElementById("perf-row"),on=true,last=null;
     if("IntersectionObserver" in window){
       new IntersectionObserver(function(es){
@@ -157,6 +162,9 @@ AL.ensureBlobs(need).then(function(){
         w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
         w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
         w.v.setPropAngle(w.th);
+        // the wind channel is what tells the six boxes apart
+        w.v.windUpdate([lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
+                        lerp(d,"wz",f0,i,j)],dt);
       });
       pst.redraw(); // one shared state: draws every box in the row
     }
@@ -258,6 +266,7 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
     viewer_hashes = {h for h in (champ_hash, base_hash)
                      if h and _mesh_js_for(results_dir, cands[h]["png_path"])}
     flight_src: dict[str, dict[str, str]] = {}
+    flow_src: dict[str, dict[str, str]] = {}
     for fh in (champ_hash, base_hash):
         if not fh or not cands[fh]["png_path"]:
             continue
@@ -266,6 +275,10 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
                  for p in sorted(fdir.glob(f"{fh}.*.flight.js"))}
         if scens:
             flight_src[fh] = scens
+        flows = {p.name.split(".")[1]: _rel(results_dir, str(p))
+                 for p in sorted(fdir.glob(f"{fh}.*.flow.js"))}
+        if flows:
+            flow_src[fh] = flows
     parts.append(candidate_card_html(
         store, run_id, results_dir, cands, champ_hash,
         viewer_hashes=viewer_hashes,
@@ -273,6 +286,33 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         setter_hashes=set(), best_hash=champ_hash,
         baseline_hash=base_hash, baseline_fit=base_fit,
         href_base="log.html"))
+
+    # performance: every scored flight replayed side by side, cameras
+    # locked together (all the mini views share one orbit state)
+    if flight_src.get(champ_hash):
+        scen_ws = {s["scenario"]: s["wh_per_km"]
+                   for s in store.scenario_results_for(run_id, champ_hash)}
+        boxes = "".join(
+            f'<figure class="pf"><canvas data-scen="{s}"></canvas>'
+            f"<figcaption>{s.replace('_', ' ')}"
+            + (f" &middot; {_fmt(scen_ws[s])} Wh/km"
+               if scen_ws.get(s) is not None else "")
+            + "</figcaption></figure>"
+            for s in flight_src[champ_hash])
+        n_scen = len(flight_src[champ_hash])
+        parts += [
+            f"<h2>performance: the champion flying all {n_scen} weather "
+            "scenarios</h2>",
+            '<p class="sub">the actual scored flights, replayed from '
+            "simulation telemetry &mdash; attitude and rotor speed are "
+            "what the simulator graded. Flow lines are OpenFOAM RANS "
+            "streamlines at each scenario&rsquo;s mean relative wind "
+            "where solved (rotors not modeled), an illustrative field "
+            f"otherwise. Drag inside any box and all {n_scen} cameras "
+            "orbit in unison; the <b>view candidate performance</b> "
+            "button on the card above opens the full-screen replay "
+            "with live telemetry.</p>",
+            f'<div id="perf-row">{boxes}</div>']
 
     # the evolution: replay the champion's own line
     parts += [
@@ -305,29 +345,6 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         "candidate in full.</p>",
         tree_section_html(store, run_id, results_dir, pin=champ_hash)]
 
-    # performance: every scored flight replayed side by side, cameras
-    # locked together (all the mini views share one orbit state)
-    if flight_src.get(champ_hash):
-        scen_ws = {s["scenario"]: s["wh_per_km"]
-                   for s in store.scenario_results_for(run_id, champ_hash)}
-        boxes = "".join(
-            f'<figure class="pf"><canvas data-scen="{s}"></canvas>'
-            f"<figcaption>{s.replace('_', ' ')}"
-            + (f" &middot; {_fmt(scen_ws[s])} Wh/km"
-               if scen_ws.get(s) is not None else "")
-            + "</figcaption></figure>"
-            for s in flight_src[champ_hash])
-        n_scen = len(flight_src[champ_hash])
-        parts += [
-            f"<h2>performance: the champion flying all {n_scen} weather "
-            "scenarios</h2>",
-            '<p class="sub">the actual scored flights, replayed from '
-            "simulation telemetry &mdash; attitude and rotor speed are "
-            "what the simulator graded. Drag inside any box and all "
-            f"{n_scen} cameras orbit in unison; the <b>view candidate "
-            "performance</b> button on the card above opens the "
-            "full-screen replay with live telemetry.</p>",
-            f'<div id="perf-row">{boxes}</div>']
 
     # data payloads for the shared engine: only the champion's ancestry
     walk_meta: dict[str, dict] = {}
@@ -366,8 +383,11 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         f"{json.dumps(blob_src, separators=(',', ':'))}</script>",
         '<script type="application/json" id="flight-src">'
         f"{json.dumps(flight_src, separators=(',', ':'))}</script>",
+        '<script type="application/json" id="flow-src">'
+        f"{json.dumps(flow_src, separators=(',', ':'))}</script>",
         f"<script>var BASELINE={json.dumps(base_hash)};"
-        f"var CHAMP={json.dumps(champ_hash)};</script>",
+        f"var CHAMP={json.dumps(champ_hash)};"
+        "window.NO_LIVE_RELOAD=true;</script>",
         REDIRECT_JS,
         '<script src="viewer.js"></script>',
         f"<script>{VIEWER_JS}</script>",

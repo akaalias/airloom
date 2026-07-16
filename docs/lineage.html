@@ -5501,7 +5501,12 @@ svgs.forEach(function(svg){
     });
   });
 });
-document.addEventListener("click",unpin);
+// only a click INSIDE the tree charts releases a pin: dragging a 3D
+// model or pressing play elsewhere on the page must not clear the
+// highlighted lineage (node clicks stopPropagation, so they re-pin)
+document.querySelectorAll(".trees").forEach(function(t){
+  t.addEventListener("click",unpin);
+});
 document.addEventListener("keydown",function(ev){
   if(ev.key==="Escape")unpin()});
 // a page may open with one lineage already lit (the landing pins its

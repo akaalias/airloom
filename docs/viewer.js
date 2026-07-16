@@ -15,6 +15,34 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
   "void main(){vec3 L=normalize(vec3(0.35,0.48,0.85));"+
   "float d=abs(dot(normalize(vN),L));float s=0.45+0.55*d;"+
   "gl_FragColor=vec4(vC.rgb*s+0.07,vC.a*uF);}";
+// CFD streamline ribbons: WebGL clamps line width to 1px, so each
+// segment is expanded to a screen-space quad in the shader; the
+// traveling ripple is computed here too, so animation costs no
+// per-frame uploads at all (phase is a uniform)
+var FLOW_VS="attribute vec3 aP;attribute vec3 aQ;attribute vec2 aE;"+
+  "attribute vec3 aF;"+ // (arc length, line length, speed factor)
+  "uniform mat3 uR;uniform vec3 uT;uniform float uS;uniform vec2 uA;"+
+  "uniform vec2 uPn;uniform vec2 uVP;uniform float uW;"+
+  "uniform float uPh;uniform float uAl;uniform float uPer;"+
+  "varying float vA;varying float vW;"+
+  "void main(){"+
+  "vec3 p=uR*(aP-uT);vec3 q=uR*(aQ-uT);"+
+  "vec2 sp=vec2(p.x*uS*uA.x+uPn.x,p.y*uS*uA.y+uPn.y);"+
+  "vec2 sq=vec2(q.x*uS*uA.x+uPn.x,q.y*uS*uA.y+uPn.y);"+
+  "vec2 d=(sq-sp)*uVP;float L=max(length(d),0.0001);"+
+  "vec2 n=vec2(-d.y,d.x)/L;"+
+  "vec2 base=mix(sp,sq,aE.x);float z=mix(p.z,q.z,aE.x);"+
+  "vec2 off=n*aE.y*uW*2.0/uVP;"+
+  "gl_Position=vec4(base+off,-z*0.25,1.0);"+
+  "float ph=fract(aF.x/uPer-uPh);"+
+  "vW=0.5+0.5*cos(ph*6.2832);"+
+  "float t=aF.x/aF.y;"+
+  "float env=clamp(min(t/0.12,(1.0-t)/0.12),0.0,1.0);"+
+  "vA=uAl*env*aF.z;}";
+var FLOW_FS="precision mediump float;"+
+  "varying float vA;varying float vW;"+
+  "uniform vec3 uCol;uniform vec3 uCol2;"+
+  "void main(){gl_FragColor=vec4(mix(uCol,uCol2,vW),vA);}";
 
 // default camera: nose-side three-quarter view (the FPV camera faces the
 // viewer); the pre-flip back view was DEF_YAW=-0.9
@@ -82,6 +110,35 @@ function ensureFlight(h,scen){
     s.onerror=function(){
       (FLIGHT_PENDING[k]||[]).forEach(function(r){r()});
       delete FLIGHT_PENDING[k];
+    };
+    document.head.appendChild(s);
+  });
+}
+// ---- CFD streamline payloads: same JSONP pattern as the flights.
+// <hash>.<scen>.flow.js carries real OpenFOAM RANS streamlines in BODY
+// coordinates; where none exists the viewer falls back to its analytic
+// field.
+var FLOWS={},FLOW_PENDING={};
+var flsEl=document.getElementById("flow-src");
+var FLOWLINE_SRC=flsEl?JSON.parse(flsEl.textContent):{};
+window.airloomFlow=function(h,scen,data){
+  var k=h+"|"+scen;
+  FLOWS[k]=data;
+  (FLOW_PENDING[k]||[]).forEach(function(r){r()});
+  delete FLOW_PENDING[k];
+};
+function ensureFlowLines(h,scen){ // resolves with the payload or null
+  var k=h+"|"+scen,src=(FLOWLINE_SRC[h]||{})[scen];
+  if(FLOWS[k]||!src)return Promise.resolve(FLOWS[k]||null);
+  return new Promise(function(res){
+    var done=function(){res(FLOWS[k]||null)};
+    if(FLOW_PENDING[k]){FLOW_PENDING[k].push(done);return}
+    FLOW_PENDING[k]=[done];
+    var s=document.createElement("script");
+    s.src=src;
+    s.onerror=function(){
+      (FLOW_PENDING[k]||[]).forEach(function(r){r()});
+      delete FLOW_PENDING[k];
     };
     document.head.appendChild(s);
   });
@@ -192,6 +249,22 @@ function makeViewer(canvas,state,opts){
   gl.attachShader(prog,shader(gl.VERTEX_SHADER,VS));
   gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,FS));
   gl.linkProgram(prog);gl.useProgram(prog);
+  // second program: the CFD streamline ribbons
+  var prog2=gl.createProgram();
+  gl.attachShader(prog2,shader(gl.VERTEX_SHADER,FLOW_VS));
+  gl.attachShader(prog2,shader(gl.FRAGMENT_SHADER,FLOW_FS));
+  gl.linkProgram(prog2);
+  var f2={};
+  ["uR","uT","uS","uA","uPn","uVP","uW","uPh","uAl","uPer","uCol","uCol2"]
+    .forEach(function(u){f2[u]=gl.getUniformLocation(prog2,u)});
+  var f2loc={};
+  ["aP","aQ","aE","aF"].forEach(function(a){
+    f2loc[a]=gl.getAttribLocation(prog2,a)});
+  function bind2(buf,attr,size){
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.enableVertexAttribArray(f2loc[attr]);
+    gl.vertexAttribPointer(f2loc[attr],size,gl.FLOAT,false,0,0);
+  }
   function bindBuf(buf,attr,size){
     gl.bindBuffer(gl.ARRAY_BUFFER,buf);
     var loc=gl.getAttribLocation(prog,attr);
@@ -212,6 +285,89 @@ function makeViewer(canvas,state,opts){
   gl.clearColor(1.0,1.0,0.973,1.0);
   var models=[]; // [{bufs, nf, nOpq}], shared center/scale from first
   var frame={c:[0,0,0],r:0.3};
+  // ---- wind-channel layer: analytic streamlines of the relative wind
+  // past the airframe. Free stream = the telemetry wind vector;
+  // deflection = potential flow around a virtual sphere at the model's
+  // center, so the air visibly parts around the body and rejoins
+  // behind it. Geometry lives in WORLD space inside the GL scene --
+  // depth-tested against the model (air passes BEHIND the frame where
+  // it should) and orbiting needs no rebuild. The moving dash trains
+  // advance at the real wind speed.
+  var FLN=opts.flowLines||34,FST=52;
+  var flow={on:false,phase:0,n:0,bufs:null,
+    P:new Float32Array(FLN*FST*6),Nb:new Float32Array(FLN*FST*6),
+    Cb:new Float32Array(FLN*FST*8),seeds:[]};
+  // stable seed pattern on the upwind disc, biased INTO the craft: most
+  // lines start inside the body's shadow so they bow visibly around it;
+  // only a few ride the outer tube (and those render fainter)
+  for(var fs=0;fs<FLN;fs++){
+    var rf=[0.14,0.26,0.38,0.52,0.68][fs%5]*(0.92+0.16*Math.random());
+    flow.seeds.push({r:rf,th:fs*2.39996+Math.random()*0.5});
+  }
+  function flowRebuild(w,m){
+    var R=frame.r,C=frame.c,a=0.5*R,ds=0.07*R,per=0.7*R;
+    var ux=w[0]/m,uy=w[1]/m,uz=w[2]/m;
+    // orthonormal frame around the stream direction (u x z-axis, with
+    // an x-axis fallback when the wind is vertical)
+    var e1x=uy,e1y=-ux,e1z=0;
+    var e1m=Math.hypot(e1x,e1y,e1z);
+    if(e1m<1e-4){e1x=1;e1y=0;e1z=0;e1m=1}
+    e1x/=e1m;e1y/=e1m;e1z/=e1m;
+    var e2x=uy*e1z-uz*e1y,e2y=uz*e1x-ux*e1z,e2z=ux*e1y-uy*e1x;
+    var alpha=0.45+0.35*Math.min(1,m/12);
+    var o=0,co=0,n=0;
+    for(var li=0;li<FLN;li++){
+      var sd=flow.seeds[li],rad=sd.r*R,c1=Math.cos(sd.th),s1=Math.sin(sd.th);
+      // inner lines carry the story; the outer tube stays quiet
+      var ringA=1.15-0.85*sd.r;
+      var px=C[0]-ux*1.5*R+e1x*rad*c1+e2x*rad*s1,
+          py=C[1]-uy*1.5*R+e1y*rad*c1+e2y*rad*s1,
+          pz=C[2]-uz*1.5*R+e1z*rad*c1+e2z*rad*s1;
+      var s=0;
+      for(var st=0;st<FST;st++){
+        // potential-flow velocity direction at p
+        var rx=px-C[0],ry=py-C[1],rz=pz-C[2];
+        var rr=Math.hypot(rx,ry,rz)||1e-6;
+        var k=(a*a*a)/(2*rr*rr*rr);
+        var dt2=(ux*rx+uy*ry+uz*rz)/rr;
+        var vx=ux*(1+k)-(rx/rr)*3*k*dt2,
+            vy=uy*(1+k)-(ry/rr)*3*k*dt2,
+            vz=uz*(1+k)-(rz/rr)*3*k*dt2;
+        var vm=Math.hypot(vx,vy,vz)||1e-6;
+        vx/=vm;vy/=vm;vz/=vm;
+        var qx=px+vx*ds,qy=py+vy*ds,qz=pz+vz*ds;
+        // continuous streamline; flow reads from a smooth brightness
+        // ripple traveling downstream (no gaps)
+        var ph=((s/per-flow.phase)%1+1)%1;
+        {
+          var wave=0.62+0.38*Math.cos(ph*6.2832);
+          var t=st/FST,env=Math.min(1,t/0.14,(1-t)/0.14);
+          var aa=alpha*env*ringA*wave;
+          flow.P[o]=px;flow.P[o+1]=py;flow.P[o+2]=pz;
+          flow.P[o+3]=qx;flow.P[o+4]=qy;flow.P[o+5]=qz;
+          for(var v6=0;v6<2;v6++){
+            // normals face the shader's light: full brightness, no
+            // per-segment lighting shimmer
+            flow.Nb[o+3*v6]=0.35;flow.Nb[o+3*v6+1]=0.48;
+            flow.Nb[o+3*v6+2]=0.85;
+            flow.Cb[co+4*v6]=0.13;flow.Cb[co+4*v6+1]=0.36;
+            flow.Cb[co+4*v6+2]=0.40;flow.Cb[co+4*v6+3]=aa;
+          }
+          o+=6;co+=8;n+=2;
+        }
+        px=qx;py=qy;pz=qz;s+=ds;
+      }
+    }
+    flow.n=n;
+    if(!flow.bufs)flow.bufs={aP:gl.createBuffer(),aN:gl.createBuffer(),
+                             aC:gl.createBuffer()};
+    gl.bindBuffer(gl.ARRAY_BUFFER,flow.bufs.aP);
+    gl.bufferData(gl.ARRAY_BUFFER,flow.P.subarray(0,o),gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,flow.bufs.aN);
+    gl.bufferData(gl.ARRAY_BUFFER,flow.Nb.subarray(0,o),gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,flow.bufs.aC);
+    gl.bufferData(gl.ARRAY_BUFFER,flow.Cb.subarray(0,co),gl.DYNAMIC_DRAW);
+  }
   var view={
     canvas:canvas,
     loadBlob:function(id){view.load([{id:id}])},
@@ -236,10 +392,21 @@ function makeViewer(canvas,state,opts){
     // several loads so swapping models never re-centers or re-fits the
     // camera (the walkthrough uses one frame for its whole chain)
     load:function(specs,fixedFrame){
+      // mono: the wind-tunnel look -- every part one neutral gray
+      // (alpha preserved, so prop disks stay sheer); part colors are
+      // for the evolution views where they carry meaning
+      function monoC(C){
+        var M=new Float32Array(C.length);
+        for(var mi=0;mi<C.length;mi+=4){
+          M[mi]=0.62;M[mi+1]=0.61;M[mi+2]=0.58;M[mi+3]=C[mi+3];
+        }
+        return M;
+      }
       models=[];
       for(var i2=0;i2<specs.length;i2++){
         var sp=specs[i2],d2=decodeBlob(sp.id);
         if(!d2)continue;
+        var CC=sp.mono?monoC(d2.C):d2.C;
         if(sp.evolved){
           if(!d2.ev)continue;
           models.push({bufs:upload(d2.ev.P,d2.ev.N,sp.ghost?d2.ev.Cg:d2.ev.Ce),
@@ -249,10 +416,10 @@ function makeViewer(canvas,state,opts){
           // flight tab: props are the (only) translucent tail of the
           // buffers -- split them into a dynamic model so setPropAngle can
           // spin each rotor about its own axis, diagonal pairs opposed
-          models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nOpq,nOpq:d2.nOpq,
+          models.push({bufs:upload(d2.P,d2.N,CC),nf:d2.nOpq,nOpq:d2.nOpq,
                        fade:sp.fade==null?1:sp.fade});
           var off=d2.nOpq*9,pP=d2.P.slice(off),pN=d2.N.slice(off),
-              pC=d2.C.slice(d2.nOpq*12),np=pP.length/3;
+              pC=CC.slice(d2.nOpq*12),np=pP.length/3;
           // assign blades to their 4 rotors: farthest-point seeding +
           // Lloyd iterations on (x,y) -- robust to any arm sweep, where a
           // naive quadrant split misassigns blades near the boundaries
@@ -325,7 +492,7 @@ function makeViewer(canvas,state,opts){
                        prop:{base:pP,cl:cl,cc:cc,spin:spin,
                              scr:new Float32Array(pP.length)}});
         }else{
-          models.push({bufs:upload(d2.P,d2.N,d2.C),nf:d2.nf,nOpq:d2.nOpq,
+          models.push({bufs:upload(d2.P,d2.N,CC),nf:d2.nf,nOpq:d2.nOpq,
                        fade:sp.fade==null?1:sp.fade});
         }
         var ext=sp.evolved?d2.ev:d2;
@@ -339,6 +506,77 @@ function makeViewer(canvas,state,opts){
       gl.uniform3f(uT,frame.c[0],frame.c[1],frame.c[2]);
     },
     setFade:function(i,v){if(models[i])models[i].fade=v},
+    // real CFD streamlines (body frame, from a .flow.js payload): the
+    // line geometry is static per scenario; only the traveling ripple
+    // is animated. null falls back to the analytic field.
+    setFlowLines:function(data){
+      if(!data||!data.lines||!data.lines.length){flow.cfd=null;return}
+      var segs=0;
+      data.lines.forEach(function(l){segs+=l.p.length/3-1});
+      var umag=Math.hypot(data.u[0],data.u[1],data.u[2])||1;
+      var V=segs*6; // 6 verts per segment: two triangles of the ribbon
+      var P=new Float32Array(V*3),Q=new Float32Array(V*3),
+          E=new Float32Array(V*2),F=new Float32Array(V*3);
+      var CORNERS=[[0,-1],[0,1],[1,1],[0,-1],[1,1],[1,-1]];
+      var vi=0;
+      data.lines.forEach(function(l){
+        var n=l.p.length/3,total=0,acc=[0];
+        for(var i=1;i<n;i++){
+          total+=Math.hypot(l.p[3*i]-l.p[3*i-3],l.p[3*i+1]-l.p[3*i-2],
+                            l.p[3*i+2]-l.p[3*i-1]);
+          acc.push(total);
+        }
+        total=total||1;
+        for(var i2=1;i2<n;i2++){
+          var fA=0.45+0.55*Math.min(1.4,(l.s[i2-1]||0)/umag);
+          var fB=0.45+0.55*Math.min(1.4,(l.s[i2]||0)/umag);
+          for(var c9=0;c9<6;c9++){
+            var e=CORNERS[c9];
+            for(var q=0;q<3;q++){
+              P[3*vi+q]=l.p[3*(i2-1)+q];
+              Q[3*vi+q]=l.p[3*i2+q];
+            }
+            E[2*vi]=e[0];E[2*vi+1]=e[1];
+            F[3*vi]=e[0]?acc[i2]:acc[i2-1];
+            F[3*vi+1]=total;
+            F[3*vi+2]=e[0]?fB:fA;
+            vi++;
+          }
+        }
+      });
+      var bufs={aP:gl.createBuffer(),aQ:gl.createBuffer(),
+                aE:gl.createBuffer(),aF:gl.createBuffer()};
+      [[bufs.aP,P],[bufs.aQ,Q],[bufs.aE,E],[bufs.aF,F]]
+        .forEach(function(b){
+          gl.bindBuffer(gl.ARRAY_BUFFER,b[0]);
+          gl.bufferData(gl.ARRAY_BUFFER,b[1],gl.STATIC_DRAW);
+        });
+      flow.cfd={nv:V,bufs:bufs,umag:umag};
+    },
+    // feed the wind-channel layer: wv = the telemetry's relative wind
+    // (world frame, m/s); dt advances the dash trains at real speed
+    windUpdate:function(wv,dt){
+      // telemetry wx/wy/wz is the CRAFT's velocity through the air
+      // (vax = vx - wind); the air streams past the OPPOSITE way --
+      // a headwind must flow nose -> tail
+      var ax=-wv[0],ay=-wv[1],az=-wv[2];
+      // geometry follows a LOW-PASSED wind: gusts sway the field
+      // smoothly instead of re-aiming every line every frame (flicker)
+      if(!flow.sw)flow.sw=[ax,ay,az];
+      var k=1-Math.exp(-(dt||0)*4);
+      flow.sw[0]+=(ax-flow.sw[0])*k;
+      flow.sw[1]+=(ay-flow.sw[1])*k;
+      flow.sw[2]+=(az-flow.sw[2])*k;
+      var m=Math.hypot(flow.sw[0],flow.sw[1],flow.sw[2]);
+      if(m<0.15||!models.length){flow.on=false;return}
+      flow.on=true;
+      // dash trains advance in CYCLES per second (12 m/s = 1.5 cyc/s):
+      // real-speed advection would strobe across a whole period a frame
+      flow.phase+=(dt||0)*m/8;
+      flow.liveM=m;
+      if(flow.cfd)return; // CFD geometry is static; only phase animates
+      flowRebuild(flow.sw,m);
+    },
     // release the GL context (card viewers churn as the page scrolls;
     // without this the browser's per-page context cap bites)
     destroy:function(){
@@ -430,6 +668,57 @@ function makeViewer(canvas,state,opts){
           gl.drawArrays(gl.TRIANGLES,mo.nOpq*3,(mo.nf-mo.nOpq)*3);
           gl.depthMask(true);
         }
+      }
+      // wind-channel streamlines: blended, depth-TESTED but not
+      // written -- the airframe occludes the air behind it. CFD
+      // ribbons live in BODY coordinates and pose with the craft; the
+      // analytic fallback lives in world frame (weather ignores pose)
+      var FB=flow.cfd;
+      if(flow.on&&FB&&FB.nv){
+        var FR=Rb;
+        if(view.modelR){
+          var MR2=view.modelR,Cm2=new Array(9);
+          for(var mc2=0;mc2<3;mc2++)for(var mr2=0;mr2<3;mr2++)
+            Cm2[mc2*3+mr2]=Rb[mr2]*MR2[mc2*3]+Rb[3+mr2]*MR2[mc2*3+1]
+                          +Rb[6+mr2]*MR2[mc2*3+2];
+          FR=Cm2;
+        }
+        gl.useProgram(prog2);
+        gl.uniformMatrix3fv(f2.uR,false,FR);
+        gl.uniform3f(f2.uT,frame.c[0],frame.c[1],frame.c[2]);
+        gl.uniform1f(f2.uS,0.85*state.zoom*fit/frame.r);
+        gl.uniform2f(f2.uA,asp[0],asp[1]);
+        gl.uniform2f(f2.uPn,state.panX||0,state.panY||0);
+        gl.uniform2f(f2.uVP,canvas.width,canvas.height);
+        gl.uniform1f(f2.uW,1.2*dpr); // ribbon half-width, device px
+        gl.uniform1f(f2.uPh,flow.phase);
+        gl.uniform1f(f2.uPer,0.7*frame.r);
+        gl.uniform1f(f2.uAl,
+          0.55+0.3*Math.min(1,(flow.liveM||FB.umag)/12));
+        gl.uniform3f(f2.uCol,0.55,0.72,0.67);  // light emerald
+        gl.uniform3f(f2.uCol2,0.09,0.30,0.26); // dark emerald
+        bind2(FB.bufs.aP,"aP",3);bind2(FB.bufs.aQ,"aQ",3);
+        bind2(FB.bufs.aE,"aE",2);bind2(FB.bufs.aF,"aF",3);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+        gl.depthMask(false);
+        gl.drawArrays(gl.TRIANGLES,0,FB.nv);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+        ["aP","aQ","aE","aF"].forEach(function(a){
+          gl.disableVertexAttribArray(f2loc[a])});
+        gl.useProgram(prog);
+      }else if(flow.on&&flow.n>0&&flow.bufs){
+        gl.uniformMatrix3fv(uR,false,Rb);
+        gl.uniform1f(uF,1);
+        bindBuf(flow.bufs.aP,"aP",3);bindBuf(flow.bufs.aN,"aN",3);
+        bindBuf(flow.bufs.aC,"aC",4);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+        gl.depthMask(false);
+        gl.drawArrays(gl.LINES,0,flow.n);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
       }
     }
   };
@@ -769,6 +1058,7 @@ function makeReplay(o){
 
 window.AL={makeState:makeState,makeViewer:makeViewer,
   decodeBlob:decodeBlob,ensureBlobs:ensureBlobs,ensureFlight:ensureFlight,
+  ensureFlowLines:ensureFlowLines,
   blobAvailable:blobAvailable,FLIGHTS:FLIGHTS,FLIGHT_SRC:FLIGHT_SRC,
   WMETA:WMETA,BASELINE:BASELINE,DEF_YAW:DEF_YAW,DEF_PITCH:DEF_PITCH,
   walkChainFor:walkChainFor,chainFrame:chainFrame,trailSpecs:trailSpecs,

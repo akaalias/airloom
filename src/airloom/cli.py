@@ -208,6 +208,14 @@ def cmd_cfd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_cfd_flow(args: argparse.Namespace) -> int:
+    from .cfd import run_flow
+    cfg = load_config(args.root, results_dir=args.results)
+    run_flow(cfg, Path(args.root).resolve() / "cfd",
+             h=args.genome_hash, solve=args.solve, extract=args.extract)
+    return 0
+
+
 def cmd_verify_champions(args: argparse.Namespace) -> int:
     from .champion import verify_champions
     cfg = load_config(args.root, results_dir=args.results)
@@ -317,6 +325,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--jobs", type=int, default=1,
                    help="concurrent case solves (each is a serial container)")
     p.set_defaults(fn=cmd_cfd_calibrate)
+
+    p = sub.add_parser("cfd-flow",
+                       help="real RANS streamlines for a candidate's flight"
+                            " views: mesh its assembly once, solve every"
+                            " weather scenario's mean relative wind, ship"
+                            " <hash>.<scen>.flow.js payloads to the gallery")
+    _add_common(p)
+    p.add_argument("genome_hash", nargs="?", default=None,
+                   help="candidate hash (default: the run champion)")
+    p.add_argument("--solve", action="store_true",
+                   help="run the cases through Docker; CPU-heavy (~1-2h)")
+    p.add_argument("--extract", action="store_true",
+                   help="parse already-solved cases into gallery payloads")
+    p.set_defaults(fn=cmd_cfd_flow)
 
     args = ap.parse_args(argv)
     return args.fn(args)
