@@ -17,7 +17,6 @@ body{margin:0;background:var(--paper);color:var(--ink);
   -webkit-font-smoothing:antialiased}
 a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--accent)}
-.num{font-variant-numeric:lining-nums tabular-nums}
 .smallcaps{font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.06em;color:var(--muted)}
 
@@ -30,9 +29,141 @@ a:hover{border-bottom-color:var(--accent)}
 .topnav a:hover{color:var(--ink);border-bottom-color:transparent}
 .topnav a.on{color:var(--ink);border-bottom-color:var(--ink)}
 
+.num{font-variant-numeric:lining-nums tabular-nums}
+img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
+/* detail-card viewer buttons: open the evolution / performance overlays */
+.vbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.vbtns button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  background:none;border:1px solid var(--rule);border-radius:2px;
+  padding:6px 10px;cursor:pointer}
+.vbtns button:hover:not(:disabled){color:var(--ink);border-color:var(--ink)}
+.vbtns button:disabled{opacity:.35;cursor:default}
+.detail.setter .vbtns button{color:var(--disc);border-color:#3a382f}
+.detail.setter .vbtns button:hover:not(:disabled){color:var(--paper);
+  border-color:var(--paper)}
+.detail.claude:not(.setter){border-top:2px solid #6a4a8a}
+.detail.setter.claude{background:#3b2a52;border-top-color:#3b2a52}
+.detail.setter.claude table.dt td{border-bottom-color:#54406e}
+.detail.setter.claude .dmeta .tlab{border-top-color:#54406e}
+.detail.setter.claude .dhead .hash,.detail.setter.claude .parents .lab,
+.detail.setter.claude .parents figcaption,.detail.setter.claude table.dt th,
+.detail.setter.claude .note .nlab,.detail.setter.claude .viewer .hint,
+.detail.setter.claude .nmodel,.detail.setter.claude .lgd{color:#c9b9de}
+.detail .chip.claude{background:#6a4a8a;color:var(--paper)}
+.detail.setter.claude .chip{background:var(--paper);color:#3b2a52}
+.detail.setter.claude .chip.claude{background:#c9b9de;color:#3b2a52}
+/* chart legend, same visual language as the lineage page's */
+.lgd{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
+  align-items:center;font-size:13.5px;color:var(--muted);
+  max-width:1080px;margin:0 auto}
+.lgd+.lgd{margin-top:6px}
+.lg{position:relative;display:inline-flex;align-items:center;gap:7px;padding:2px 0}
+.lg:has(.tip){cursor:help}
+.lg:hover{color:var(--ink)}
+.lg .sw{display:inline-flex;align-items:center}
+.lg .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.lg .tip{display:none;position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
+  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
+  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07)}
+.lg:hover .tip{display:block}
+.lg:nth-last-child(-n+2) .tip{left:auto;right:calc(100% + 12px)}
+.lg .tip b{font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}
+.lg.gl{color:var(--ink);font-weight:700}
+/* lazy-loaded stills reserve their box up front (top views are 4:3,
+   detail bottom views square) so scrolling and #d- anchor jumps never
+   land on a page that is still reflowing; until the observer fills in
+   src, the empty img stays invisible instead of a broken-image glyph */
+img[data-src]{visibility:hidden}
+.detail{border-top:1px solid var(--rule);padding:22px 0 26px;margin:16px 0 0}
+.detail .dhead{font:400 21px var(--serif);margin:0 0 14px}
+.detail .dhead .hash{font:17px var(--mono);color:var(--muted)}
+.detail .dcols{display:flex;gap:26px}
+.viewer{width:50%;min-width:320px;position:relative}
+.viewer canvas,.viewer img{width:100%;aspect-ratio:4/3;display:block;
+  cursor:grab;touch-action:none}
+/* static fallback renders are 360px wide: never upscale them past
+   natural size or they pixelate */
+.viewer img{object-fit:contain;width:100%;aspect-ratio:1/1;cursor:default;
+  border-radius:6px}
+.viewer .vr{position:relative}
+.viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
+  color:var(--faint);pointer-events:none}
+.viewer .lgd{margin-top:10px;font-size:12.5px;gap:4px 14px}
+.detail.setter .lgd{color:var(--disc)}
+.detail.setter .lg:hover,.detail.setter .lg.gl{color:var(--paper)}
+.dmeta{flex:1;min-width:280px}
+.dmeta .headline{font-size:17px;margin:4px 0 10px}
+.dmeta .headline b{font-size:21px}
+.dmeta .tables{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
+table.dt{border-collapse:collapse;font-size:14px;margin-top:2px}
+table.dt td,table.dt th{text-align:left;padding:3px 18px 3px 0;border-bottom:1px solid var(--rule-soft)}
+table.dt th{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  border-bottom:1.5px solid var(--ink)}
+table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
+.parents{width:220px;flex-shrink:0}
+.parents .lab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px}
+.parents figure{margin:0 0 10px}
+.parents img{width:100%;mix-blend-mode:multiply;border-radius:6px;
+  aspect-ratio:4/3;object-fit:contain}
+.parents figcaption{font:12px var(--mono);color:var(--faint)}
+.viewer img.peek{cursor:zoom-in}
+.chip{display:inline-block;font:600 10.5px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.07em;background:var(--ink);color:var(--paper);
+  padding:3px 9px;margin-left:10px;vertical-align:2px}
+.chip.champ{background:var(--accent)}
+table.dt.hd{margin:10px 0 4px}
+table.dt.hd b{font-size:17px}
+.headline .lab,.note .nlab{font:600 11px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted)}
+.headline .fail{color:var(--accent);font-style:italic}
+.note{max-width:660px;font-size:14.5px;line-height:1.55;margin:12px 0}
+.note .nlab{display:block;margin-bottom:2px}
+.note.res .nlab{color:var(--accent)}
+.nmodel{font:italic 12px var(--serif);color:var(--faint);margin-top:8px}
+.detail.setter .nmodel{color:var(--disc)}
+.dmeta .tlab{font:600 14px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--ink);
+  margin:24px 0 8px;padding-top:16px;border-top:1px solid var(--rule-soft)}
+/* invalid candidates: red diagonal cross over the render */
+.card.invalid>a{position:relative;display:block}
+.xed{position:relative;display:inline-block;max-width:100%}
+.card.invalid>a::after,.xed::after{content:"";position:absolute;inset:0;
+  pointer-events:none;background:
+  linear-gradient(to top right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px)),
+  linear-gradient(to bottom right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px))}
+/* improvement-setter / champion detail rows: inverted, like the grid cards */
+.detail.setter{background:var(--ink);color:var(--paper);border-top-color:var(--ink);
+  margin:16px -26px 0;padding-left:26px;padding-right:26px}
+.detail.champion{outline:2px solid var(--accent);outline-offset:-1px}
+.detail.setter .viewer img,.detail.setter .parents img{mix-blend-mode:normal}
+.detail.setter .dhead .hash,.detail.setter .parents .lab,
+.detail.setter .parents figcaption,.detail.setter table.dt th,
+.detail.setter .note .nlab,
+.detail.setter .viewer .hint{color:var(--disc)}
+.detail.setter .dmeta .tlab{color:var(--paper)}
+.detail.setter table.dt td{border-bottom-color:#3a382f}
+.detail.setter table.dt th{border-bottom-color:var(--paper)}
+.detail.setter .dmeta .tlab{border-top-color:#3a382f}
+.detail.setter .note.res .nlab{color:#d0765b}
+.detail.setter .chip{background:var(--paper);color:var(--ink)}
+.detail.setter .chip.champ{background:var(--accent);color:var(--paper)}
+
 .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
-h1{font-weight:400;font-size:38px;line-height:1.1;letter-spacing:-.01em;
-  margin:0 0 8px;text-align:center}
+h1{font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;
+  margin:0 0 10px;text-align:center}
+h1 .tagline{display:block;font-size:19px;font-style:italic;
+  color:var(--muted);margin-top:10px;letter-spacing:0}
 h1 .hash{font:26px var(--mono);color:var(--muted)}
 p.sub{text-align:center;font-style:italic;color:var(--muted);
   font-size:15.5px;line-height:1.7;margin:0 auto 8px;max-width:760px}
@@ -100,8 +231,11 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
 </style>
 <div class="wrap">
 <nav class="topnav"><span class="brand">Airloom</span><a href="index.html" class="on">the result</a><a href="log.html">research log</a><a href="lineage.html">family tree</a><a href="glossary.html">glossary</a></nav>
-<h1>an evolved drone frame &mdash; <span class="hash">913f15a5a9be</span></h1>
-<p class="sub">the champion of an evolutionary design run: 562 candidate frames flown through six weather scenarios across 40 generations, breeding lower-energy designs each round. This is the winner &mdash; drag it around; it is the real simulated geometry.</p>
+<h1>&ldquo;The snuggle is real&rdquo;<span class="tagline">Airloom &mdash; evolving quadcopter frame geometry for Wh/km, with Claude as an occasional co-designer</span></h1>
+<p class="sub">I let a genetic algorithm loose on the geometry of a 7-inch quadcopter frame &mdash; the real, GPLv3 Source One V6 plate drawings, morphed by twelve genes and flown through six simulated weather scenarios, with Claude sitting in every few generations to propose designs from the run&rsquo;s own telemetry. Every candidate ever flown is in the <a href="log.html">gallery</a>, failures included: click one to spin the 3D model, superimpose its whole lineage as ghosts, or replay its evolution generation by generation. Free software, <a href="https://github.com/akaalias/airloom">GPLv3</a>.</p>
+<div class="detail setter champion" id="d-913f15a5a9be"><div class="dhead">candidate <span class="hash">913f15a5a9be</span><span class="chip champ">run champion</span></div><div class="dcols"><div class="viewer"><div class="vr"><img class="peek" decoding="async" data-src="frames/gen_0039/913f15a5a9be_bottom.png" alt="913f15a5a9be" data-mesh="m-913f15a5a9be" data-title="913f15a5a9be" data-fit="6.051" data-setter="1" data-ancestor="m-7792e42599f3" data-anctitle="7792e42599f3 · g0 · 6.886 · baseline"><div class="hint">click to open the 3D model</div></div><div class="vbtns"><button data-mode="evo">view candidate evolution</button><button data-mode="perf">view candidate performance</button></div><div class="lgd parts"><span class="lg gl">evolved:</span><span class="lg"><span class="sw"><span class="dot" style="background:#8c2f1f"></span></span>arms<span class="tip"><b>arms</b><br>Evolved part: the four arms &mdash; length, width, waist, thickness and sweep genes reshape them.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#34322e"></span></span>deck plates + standoffs<span class="tip"><b>deck plates + standoffs</b><br>Evolved part: the stacked deck plates and standoffs &mdash; plate size, thickness and deck gap genes reshape them.</span></span><span class="lg gl">fixed kit:</span><span class="lg"><span class="sw"><span class="dot" style="background:#4a6fa5"></span></span>battery<span class="tip"><b>battery</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#5a7a52"></span></span>FC/ESC stack<span class="tip"><b>FC/ESC stack</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#8a6a1e"></span></span>wiring/XT60<span class="tip"><b>wiring/XT60</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#55534c"></span></span>motors<span class="tip"><b>motors</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#d8d5c8"></span></span>prop disks<span class="tip"><b>prop disks</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span></div></div><div class="dmeta"><table class="dt hd"><tr><th>metric</th><th>value</th></tr><tr><td>energy score</td><td class='num'><b>6.051</b> Wh/km</td></tr><tr><td>vs baseline</td><td class='num'><b>12.1%</b> better</td></tr><tr><td>scenario mean</td><td class='num'>3.729 Wh/km</td></tr><tr><td>worst scenario</td><td class='num'>4.645 Wh/km</td></tr><tr><td>frame mass</td><td class='num'>70.0&thinsp;g</td></tr><tr><td>material</td><td class='num'>pa12_cf</td></tr><tr><td>born</td><td class='num'>generation 39 via crossover</td></tr></table><div class="note"><span class="nlab">hypothesis</span>Recombine two selected parents: their strengths may be complementary. Parents: 0166ab (6.12) and ca8834 (6.11) Wh/km.</div><div class="note"><span class="nlab">method</span>Largest gene changes: arm thickness 4.3 mm (was arm thickness 4.8 mm), deck gap 38.2 mm (was deck gap 39.5 mm), arm width ×0.81 (was arm width ×0.80).</div><div class="note res"><span class="nlab">result</span>Aggregate 6.051 Wh/km. NEW BEST-SO-FAR at evaluation time. Weakest scenario: storm.</div><div class="tlab">scenario results &amp; genome</div><div class="tables"><table class="dt"><tr><th>scenario</th><th>wh/km</th><th>avg power, w</th><th>max tilt</th><th></th></tr><tr><td>calm_warm</td><td>3.179</td><td>135.0</td><td>25.4&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>cold_headwind</td><td>3.869</td><td>164.3</td><td>38.4&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>crosswind</td><td>3.723</td><td>158.2</td><td>33.5&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>gusty_light</td><td>3.568</td><td>151.6</td><td>32.3&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>hot_thin</td><td>3.391</td><td>144.1</td><td>27.4&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>storm</td><td>4.645</td><td>197.3</td><td>29.9&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr></table><table class="dt"><tr><th>gene</th><th>value</th></tr><tr><td>arm length</td><td>×0.83</td></tr><tr><td>arm width</td><td>×0.81</td></tr><tr><td>arm waist</td><td>×0.60</td></tr><tr><td>arm thickness</td><td>4.3 mm</td></tr><tr><td>front sweep</td><td>36.1°</td></tr><tr><td>rear sweep</td><td>42.1°</td></tr><tr><td>plate length</td><td>×1.03</td></tr><tr><td>plate width</td><td>×1.03</td></tr><tr><td>deck gap</td><td>38.2 mm</td></tr><tr><td>battery wedge</td><td>0.0°</td></tr><tr><td>plate thickness</td><td>×0.82</td></tr><tr><td>material</td><td>pa12_cf</td></tr></table></div></div><div class="parents"><div class="lab">parents</div><figure><a href="log.html#d-0166abd4d36e" style="border:none"><img data-src="frames/gen_0038/0166abd4d36e.png" alt="0166abd4d36e" decoding="async"></a><figcaption>0166abd4d36e &middot; <span class="num">6.115</span></figcaption></figure><figure><a href="log.html#d-ca88346c95ae" style="border:none"><img data-src="frames/gen_0036/ca88346c95ae.png" alt="ca88346c95ae" decoding="async"></a><figcaption>ca88346c95ae &middot; <span class="num">6.113</span></figcaption></figure></div></div></div>
+<h2>the champion, live</h2>
+<p class="sub">562 candidate frames flown through six weather scenarios across 40 generations, breeding lower-energy designs each round. This is the winner &mdash; drag it around; it is the real simulated geometry.</p>
 <div class="hero"><canvas id="hero-canvas"></canvas><div class="hint">drag to rotate &middot; scroll to zoom &middot; double-click resets</div><div class="lgd parts"><span class="lg gl">evolved:</span><span class="lg"><span class="sw"><span class="dot" style="background:#8c2f1f"></span></span>arms<span class="tip"><b>arms</b><br>Evolved part: the four arms &mdash; length, width, waist, thickness and sweep genes reshape them.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#34322e"></span></span>deck plates + standoffs<span class="tip"><b>deck plates + standoffs</b><br>Evolved part: the stacked deck plates and standoffs &mdash; plate size, thickness and deck gap genes reshape them.</span></span><span class="lg gl">fixed kit:</span><span class="lg"><span class="sw"><span class="dot" style="background:#4a6fa5"></span></span>battery<span class="tip"><b>battery</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#5a7a52"></span></span>FC/ESC stack<span class="tip"><b>FC/ESC stack</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#8a6a1e"></span></span>wiring/XT60<span class="tip"><b>wiring/XT60</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#55534c"></span></span>motors<span class="tip"><b>motors</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#d8d5c8"></span></span>prop disks<span class="tip"><b>prop disks</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span></div></div>
 <div class="stats">
 <div class="stat"><b>6.051</b><span>Wh/km energy score</span></div>
@@ -122,6 +256,7 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
 <div class="panel"><h3>net change</h3><p>the champion&rsquo;s evolved parts (deck + arms) solid, the baseline&rsquo;s as a gray ghost, superimposed &mdash; the total geometric distance evolution covered. Fixed kit hidden.</p><canvas id="diff-canvas"></canvas></div>
 <div class="panel" id="trail-panel"><h3>lineage trail</h3><p>every ancestor ghosted at once, fainter the older it is &mdash; a motion trail of the whole lineage converging on the champion.</p><canvas id="trail-canvas"></canvas></div>
 <p class="more">obsessed with the process too? the <a href="log.html">research log</a> has every candidate, every generation, flight replays in every weather scenario, and the full <a href="lineage.html">family tree</a>. terms live in the <a href="glossary.html">glossary</a>.</p>
+<script>(function(){var all=document.querySelectorAll("img[data-src]");function loadNow(im){im.src=im.dataset.src;im.removeAttribute("data-src")}if(!("IntersectionObserver" in window)){all.forEach(loadNow);return}var ob=new IntersectionObserver(function(es){es.forEach(function(en){if(!en.isIntersecting)return;loadNow(en.target);ob.unobserve(en.target)})},{rootMargin:"1600px"});all.forEach(function(im){ob.observe(im)});})()</script>
 <script type="application/json" id="walk-meta">{"7792e42599f3":{"p":null,"q":null,"g":0,"f":"6.886","i":"frames/gen_0000/7792e42599f3.png"},"913f15a5a9be":{"p":"0166abd4d36e","q":"ca88346c95ae","g":39,"f":"6.051","i":"frames/gen_0039/913f15a5a9be.png"},"ca88346c95ae":{"p":null,"q":null,"g":36,"f":"6.113","i":"frames/gen_0036/ca88346c95ae.png"},"0166abd4d36e":{"p":"ca88346c95ae","q":"4d5a5ecbbe0d","g":38,"f":"6.115","i":"frames/gen_0038/0166abd4d36e.png"},"4d5a5ecbbe0d":{"p":"b5fd89cd1e22","q":"ec81aaaf05c6","g":37,"f":"6.140","i":"frames/gen_0037/4d5a5ecbbe0d.png"},"ec81aaaf05c6":{"p":"b5fd89cd1e22","q":null,"g":36,"f":"6.131","i":"frames/gen_0036/ec81aaaf05c6.png"},"b5fd89cd1e22":{"p":null,"q":null,"g":24,"f":"6.144","i":"frames/gen_0024/b5fd89cd1e22.png"}}</script>
 <script type="application/json" id="blob-src">{"m-7792e42599f3":"frames/gen_0000/7792e42599f3.mesh.js","m-913f15a5a9be":"frames/gen_0039/913f15a5a9be.mesh.js","m-ca88346c95ae":"frames/gen_0036/ca88346c95ae.mesh.js","m-0166abd4d36e":"frames/gen_0038/0166abd4d36e.mesh.js","m-4d5a5ecbbe0d":"frames/gen_0037/4d5a5ecbbe0d.mesh.js","m-ec81aaaf05c6":"frames/gen_0036/ec81aaaf05c6.mesh.js","m-b5fd89cd1e22":"frames/gen_0024/b5fd89cd1e22.mesh.js"}</script>
 <script>var BASELINE="7792e42599f3";var CHAMP="913f15a5a9be";</script>
@@ -137,6 +272,17 @@ if(/^#(ovl|perf|d)-/.test(location.hash)){
 }
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
+// the champion card's controls hand off to the research log, where the
+// full-screen overlays live (deep links restore the exact view)
+document.querySelectorAll(".vbtns button").forEach(function(bt){
+  bt.addEventListener("click",function(){
+    location.href="log.html#"+
+      (bt.dataset.mode==="perf"?"perf":"ovl")+"-"+CH;
+  });
+});
+var pk=document.querySelector("img.peek");
+if(pk)pk.addEventListener("click",function(){
+  location.href="log.html#ovl-"+CH});
 var chain=AL.walkChainFor(CH).steps;
 var need=["m-"+CH];
 chain.forEach(function(h){need.push("m-"+h)});

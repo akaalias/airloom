@@ -53,7 +53,6 @@ body{margin:0;background:var(--paper);color:var(--ink);
   -webkit-font-smoothing:antialiased}
 a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--accent)}
-.num{font-variant-numeric:lining-nums tabular-nums}
 .smallcaps{font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.06em;color:var(--muted)}
 """
@@ -84,7 +83,161 @@ def nav_html(active: str) -> str:
     return f'<nav class="topnav"><span class="brand">Airloom</span>{links}</nav>'
 
 
-CSS = TUFTE_TOKENS + NAV_CSS + """
+
+# viewport-driven image loading: stills ship as data-src and only those
+# near the viewport get fetched (1600px lookahead keeps scrolling
+# seamless). Native loading=lazy proved unreliable -- Chrome fetches
+# the whole page in hidden tabs -- hence the explicit observer. Any
+# page embedding candidate cards includes this snippet.
+LAZY_IMG_JS = (
+    "<script>(function(){"
+    'var all=document.querySelectorAll("img[data-src]");'
+    "function loadNow(im){im.src=im.dataset.src;"
+    'im.removeAttribute("data-src")}'
+    'if(!("IntersectionObserver" in window)){'
+    "all.forEach(loadNow);return}"
+    "var ob=new IntersectionObserver(function(es){"
+    "es.forEach(function(en){if(!en.isIntersecting)return;"
+    "loadNow(en.target);ob.unobserve(en.target)})},"
+    '{rootMargin:"1600px"});'
+    "all.forEach(function(im){ob.observe(im)});"
+    "})()</script>")
+
+# candidate detail card: the shared component's styles, used
+# by the research log (every card) and the landing (champion)
+CARD_CSS = """
+.num{font-variant-numeric:lining-nums tabular-nums}
+img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
+/* detail-card viewer buttons: open the evolution / performance overlays */
+.vbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.vbtns button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  background:none;border:1px solid var(--rule);border-radius:2px;
+  padding:6px 10px;cursor:pointer}
+.vbtns button:hover:not(:disabled){color:var(--ink);border-color:var(--ink)}
+.vbtns button:disabled{opacity:.35;cursor:default}
+.detail.setter .vbtns button{color:var(--disc);border-color:#3a382f}
+.detail.setter .vbtns button:hover:not(:disabled){color:var(--paper);
+  border-color:var(--paper)}
+.detail.claude:not(.setter){border-top:2px solid #6a4a8a}
+.detail.setter.claude{background:#3b2a52;border-top-color:#3b2a52}
+.detail.setter.claude table.dt td{border-bottom-color:#54406e}
+.detail.setter.claude .dmeta .tlab{border-top-color:#54406e}
+.detail.setter.claude .dhead .hash,.detail.setter.claude .parents .lab,
+.detail.setter.claude .parents figcaption,.detail.setter.claude table.dt th,
+.detail.setter.claude .note .nlab,.detail.setter.claude .viewer .hint,
+.detail.setter.claude .nmodel,.detail.setter.claude .lgd{color:#c9b9de}
+.detail .chip.claude{background:#6a4a8a;color:var(--paper)}
+.detail.setter.claude .chip{background:var(--paper);color:#3b2a52}
+.detail.setter.claude .chip.claude{background:#c9b9de;color:#3b2a52}
+/* chart legend, same visual language as the lineage page's */
+.lgd{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
+  align-items:center;font-size:13.5px;color:var(--muted);
+  max-width:1080px;margin:0 auto}
+.lgd+.lgd{margin-top:6px}
+.lg{position:relative;display:inline-flex;align-items:center;gap:7px;padding:2px 0}
+.lg:has(.tip){cursor:help}
+.lg:hover{color:var(--ink)}
+.lg .sw{display:inline-flex;align-items:center}
+.lg .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.lg .tip{display:none;position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
+  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
+  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07)}
+.lg:hover .tip{display:block}
+.lg:nth-last-child(-n+2) .tip{left:auto;right:calc(100% + 12px)}
+.lg .tip b{font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}
+.lg.gl{color:var(--ink);font-weight:700}
+/* lazy-loaded stills reserve their box up front (top views are 4:3,
+   detail bottom views square) so scrolling and #d- anchor jumps never
+   land on a page that is still reflowing; until the observer fills in
+   src, the empty img stays invisible instead of a broken-image glyph */
+img[data-src]{visibility:hidden}
+.detail{border-top:1px solid var(--rule);padding:22px 0 26px;margin:16px 0 0}
+.detail .dhead{font:400 21px var(--serif);margin:0 0 14px}
+.detail .dhead .hash{font:17px var(--mono);color:var(--muted)}
+.detail .dcols{display:flex;gap:26px}
+.viewer{width:50%;min-width:320px;position:relative}
+.viewer canvas,.viewer img{width:100%;aspect-ratio:4/3;display:block;
+  cursor:grab;touch-action:none}
+/* static fallback renders are 360px wide: never upscale them past
+   natural size or they pixelate */
+.viewer img{object-fit:contain;width:100%;aspect-ratio:1/1;cursor:default;
+  border-radius:6px}
+.viewer .vr{position:relative}
+.viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
+  color:var(--faint);pointer-events:none}
+.viewer .lgd{margin-top:10px;font-size:12.5px;gap:4px 14px}
+.detail.setter .lgd{color:var(--disc)}
+.detail.setter .lg:hover,.detail.setter .lg.gl{color:var(--paper)}
+.dmeta{flex:1;min-width:280px}
+.dmeta .headline{font-size:17px;margin:4px 0 10px}
+.dmeta .headline b{font-size:21px}
+.dmeta .tables{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
+table.dt{border-collapse:collapse;font-size:14px;margin-top:2px}
+table.dt td,table.dt th{text-align:left;padding:3px 18px 3px 0;border-bottom:1px solid var(--rule-soft)}
+table.dt th{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  border-bottom:1.5px solid var(--ink)}
+table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
+.parents{width:220px;flex-shrink:0}
+.parents .lab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px}
+.parents figure{margin:0 0 10px}
+.parents img{width:100%;mix-blend-mode:multiply;border-radius:6px;
+  aspect-ratio:4/3;object-fit:contain}
+.parents figcaption{font:12px var(--mono);color:var(--faint)}
+.viewer img.peek{cursor:zoom-in}
+.chip{display:inline-block;font:600 10.5px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.07em;background:var(--ink);color:var(--paper);
+  padding:3px 9px;margin-left:10px;vertical-align:2px}
+.chip.champ{background:var(--accent)}
+table.dt.hd{margin:10px 0 4px}
+table.dt.hd b{font-size:17px}
+.headline .lab,.note .nlab{font:600 11px var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted)}
+.headline .fail{color:var(--accent);font-style:italic}
+.note{max-width:660px;font-size:14.5px;line-height:1.55;margin:12px 0}
+.note .nlab{display:block;margin-bottom:2px}
+.note.res .nlab{color:var(--accent)}
+.nmodel{font:italic 12px var(--serif);color:var(--faint);margin-top:8px}
+.detail.setter .nmodel{color:var(--disc)}
+.dmeta .tlab{font:600 14px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--ink);
+  margin:24px 0 8px;padding-top:16px;border-top:1px solid var(--rule-soft)}
+/* invalid candidates: red diagonal cross over the render */
+.card.invalid>a{position:relative;display:block}
+.xed{position:relative;display:inline-block;max-width:100%}
+.card.invalid>a::after,.xed::after{content:"";position:absolute;inset:0;
+  pointer-events:none;background:
+  linear-gradient(to top right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px)),
+  linear-gradient(to bottom right,transparent calc(50% - 1px),
+    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
+    transparent calc(50% + 1px))}
+/* improvement-setter / champion detail rows: inverted, like the grid cards */
+.detail.setter{background:var(--ink);color:var(--paper);border-top-color:var(--ink);
+  margin:16px -26px 0;padding-left:26px;padding-right:26px}
+.detail.champion{outline:2px solid var(--accent);outline-offset:-1px}
+.detail.setter .viewer img,.detail.setter .parents img{mix-blend-mode:normal}
+.detail.setter .dhead .hash,.detail.setter .parents .lab,
+.detail.setter .parents figcaption,.detail.setter table.dt th,
+.detail.setter .note .nlab,
+.detail.setter .viewer .hint{color:var(--disc)}
+.detail.setter .dmeta .tlab{color:var(--paper)}
+.detail.setter table.dt td{border-bottom-color:#3a382f}
+.detail.setter table.dt th{border-bottom-color:var(--paper)}
+.detail.setter .dmeta .tlab{border-top-color:#3a382f}
+.detail.setter .note.res .nlab{color:#d0765b}
+.detail.setter .chip{background:var(--paper);color:var(--ink)}
+.detail.setter .chip.champ{background:var(--accent);color:var(--paper)}
+"""
+
+CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + """
 .wrap{max-width:92vw;margin:0 auto;padding:40px 0 96px}
 @media(max-width:1100px){.wrap{max-width:none;padding-left:28px;padding-right:28px}}
 h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;
@@ -130,7 +283,6 @@ h1 code{font:400 26px var(--mono);color:var(--muted)}
 .board p.note{font-size:12.5px;font-style:italic;line-height:1.65;
   color:var(--faint);margin:6px 0 0}
 .board ul{margin:4px 0 0;padding-left:16px}
-img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
 /* flight tab: HUD over the canvas, screen-space weather streaks, scrub */
 .fl-hud{position:absolute;left:26px;top:46px;z-index:4;pointer-events:none;
   font:12px/1.75 var(--mono);color:var(--muted);white-space:pre}
@@ -152,17 +304,6 @@ img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
   border-left:1px solid var(--rule)}
 .fl-b .cap{white-space:nowrap}
 #fl-split-btn{margin-left:auto}
-/* detail-card viewer buttons: open the evolution / performance overlays */
-.vbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.vbtns button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
-  background:none;border:1px solid var(--rule);border-radius:2px;
-  padding:6px 10px;cursor:pointer}
-.vbtns button:hover:not(:disabled){color:var(--ink);border-color:var(--ink)}
-.vbtns button:disabled{opacity:.35;cursor:default}
-.detail.setter .vbtns button{color:var(--disc);border-color:#3a382f}
-.detail.setter .vbtns button:hover:not(:disabled){color:var(--paper);
-  border-color:var(--paper)}
 .board li{font-size:12.5px;line-height:1.6;color:var(--muted)}
 .knobs{border-collapse:collapse;width:100%;margin:6px 0 10px}
 .knobs td{padding:2.5px 0;border-bottom:1px solid var(--rule);
@@ -226,17 +367,6 @@ img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
 .card.setter.claude .hash,.card.setter.claude .agg .unit,
 .card.setter.claude table.sc td{color:#c9b9de}
 .card.setter.claude table.sc td:last-child{color:var(--paper)}
-.detail.claude:not(.setter){border-top:2px solid #6a4a8a}
-.detail.setter.claude{background:#3b2a52;border-top-color:#3b2a52}
-.detail.setter.claude table.dt td{border-bottom-color:#54406e}
-.detail.setter.claude .dmeta .tlab{border-top-color:#54406e}
-.detail.setter.claude .dhead .hash,.detail.setter.claude .parents .lab,
-.detail.setter.claude .parents figcaption,.detail.setter.claude table.dt th,
-.detail.setter.claude .note .nlab,.detail.setter.claude .viewer .hint,
-.detail.setter.claude .nmodel,.detail.setter.claude .lgd{color:#c9b9de}
-.detail .chip.claude{background:#6a4a8a;color:var(--paper)}
-.detail.setter.claude .chip{background:var(--paper);color:#3b2a52}
-.detail.setter.claude .chip.claude{background:#c9b9de;color:#3b2a52}
 /* 3d overlay bar inherits the claude tint */
 #ovl.claude .ovl-bar,#ovl.claude .ovl-lgd{background:rgba(106,74,138,.08)}
 #ovl.claude.inv .ovl-bar,#ovl.claude.inv .ovl-lgd{background:#3b2a52;
@@ -249,25 +379,6 @@ img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
 h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border-bottom:1px solid var(--rule);padding-bottom:6px;margin:44px 0 14px}
-/* chart legend, same visual language as the lineage page's */
-.lgd{display:flex;flex-wrap:wrap;gap:7px 20px;justify-content:center;
-  align-items:center;font-size:13.5px;color:var(--muted);
-  max-width:1080px;margin:0 auto}
-.lgd+.lgd{margin-top:6px}
-.lg{position:relative;display:inline-flex;align-items:center;gap:7px;padding:2px 0}
-.lg:has(.tip){cursor:help}
-.lg:hover{color:var(--ink)}
-.lg .sw{display:inline-flex;align-items:center}
-.lg .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
-.lg .tip{display:none;position:absolute;left:calc(100% + 12px);top:50%;
-  transform:translateY(-50%);width:300px;z-index:30;background:var(--paper);
-  border:1px solid var(--ink);padding:10px 13px;font-size:13.5px;
-  line-height:1.5;color:var(--ink);box-shadow:6px 6px 0 rgba(17,17,17,.07)}
-.lg:hover .tip{display:block}
-.lg:nth-last-child(-n+2) .tip{left:auto;right:calc(100% + 12px)}
-.lg .tip b{font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.05em;font-size:11.5px;color:var(--muted)}
-.lg.gl{color:var(--ink);font-weight:700}
 .chart-card{border-top:1px solid var(--rule);padding:14px 0 0;margin-top:14px}
 .chart-card svg{width:100%;height:auto;display:block}
 .row{display:flex;flex-wrap:wrap;gap:14px}
@@ -275,11 +386,6 @@ h2{font:600 13px/1.2 var(--serif);font-feature-settings:"smcp" 1;
 .card.best{border:1.5px solid var(--ink)}
 .card.invalid{color:var(--muted)}
 .card.invalid img{opacity:.55}
-/* lazy-loaded stills reserve their box up front (top views are 4:3,
-   detail bottom views square) so scrolling and #d- anchor jumps never
-   land on a page that is still reflowing; until the observer fills in
-   src, the empty img stays invisible instead of a broken-image glyph */
-img[data-src]{visibility:hidden}
 .card img{width:100%;height:auto;display:block;mix-blend-mode:multiply;
   border-radius:6px;aspect-ratio:4/3;object-fit:contain}
 .card .hash{font:12px var(--mono);color:var(--faint);margin-top:4px}
@@ -290,41 +396,6 @@ img[data-src]{visibility:hidden}
 table.sc{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
 table.sc td{padding:1px 0;color:var(--muted);border:none}
 table.sc td:last-child{text-align:right;color:var(--ink)}
-.detail{border-top:1px solid var(--rule);padding:22px 0 26px;margin:16px 0 0}
-.detail .dhead{font:400 21px var(--serif);margin:0 0 14px}
-.detail .dhead .hash{font:17px var(--mono);color:var(--muted)}
-.detail .dcols{display:flex;gap:26px}
-.viewer{width:50%;min-width:320px;position:relative}
-.viewer canvas,.viewer img{width:100%;aspect-ratio:4/3;display:block;
-  cursor:grab;touch-action:none}
-/* static fallback renders are 360px wide: never upscale them past
-   natural size or they pixelate */
-.viewer img{object-fit:contain;width:100%;aspect-ratio:1/1;cursor:default;
-  border-radius:6px}
-.viewer .vr{position:relative}
-.viewer .hint{position:absolute;left:2px;bottom:2px;font:italic 11.5px var(--serif);
-  color:var(--faint);pointer-events:none}
-.viewer .lgd{margin-top:10px;font-size:12.5px;gap:4px 14px}
-.detail.setter .lgd{color:var(--disc)}
-.detail.setter .lg:hover,.detail.setter .lg.gl{color:var(--paper)}
-.dmeta{flex:1;min-width:280px}
-.dmeta .headline{font-size:17px;margin:4px 0 10px}
-.dmeta .headline b{font-size:21px}
-.dmeta .tables{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
-table.dt{border-collapse:collapse;font-size:14px;margin-top:2px}
-table.dt td,table.dt th{text-align:left;padding:3px 18px 3px 0;border-bottom:1px solid var(--rule-soft)}
-table.dt th{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
-  border-bottom:1.5px solid var(--ink)}
-table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
-.parents{width:220px;flex-shrink:0}
-.parents .lab{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px}
-.parents figure{margin:0 0 10px}
-.parents img{width:100%;mix-blend-mode:multiply;border-radius:6px;
-  aspect-ratio:4/3;object-fit:contain}
-.parents figcaption{font:12px var(--mono);color:var(--faint)}
-.viewer img.peek{cursor:zoom-in}
 .chart-card svg [data-h]{cursor:pointer}
 .chart-card svg circle[data-h]:hover{stroke:#111111;stroke-width:2.5}
 .chart-card svg text[data-h]:hover{font-size:16px}
@@ -335,52 +406,6 @@ table.dt td:nth-child(n+2){font-variant-numeric:lining-nums tabular-nums}
 .card.setter table.sc td:last-child{color:var(--paper)}
 .card.setter img{mix-blend-mode:normal}
 .card.champion{outline:2px solid var(--accent);outline-offset:-1px}
-.chip{display:inline-block;font:600 10.5px var(--serif);
-  font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.07em;background:var(--ink);color:var(--paper);
-  padding:3px 9px;margin-left:10px;vertical-align:2px}
-.chip.champ{background:var(--accent)}
-table.dt.hd{margin:10px 0 4px}
-table.dt.hd b{font-size:17px}
-.headline .lab,.note .nlab{font:600 11px var(--serif);
-  font-feature-settings:"smcp" 1;text-transform:uppercase;
-  letter-spacing:.06em;color:var(--muted)}
-.headline .fail{color:var(--accent);font-style:italic}
-.note{max-width:660px;font-size:14.5px;line-height:1.55;margin:12px 0}
-.note .nlab{display:block;margin-bottom:2px}
-.note.res .nlab{color:var(--accent)}
-.nmodel{font:italic 12px var(--serif);color:var(--faint);margin-top:8px}
-.detail.setter .nmodel{color:var(--disc)}
-.dmeta .tlab{font:600 14px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.09em;color:var(--ink);
-  margin:24px 0 8px;padding-top:16px;border-top:1px solid var(--rule-soft)}
-/* invalid candidates: red diagonal cross over the render */
-.card.invalid>a{position:relative;display:block}
-.xed{position:relative;display:inline-block;max-width:100%}
-.card.invalid>a::after,.xed::after{content:"";position:absolute;inset:0;
-  pointer-events:none;background:
-  linear-gradient(to top right,transparent calc(50% - 1px),
-    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
-    transparent calc(50% + 1px)),
-  linear-gradient(to bottom right,transparent calc(50% - 1px),
-    rgba(140,47,31,.65) calc(50% - 1px),rgba(140,47,31,.65) calc(50% + 1px),
-    transparent calc(50% + 1px))}
-/* improvement-setter / champion detail rows: inverted, like the grid cards */
-.detail.setter{background:var(--ink);color:var(--paper);border-top-color:var(--ink);
-  margin:16px -26px 0;padding-left:26px;padding-right:26px}
-.detail.champion{outline:2px solid var(--accent);outline-offset:-1px}
-.detail.setter .viewer img,.detail.setter .parents img{mix-blend-mode:normal}
-.detail.setter .dhead .hash,.detail.setter .parents .lab,
-.detail.setter .parents figcaption,.detail.setter table.dt th,
-.detail.setter .note .nlab,
-.detail.setter .viewer .hint{color:var(--disc)}
-.detail.setter .dmeta .tlab{color:var(--paper)}
-.detail.setter table.dt td{border-bottom-color:#3a382f}
-.detail.setter table.dt th{border-bottom-color:var(--paper)}
-.detail.setter .dmeta .tlab{border-top-color:#3a382f}
-.detail.setter .note.res .nlab{color:#d0765b}
-.detail.setter .chip{background:var(--paper);color:var(--ink)}
-.detail.setter .chip.champ{background:var(--accent);color:var(--paper)}
 #ovl{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;
   flex-direction:column}
 #ovl.open{display:flex}
@@ -2409,6 +2434,184 @@ def _process_html(cfg) -> str:
             "</div>")
 
 
+def candidate_card_html(store, run_id: str, results_dir: Path,
+                        cands: dict, h: str, *, viewer_hashes: set,
+                        flight_src: dict, setter_hashes: set,
+                        best_hash: str | None, baseline_hash: str | None,
+                        baseline_fit: float, scen_cache: dict | None = None,
+                        href_base: str = "") -> str:
+    """One candidate detail card -- the shared component behind every
+    entry of the research log and the champion card on the landing page.
+    href_base prefixes the parent links so a card embedded on another
+    page can point back into the log."""
+    scen_rows = (scen_cache.get(h) if scen_cache and h in scen_cache
+                 else store.scenario_results_for(run_id, h))
+    c = cands[h]
+    fit = store.fitness_of(c)
+    invalid = not math.isfinite(fit)
+    is_setter = h in setter_hashes or h == best_hash
+    # invalid renders get a red diagonal cross drawn over them
+    xo, xc = ('<span class="xed">', "</span>") if invalid else ("", "")
+    img = _rel(results_dir, c["png_path"])
+    bottom = _bottom_png_for(results_dir, c["png_path"]) or img
+    if h in viewer_hashes:
+        # the 3D comparison views (side-by-side, net change, flight
+        # split) all reference the baseline: the gen-0 winner
+        anc_attr = ""
+        if (baseline_hash and baseline_hash != h
+                and baseline_hash in viewer_hashes):
+            anc_attr = (f' data-ancestor="m-{baseline_hash}" '
+                        f'data-anctitle="{baseline_hash} · g0 · '
+                        f'{_fmt(baseline_fit)} · baseline"')
+        setter_attr = ' data-setter="1"' if is_setter else ""
+        claude_attr = ' data-claude="1"' \
+            if c["operator"] == "designer" else ""
+        failed_attr = "" if c["valid"] else ' data-failed="1"'
+        # performance button needs flight telemetry, which the
+        # curation rule renders for champions/setters only
+        perf_attr = "" if flight_src.get(h) else (
+            ' disabled title="flights are rendered for the champion '
+            'and best-so-far setters"')
+        viewer = (f'<div class="viewer"><div class="vr">{xo}'
+                  f'<img class="peek" decoding="async" '
+                  f'data-src="{bottom}" '
+                  f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
+                  f'data-fit="{_fmt(fit)}"{setter_attr}{claude_attr}'
+                  f'{failed_attr}{anc_attr}>{xc}'
+                  f'<div class="hint">click to open the 3D model</div></div>'
+                  f'<div class="vbtns">'
+                  f'<button data-mode="evo">view candidate evolution'
+                  f"</button>"
+                  f'<button data-mode="perf"{perf_attr}>view candidate '
+                  f"performance</button></div>"
+                  f"{_parts_legend_html()}</div>")
+    else:
+        viewer = (f'<div class="viewer"><div class="vr">{xo}'
+                  f'<img data-src="{bottom}" alt="{h}" '
+                  f'decoding="async">{xc}</div>'
+                  f"{_parts_legend_html()}</div>")
+
+    parent_imgs = []
+    for pkey in ("parent_a", "parent_b"):
+        ph = c[pkey]
+        if ph and ph in cands:
+            pimg = _rel(results_dir, cands[ph]["png_path"])
+            pfit = store.fitness_of(cands[ph])
+            parent_imgs.append(
+                f'<figure><a href="{href_base}#d-{ph}" style="border:none">'
+                f'<img data-src="{pimg}" alt="{ph}" '
+                f'decoding="async"></a>'
+                f'<figcaption>{ph} &middot; <span class="num">{_fmt(pfit)}'
+                "</span></figcaption></figure>")
+    parents_html = ('<div class="lab">parents</div>' + "".join(parent_imgs)
+                    if parent_imgs else
+                    '<div class="lab">no parents</div>'
+                    '<div style="font-style:italic;color:var(--faint);font-size:13px">'
+                    "seed / immigrant</div>")
+    sc_rows = "".join(
+        f"<tr><td>{html.escape(s['scenario'])}</td>"
+        f"<td>{_fmt(s['wh_per_km'])}</td><td>{_fmt(s['avg_power_w'], 1)}</td>"
+        f"<td>{_fmt(s['max_tilt_deg'], 1)}&deg;</td>"
+        f"<td style='color:var(--accent);font-style:italic'>"
+        f"{html.escape(s['failure_reason'] or '')}</td></tr>"
+        for s in scen_rows)
+    mass = f"{c['frame_mass'] * 1e3:.1f}" if c["frame_mass"] else "&mdash;"
+    genes = describe_genome(json.loads(c["genome_json"]), c["material"])
+    gene_rows = "".join(
+        f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td></tr>"
+        for lab, val in genes)
+    badge = ""
+    if h == best_hash:
+        badge = '<span class="chip champ">run champion</span>'
+    elif h in setter_hashes:
+        badge = '<span class="chip">new best when evaluated</span>'
+    if c["operator"] == "designer":
+        badge += '<span class="chip claude">&#10022; claude-designed</span>'
+    born = f"generation {c['generation_born']} via {c['operator']}"
+    if invalid:
+        metric_rows = [
+            ("status", '<span style="color:var(--accent);font-style:'
+                       'italic">invalid &mdash; '
+                       f'{html.escape(c["failure_reason"] or "unknown")}'
+                       "</span>"),
+            ("energy score", "&#8734; (never flew the scenarios)"),
+        ]
+    else:
+        metric_rows = [
+            ("energy score", f"<b>{_fmt(fit)}</b> Wh/km"),
+        ]
+        # % vs the baseline (the generation-0 winner); lower Wh/km
+        # is better, so a drop reads as improvement
+        if h == baseline_hash:
+            metric_rows.append(
+                ("vs baseline", "is the baseline (gen-0 winner)"))
+        elif math.isfinite(baseline_fit) and baseline_fit > 0:
+            delta = (baseline_fit - fit) / baseline_fit * 100
+            if abs(delta) < 0.05:
+                vs = "&plusmn;0.0% (matches baseline)"
+            elif delta > 0:
+                vs = f"<b>{delta:.1f}%</b> better"
+            else:
+                vs = (f'<span style="color:var(--accent)">'
+                      f"<b>{-delta:.1f}%</b> worse</span>")
+            metric_rows.append(("vs baseline", vs))
+        metric_rows += [
+            ("scenario mean", f"{_fmt(c['mean_whkm'])} Wh/km"),
+            ("worst scenario", f"{_fmt(c['worst_whkm'])} Wh/km"),
+        ]
+    metric_rows += [
+        ("frame mass", f"{mass}&thinsp;g"),
+        ("material", html.escape(c["material"] or "&mdash;")),
+        ("born", born),
+    ]
+    headline = ('<table class="dt hd"><tr><th>metric</th><th>value</th>'
+                "</tr>" + "".join(
+                    f"<tr><td>{k}</td><td class='num'>{v}</td></tr>"
+                    for k, v in metric_rows) + "</table>")
+    notes = ""
+    for key, label, cls2 in (("hypothesis", "hypothesis", ""),
+                             ("method", "method", ""),
+                             ("result_note", "result", " res")):
+        try:
+            text = c[key]
+        except (KeyError, IndexError):
+            text = None
+        if text:
+            notes += (f'<div class="note{cls2}"><span class="nlab">'
+                      f"{label}</span>{html.escape(text)}</div>")
+    try:  # exact model that wrote the notes (from the claude CLI call)
+        notes_model = c["notes_model"]
+    except (KeyError, IndexError):
+        notes_model = None
+    if notes and notes_model:
+        notes += (f'<div class="nmodel">notes by '
+                  f"{html.escape(notes_model)}</div>")
+    dcls = "detail" + (" setter" if is_setter else "") + \
+        (" champion" if h == best_hash else "") + \
+        (" claude" if c["operator"] == "designer" else "")
+    gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'
+                  f"{gene_rows}</table>")
+    if invalid:  # never flew: a scenario table would be a dead header
+        tlab, tables = "genome", gene_table
+    else:
+        tlab = "scenario results &amp; genome"
+        tables = (f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
+                  f"<th>avg power, w</th><th>max tilt</th><th></th></tr>"
+                  f"{sc_rows}</table>" + gene_table)
+    return (
+        f'<div class="{dcls}" id="d-{h}">'
+        f'<div class="dhead">candidate <span class="hash">{h}</span>'
+        f"{badge}</div>"
+        f'<div class="dcols">'
+        f"{viewer}"
+        f'<div class="dmeta">'
+        f"{headline}{notes}"
+        f'<div class="tlab">{tlab}</div>'
+        f'<div class="tables">{tables}</div>'
+        f'</div><div class="parents">{parents_html}</div>'
+        f"</div></div>")
+
+
 def write_gallery(store: Store, run_id: str, results_dir: Path,
                   target_whkm: float | None = None,
                   record_whkm: float | None = None,
@@ -2544,170 +2747,12 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                  "flying the same weather in sync "
                  "(3D models load on demand when an overlay opens)</p>")
     for h in detail_ids:
-        c = cands[h]
-        fit = store.fitness_of(c)
-        invalid = not math.isfinite(fit)
-        is_setter = h in setter_hashes or h == best_hash
-        # invalid renders get a red diagonal cross drawn over them
-        xo, xc = ('<span class="xed">', "</span>") if invalid else ("", "")
-        img = _rel(results_dir, c["png_path"])
-        bottom = _bottom_png_for(results_dir, c["png_path"]) or img
-        if h in viewer_hashes:
-            # the 3D comparison views (side-by-side, net change, flight
-            # split) all reference the baseline: the gen-0 winner
-            anc_attr = ""
-            if (baseline_hash and baseline_hash != h
-                    and baseline_hash in viewer_hashes):
-                anc_attr = (f' data-ancestor="m-{baseline_hash}" '
-                            f'data-anctitle="{baseline_hash} · g0 · '
-                            f'{_fmt(baseline_fit)} · baseline"')
-            setter_attr = ' data-setter="1"' if is_setter else ""
-            claude_attr = ' data-claude="1"' \
-                if c["operator"] == "designer" else ""
-            failed_attr = "" if c["valid"] else ' data-failed="1"'
-            # performance button needs flight telemetry, which the
-            # curation rule renders for champions/setters only
-            perf_attr = "" if flight_src.get(h) else (
-                ' disabled title="flights are rendered for the champion '
-                'and best-so-far setters"')
-            viewer = (f'<div class="viewer"><div class="vr">{xo}'
-                      f'<img class="peek" decoding="async" '
-                      f'data-src="{bottom}" '
-                      f'alt="{h}" data-mesh="m-{h}" data-title="{h}" '
-                      f'data-fit="{_fmt(fit)}"{setter_attr}{claude_attr}'
-                      f'{failed_attr}{anc_attr}>{xc}'
-                      f'<div class="hint">click to open the 3D model</div></div>'
-                      f'<div class="vbtns">'
-                      f'<button data-mode="evo">view candidate evolution'
-                      f"</button>"
-                      f'<button data-mode="perf"{perf_attr}>view candidate '
-                      f"performance</button></div>"
-                      f"{_parts_legend_html()}</div>")
-        else:
-            viewer = (f'<div class="viewer"><div class="vr">{xo}'
-                      f'<img data-src="{bottom}" alt="{h}" '
-                      f'decoding="async">{xc}</div>'
-                      f"{_parts_legend_html()}</div>")
-
-        parent_imgs = []
-        for pkey in ("parent_a", "parent_b"):
-            ph = c[pkey]
-            if ph and ph in cands:
-                pimg = _rel(results_dir, cands[ph]["png_path"])
-                pfit = store.fitness_of(cands[ph])
-                parent_imgs.append(
-                    f'<figure><a href="#d-{ph}" style="border:none">'
-                    f'<img data-src="{pimg}" alt="{ph}" '
-                    f'decoding="async"></a>'
-                    f'<figcaption>{ph} &middot; <span class="num">{_fmt(pfit)}'
-                    "</span></figcaption></figure>")
-        parents_html = ('<div class="lab">parents</div>' + "".join(parent_imgs)
-                        if parent_imgs else
-                        '<div class="lab">no parents</div>'
-                        '<div style="font-style:italic;color:var(--faint);font-size:13px">'
-                        "seed / immigrant</div>")
-        sc_rows = "".join(
-            f"<tr><td>{html.escape(s['scenario'])}</td>"
-            f"<td>{_fmt(s['wh_per_km'])}</td><td>{_fmt(s['avg_power_w'], 1)}</td>"
-            f"<td>{_fmt(s['max_tilt_deg'], 1)}&deg;</td>"
-            f"<td style='color:var(--accent);font-style:italic'>"
-            f"{html.escape(s['failure_reason'] or '')}</td></tr>"
-            for s in scen_cache.get(h, []))
-        mass = f"{c['frame_mass'] * 1e3:.1f}" if c["frame_mass"] else "&mdash;"
-        genes = describe_genome(json.loads(c["genome_json"]), c["material"])
-        gene_rows = "".join(
-            f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td></tr>"
-            for lab, val in genes)
-        badge = ""
-        if h == best_hash:
-            badge = '<span class="chip champ">run champion</span>'
-        elif h in setter_hashes:
-            badge = '<span class="chip">new best when evaluated</span>'
-        if c["operator"] == "designer":
-            badge += '<span class="chip claude">&#10022; claude-designed</span>'
-        born = f"generation {c['generation_born']} via {c['operator']}"
-        if invalid:
-            metric_rows = [
-                ("status", '<span style="color:var(--accent);font-style:'
-                           'italic">invalid &mdash; '
-                           f'{html.escape(c["failure_reason"] or "unknown")}'
-                           "</span>"),
-                ("energy score", "&#8734; (never flew the scenarios)"),
-            ]
-        else:
-            metric_rows = [
-                ("energy score", f"<b>{_fmt(fit)}</b> Wh/km"),
-            ]
-            # % vs the baseline (the generation-0 winner); lower Wh/km
-            # is better, so a drop reads as improvement
-            if h == baseline_hash:
-                metric_rows.append(
-                    ("vs baseline", "is the baseline (gen-0 winner)"))
-            elif math.isfinite(baseline_fit) and baseline_fit > 0:
-                delta = (baseline_fit - fit) / baseline_fit * 100
-                if abs(delta) < 0.05:
-                    vs = "&plusmn;0.0% (matches baseline)"
-                elif delta > 0:
-                    vs = f"<b>{delta:.1f}%</b> better"
-                else:
-                    vs = (f'<span style="color:var(--accent)">'
-                          f"<b>{-delta:.1f}%</b> worse</span>")
-                metric_rows.append(("vs baseline", vs))
-            metric_rows += [
-                ("scenario mean", f"{_fmt(c['mean_whkm'])} Wh/km"),
-                ("worst scenario", f"{_fmt(c['worst_whkm'])} Wh/km"),
-            ]
-        metric_rows += [
-            ("frame mass", f"{mass}&thinsp;g"),
-            ("material", html.escape(c["material"] or "&mdash;")),
-            ("born", born),
-        ]
-        headline = ('<table class="dt hd"><tr><th>metric</th><th>value</th>'
-                    "</tr>" + "".join(
-                        f"<tr><td>{k}</td><td class='num'>{v}</td></tr>"
-                        for k, v in metric_rows) + "</table>")
-        notes = ""
-        for key, label, cls2 in (("hypothesis", "hypothesis", ""),
-                                 ("method", "method", ""),
-                                 ("result_note", "result", " res")):
-            try:
-                text = c[key]
-            except (KeyError, IndexError):
-                text = None
-            if text:
-                notes += (f'<div class="note{cls2}"><span class="nlab">'
-                          f"{label}</span>{html.escape(text)}</div>")
-        try:  # exact model that wrote the notes (from the claude CLI call)
-            notes_model = c["notes_model"]
-        except (KeyError, IndexError):
-            notes_model = None
-        if notes and notes_model:
-            notes += (f'<div class="nmodel">notes by '
-                      f"{html.escape(notes_model)}</div>")
-        dcls = "detail" + (" setter" if is_setter else "") + \
-            (" champion" if h == best_hash else "") + \
-            (" claude" if c["operator"] == "designer" else "")
-        gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'
-                      f"{gene_rows}</table>")
-        if invalid:  # never flew: a scenario table would be a dead header
-            tlab, tables = "genome", gene_table
-        else:
-            tlab = "scenario results &amp; genome"
-            tables = (f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
-                      f"<th>avg power, w</th><th>max tilt</th><th></th></tr>"
-                      f"{sc_rows}</table>" + gene_table)
-        parts.append(
-            f'<div class="{dcls}" id="d-{h}">'
-            f'<div class="dhead">candidate <span class="hash">{h}</span>'
-            f"{badge}</div>"
-            f'<div class="dcols">'
-            f"{viewer}"
-            f'<div class="dmeta">'
-            f"{headline}{notes}"
-            f'<div class="tlab">{tlab}</div>'
-            f'<div class="tables">{tables}</div>'
-            f'</div><div class="parents">{parents_html}</div>'
-            f"</div></div>")
+        parts.append(candidate_card_html(
+            store, run_id, results_dir, cands, h,
+            viewer_hashes=viewer_hashes, flight_src=flight_src,
+            setter_hashes=setter_hashes, best_hash=best_hash,
+            baseline_hash=baseline_hash, baseline_fit=baseline_fit,
+            scen_cache=scen_cache))
 
     parts.append(
         '<div id="ovl">'
@@ -2816,23 +2861,7 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                         "g": c["generation_born"],
                         "f": f"{fit:.3f}" if math.isfinite(fit) else None,
                         "i": _rel(results_dir, c["png_path"])}
-    # viewport-driven image loading: thousands of heavy stills, so only
-    # those near the viewport get fetched (1600px lookahead keeps
-    # scrolling seamless). Native loading=lazy proved unreliable --
-    # Chrome fetched the whole page -- hence the explicit observer.
-    parts.append(
-        "<script>(function(){"
-        'var all=document.querySelectorAll("img[data-src]");'
-        "function loadNow(im){im.src=im.dataset.src;"
-        'im.removeAttribute("data-src")}'
-        'if(!("IntersectionObserver" in window)){'
-        "all.forEach(loadNow);return}"
-        "var ob=new IntersectionObserver(function(es){"
-        "es.forEach(function(en){if(!en.isIntersecting)return;"
-        "loadNow(en.target);ob.unobserve(en.target)})},"
-        '{rootMargin:"1600px"});'
-        "all.forEach(function(im){ob.observe(im)});"
-        "})()</script>")
+    parts.append(LAZY_IMG_JS)
     parts.append('<script type="application/json" id="walk-meta">'
                  f"{json.dumps(walk_meta, separators=(',', ':'))}</script>")
     # the baseline hash (gen-0 winner): the reference every comparison

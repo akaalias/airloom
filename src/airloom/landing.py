@@ -16,13 +16,17 @@ import math
 from pathlib import Path
 
 from .dbstore import Store
-from .gallery import (GH_RIBBON_HTML, NAV_CSS, TUFTE_TOKENS, _bottom_png_for,
-                      _fmt, _mesh_js_for, _parts_legend_html, _rel, nav_html)
+from .gallery import (CARD_CSS, GH_RIBBON_HTML, LAZY_IMG_JS, NAV_CSS,
+                      TUFTE_TOKENS, _bottom_png_for, _fmt, _mesh_js_for,
+                      _parts_legend_html, _rel, candidate_card_html,
+                      nav_html)
 
-LANDING_CSS = TUFTE_TOKENS + NAV_CSS + """
+LANDING_CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + """
 .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
-h1{font-weight:400;font-size:38px;line-height:1.1;letter-spacing:-.01em;
-  margin:0 0 8px;text-align:center}
+h1{font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;
+  margin:0 0 10px;text-align:center}
+h1 .tagline{display:block;font-size:19px;font-style:italic;
+  color:var(--muted);margin-top:10px;letter-spacing:0}
 h1 .hash{font:26px var(--mono);color:var(--muted)}
 p.sub{text-align:center;font-style:italic;color:var(--muted);
   font-size:15.5px;line-height:1.7;margin:0 auto 8px;max-width:760px}
@@ -105,6 +109,17 @@ if(/^#(ovl|perf|d)-/.test(location.hash)){
 }
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
+// the champion card's controls hand off to the research log, where the
+// full-screen overlays live (deep links restore the exact view)
+document.querySelectorAll(".vbtns button").forEach(function(bt){
+  bt.addEventListener("click",function(){
+    location.href="log.html#"+
+      (bt.dataset.mode==="perf"?"perf":"ovl")+"-"+CH;
+  });
+});
+var pk=document.querySelector("img.peek");
+if(pk)pk.addEventListener("click",function(){
+  location.href="log.html#ovl-"+CH});
 var chain=AL.walkChainFor(CH).steps;
 var need=["m-"+CH];
 chain.forEach(function(h){need.push("m-"+h)});
@@ -146,6 +161,24 @@ AL.ensureBlobs(need).then(function(){
 """
 
 
+INTRO_TITLE = ("&ldquo;The snuggle is real&rdquo;"
+               '<span class="tagline">Airloom &mdash; evolving quadcopter '
+               "frame geometry for Wh/km, with Claude as an occasional "
+               "co-designer</span>")
+
+INTRO_TEXT = (
+    "I let a genetic algorithm loose on the geometry of a 7-inch "
+    "quadcopter frame &mdash; the real, GPLv3 Source One V6 plate "
+    "drawings, morphed by twelve genes and flown through six simulated "
+    "weather scenarios, with Claude sitting in every few generations to "
+    "propose designs from the run&rsquo;s own telemetry. Every candidate "
+    'ever flown is in the <a href="log.html">gallery</a>, failures '
+    "included: click one to spin the 3D model, superimpose its whole "
+    "lineage as ghosts, or replay its evolution generation by "
+    'generation. Free software, <a href="https://github.com/akaalias/'
+    'airloom">GPLv3</a>.')
+
+
 def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
     """index.html: the result-first landing page. Fail-soft: with no
     valid candidates it still writes a page pointing at the log."""
@@ -184,11 +217,30 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
     mass = (f"{champ['frame_mass'] * 1e3:.1f}"
             if champ["frame_mass"] else "&mdash;")
 
+    # intro: what this project is, for someone landing cold
+    parts += [f"<h1>{INTRO_TITLE}</h1>",
+              f'<p class="sub">{INTRO_TEXT}</p>']
+
+    # the champion's full detail card -- the same component the research
+    # log renders for every candidate; its controls deep-link into the
+    # log's overlays (wired by LANDING_JS below)
+    viewer_hashes = {h for h in (champ_hash, base_hash)
+                     if h and _mesh_js_for(results_dir, cands[h]["png_path"])}
+    champ_png = Path(champ["png_path"] or "")
+    has_flight = bool(champ["png_path"]) and any(
+        champ_png.parent.glob(f"{champ_hash}.*.flight.js"))
+    parts.append(candidate_card_html(
+        store, run_id, results_dir, cands, champ_hash,
+        viewer_hashes=viewer_hashes,
+        flight_src={champ_hash: True} if has_flight else {},
+        setter_hashes=set(), best_hash=champ_hash,
+        baseline_hash=base_hash, baseline_fit=base_fit,
+        href_base="log.html"))
+
     # hero + stats
     parts += [
-        "<h1>an evolved drone frame &mdash; "
-        f'<span class="hash">{champ_hash}</span></h1>',
-        '<p class="sub">the champion of an evolutionary design run: '
+        "<h2>the champion, live</h2>",
+        '<p class="sub">'
         f"{len(cands)} candidate frames flown through six weather "
         f"scenarios across {n_gens} generations, breeding lower-energy "
         "designs each round. This is the winner &mdash; drag it around; "
@@ -298,6 +350,7 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             blob_src[f"m-{cur}"] = src
 
     parts += [
+        LAZY_IMG_JS,
         '<script type="application/json" id="walk-meta">'
         f"{json.dumps(walk_meta, separators=(',', ':'))}</script>",
         '<script type="application/json" id="blob-src">'
