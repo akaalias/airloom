@@ -932,7 +932,7 @@ var soloState=makeState(),evoState=makeState(),cmpState=makeState(),
     walkState=makeState(1.2),fullState=makeState(1.2),
     flState=makeState(0.35);  // low chase-cam pitch: tilt reads best
 var soloV=null,evoV=null,cmpA=null,cmpB=null,diffV=null,walkV=null,
-    fullV=null,flV=null,flVB=null,current=null;
+    fullV=null,flV=null,flVB=null,current=null,pendingTab=null;
 function ensureViewers(){
   if(!soloV)soloV=makeViewer(document.getElementById("ovl-solo"),soloState);
   if(!evoV)evoV=makeViewer(document.getElementById("ovl-evo"),evoState);
@@ -1227,6 +1227,8 @@ function flSplitSet(on){
   FLB.anim=requestAnimationFrame(anim);
 }
 function flOpen(scen){
+  if(ovl.classList.contains("open")&&ovl.classList.contains("perf"))
+    history.replaceState(null,"","#perf-"+FL.hash+"/"+scen);
   var jobs=[ensureFlight(FL.hash,scen)];
   if(FLB.hash)jobs.push(ensureFlight(FLB.hash,scen));
   Promise.all(jobs).then(function(){
@@ -1272,6 +1274,12 @@ function setTab(name){
     b.classList.toggle("on",b.dataset.tab===name)});
   ovl.querySelectorAll(".ovl-body").forEach(function(b){
     b.classList.toggle("on",b.dataset.tab===name)});
+  // deep link: the URL always names the open candidate + tab, so any
+  // view can be copied and shared (perf mode is stamped by flOpen,
+  // whose scenario is the more useful coordinate there)
+  if(current&&ovl.classList.contains("open")&&
+     !ovl.classList.contains("perf"))
+    history.replaceState(null,"","#ovl-"+current.mesh.slice(2)+"/"+name);
   // the freshly shown canvas needs layout to settle before it has a size
   requestAnimationFrame(redrawAll);
   setTimeout(redrawAll,60);
@@ -1444,13 +1452,25 @@ function openOverlay(d,mode){
     FL.defScen=null;
     pt.innerHTML="";
   }
-  setTab(perf?"flight":"solo");
+  // a deep link may name the tab (evolution) or scenario (performance)
+  // to land on; fall back to the default when it is unknown or disabled
+  var want=pendingTab;pendingTab=null;
+  if(perf){
+    if(want&&fsc[want])FL.defScen=want;
+    setTab("flight");
+  }else{
+    var wb=want?ovl.querySelector(
+      '#evo-tabs button[data-tab="'+want+'"]'):null;
+    setTab(wb&&!wb.disabled?want:"solo");
+  }
 }
 function closeOverlay(){
   playStop();
   flPause();
   ovl.classList.remove("open");
   document.body.style.overflow="";
+  // leave a plain card anchor behind so the URL stays meaningful
+  if(current)history.replaceState(null,"","#d-"+current.mesh.slice(2));
 }
 ovl.querySelectorAll(".ovl-tabs button").forEach(function(b){
   b.addEventListener("click",function(){if(!b.disabled)setTab(b.dataset.tab)});
@@ -1482,6 +1502,20 @@ document.querySelectorAll(".vbtns button").forEach(function(bt){
     if(img)openFromPeek(img,bt.dataset.mode);
   });
 });
+// deep links: #ovl-<hash>/<tab> (evolution) and #perf-<hash>/<scenario>
+// (performance) reopen the shared view on load; plain #d-<hash> anchors
+// keep their native scroll behavior
+function openFromHash(){
+  var m=location.hash.match(/^#(ovl|perf)-([0-9a-f]+)(?:\/([\w-]+))?$/);
+  if(!m)return;
+  var img=document.querySelector('img.peek[data-mesh="m-'+m[2]+'"]');
+  if(!img)return;
+  var card=document.getElementById("d-"+m[2]);
+  if(card)card.scrollIntoView(); // the card sits behind when esc closes
+  pendingTab=m[3]||null;
+  openFromPeek(img,m[1]==="perf"?"perf":"evo");
+}
+openFromHash();
 // quick view presets act on whichever tab is showing
 // nose (FPV camera) = +X in mesh space; yaw/pitch pairs put it facing
 // the viewer (front), pointing left/right in profile, or up in plan views
