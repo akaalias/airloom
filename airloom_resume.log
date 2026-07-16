@@ -1,0 +1,139 @@
+[airloom] results snapshot committed (results/.git @ c83c00b)
+[airloom] resuming run 'run_20260714_015948' at generation 10 (target 40)
+[airloom] type 'quit' + enter (or ctrl-c) to stop gracefully; the run stays resumable
+[airloom] gen  10  best   6.291  valid 12/16  (241.9s)
+[airloom] gen  11  best   6.274  valid 8/16  ( 84.5s)
+[airloom] designer pre-screen rejected 2 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (periodic): injecting 3 candidates
+[airloom] gen  12  best   6.274  valid 12/16  (153.5s)
+[airloom] patience exhausted (3 gens without >=0.5% improvement) -- pivot rank 1, 5 far parents
+[airloom] designer pre-screen rejected 2 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  13  best   6.274  valid 12/16  (231.7s)
+[airloom] patience exhausted (4 gens without >=0.5% improvement) -- pivot rank 1, 5 far parents
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  14  best   6.274  valid 10/16  (192.0s)
+[airloom] patience exhausted (5 gens without >=0.5% improvement) -- pivot rank 1, 5 far parents
+[airloom] designer pre-screen rejected 2 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  15  best   6.257  valid 11/16  (228.5s)
+[airloom] patience exhausted (6 gens without >=0.5% improvement) -- pivot rank 2 (escalated)
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  16  best   6.257  valid 10/16  (196.0s)
+[airloom] patience exhausted (7 gens without >=0.5% improvement) -- pivot rank 2 (escalated)
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  17  best   6.257  valid 8/16  (200.9s)
+[airloom] patience exhausted (8 gens without >=0.5% improvement) -- pivot rank 2 (escalated)
+[airloom] designer pre-screen rejected 2 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 2 candidates
+[airloom] gen  18  best   6.257  valid 6/16  (181.3s)
+[airloom] patience exhausted (9 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 3 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 2 candidates
+[airloom] gen  19  best   6.257  valid 9/16  (238.5s)
+[airloom] patience exhausted (10 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  20  best   6.257  valid 11/16  (207.9s)
+[airloom] patience exhausted (11 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 3 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 2 candidates
+[airloom] gen  21  best   6.257  valid 11/16  (288.9s)
+[airloom] patience exhausted (12 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  22  best   6.172  valid 10/16  (198.5s)
+[airloom] gen  23  best   6.165  valid 10/16  ( 73.8s)
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (periodic): injecting 3 candidates
+[airloom] gen  24  best   6.144  valid 11/16  (201.0s)
+[airloom] gen  25  best   6.144  valid 7/16  ( 51.8s)
+[airloom] patience exhausted (3 gens without >=0.5% improvement) -- pivot rank 1, 5 far parents
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  26  best   6.144  valid 10/16  (6279.0s)
+[airloom] patience exhausted (4 gens without >=0.5% improvement) -- pivot rank 1, 5 far parents
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  27  best   6.144  valid 8/16  (14380.6s)
+[airloom] patience exhausted (5 gens without >=0.5% improvement) -- pivot rank 1, 5 far parents
+[airloom] designer pre-screen rejected 2 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  28  best   6.144  valid 10/16  (179.5s)
+[airloom] patience exhausted (6 gens without >=0.5% improvement) -- pivot rank 2 (escalated)
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  29  best   6.144  valid 10/16  (203.4s)
+[airloom] patience exhausted (7 gens without >=0.5% improvement) -- pivot rank 2 (escalated)
+[airloom] designer pre-screen rejected 3 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  30  best   6.144  valid 6/16  (278.1s)
+[airloom] patience exhausted (8 gens without >=0.5% improvement) -- pivot rank 2 (escalated)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  31  best   6.144  valid 12/16  (239.3s)
+[airloom] patience exhausted (9 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 3 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 2 candidates
+[airloom] gen  32  best   6.144  valid 11/16  (249.5s)
+[airloom] patience exhausted (10 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 2 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  33  best   6.144  valid 10/16  (526.4s)
+[airloom] patience exhausted (11 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 3 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5, claude-sonnet-5
+[airloom] designer round (pivot): injecting 3 candidates
+[airloom] gen  34  best   6.144  valid 12/16  (955.3s)
+[airloom] patience exhausted (12 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] narrator enriched 0/14 notes (rule-based fallback for the rest)
+[airloom] gen  35  best   6.144  valid 11/16  (11844.3s)
+[airloom] patience exhausted (13 gens without >=0.5% improvement) -- pivot rank 3 (escalated)
+[airloom] designer pre-screen rejected 4 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (pivot): injecting 1 candidates
+[airloom] gen  36  best   6.113  valid 11/16  (4724.6s)
+[airloom] gen  37  best   6.113  valid 8/16  ( 51.8s)
+[airloom] gen  38  best   6.113  valid 11/16  ( 89.2s)
+[airloom] designer pre-screen rejected 1 candidate(s)
+[airloom] designer round served by claude-haiku-4-5-20251001, claude-sonnet-5
+[airloom] designer round (periodic): injecting 3 candidates
+[airloom] gen  39  best   6.051  valid 13/16  (3096.8s)
+[airloom] narrator enriched 0/14 notes (rule-based fallback for the rest)
+[airloom] done. gallery: file:///Users/alexisrondeau/Workshop/evolutionary-design/results/index.html
+
+# Leaderboard — top 10
+
+| rank | hash | gen | operator | material | frame g | agg Wh/km | mean | worst | calm_warm | cold_headwind | storm | crosswind | gusty_light | hot_thin |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | `913f15a5a9be` | 39 | crossover | pa12_cf | 70.0 | 6.051 | 3.729 | 4.645 | 3.179 | 3.869 | 4.645 | 3.723 | 3.568 | 3.391 |
+| 2 | `1e085d6fc34d` | 39 | crossover | pa12_cf | 73.6 | 6.103 | 3.760 | 4.686 | 3.198 | 3.912 | 4.686 | 3.755 | 3.597 | 3.414 |
+| 3 | `da4458bc7198` | 38 | mutation | pa12_cf | 74.3 | 6.113 | 3.766 | 4.694 | 3.203 | 3.919 | 4.694 | 3.761 | 3.603 | 3.419 |
+| 4 | `ca88346c95ae` | 36 | designer | pa12_cf | 74.2 | 6.113 | 3.766 | 4.694 | 3.202 | 3.920 | 4.694 | 3.761 | 3.603 | 3.418 |
+| 5 | `0166abd4d36e` | 38 | crossover | pa12_cf | 74.4 | 6.115 | 3.768 | 4.693 | 3.209 | 3.913 | 4.693 | 3.762 | 3.605 | 3.425 |
+| 6 | `dbf202026ed3` | 39 | crossover | pa12_cf | 74.9 | 6.115 | 3.768 | 4.695 | 3.207 | 3.917 | 4.695 | 3.761 | 3.604 | 3.423 |
+| 7 | `7f8d4756ea04` | 39 | crossover | pa12_cf | 74.8 | 6.120 | 3.771 | 4.698 | 3.212 | 3.917 | 4.698 | 3.766 | 3.608 | 3.427 |
+| 8 | `3f41acfb942f` | 39 | crossover | pa12_cf | 74.6 | 6.120 | 3.771 | 4.699 | 3.208 | 3.924 | 4.699 | 3.763 | 3.607 | 3.424 |
+| 9 | `ec81aaaf05c6` | 36 | mutation | cf_plate | 81.4 | 6.131 | 3.778 | 4.705 | 3.234 | 3.903 | 4.705 | 3.763 | 3.617 | 3.450 |
+| 10 | `f0383d09886a` | 38 | crossover | cf_plate | 81.8 | 6.133 | 3.780 | 4.706 | 3.240 | 3.901 | 4.706 | 3.759 | 3.618 | 3.455 |
+
+gallery: file:///Users/alexisrondeau/Workshop/evolutionary-design/results/index.html
