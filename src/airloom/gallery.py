@@ -3415,9 +3415,10 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     if not (results_dir / "log.html").exists():
         return
     docs_dir.mkdir(parents=True, exist_ok=True)
-    for name in ("index.html", "log.html", "viewer.js", "lineage.html",
-                 "lineage.svg", "lineage.dot", "glossary.html",
-                 "convergence.png", "leaderboard.md", "designer_log.md"):
+    for name in ("index.html", "log.html", "viewer.js", "share.png",
+                 "lineage.html", "lineage.svg", "lineage.dot",
+                 "glossary.html", "convergence.png", "leaderboard.md",
+                 "designer_log.md"):
         src = results_dir / name
         if src.exists():
             shutil.copyfile(src, docs_dir / name)

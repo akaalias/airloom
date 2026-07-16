@@ -192,6 +192,71 @@ AL.ensureBlobs(need).then(function(){
 """
 
 
+SITE_URL = "https://alexisrondeau.me/airloom/"
+
+
+def write_share_card(results_dir: Path, champ_png: str | None,
+                     improvement: float | None, champ_fit: float,
+                     n_gens: int, n_cands: int) -> Path | None:
+    """share.png (1200x630): the social card, rebuilt with the landing
+    so it always shows the CURRENT champion. Paper background, the
+    title, the headline stat, and the champion's render."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:
+        return None
+
+    paper, ink = (255, 255, 248), (17, 17, 17)
+    muted, accent = (107, 106, 96), (140, 47, 31)
+    rule = (217, 213, 195)
+
+    def font(size: int, face: int = 0):
+        for path, idx in (("/System/Library/Fonts/Palatino.ttc", face),
+                          ("/System/Library/Fonts/Supplemental/Georgia.ttf",
+                           0)):
+            try:
+                return ImageFont.truetype(path, size, index=idx)
+            except OSError:
+                continue
+        return ImageFont.load_default()
+
+    W, H = 1200, 630
+    im = Image.new("RGB", (W, H), paper)
+    dr = ImageDraw.Draw(im)
+
+    # the champion render fills the right half (its background IS paper)
+    if champ_png and Path(champ_png).exists():
+        r = Image.open(champ_png).convert("RGB")
+        r.thumbnail((640, 560))
+        im.paste(r, (W - r.width - 30, (H - r.height) // 2))
+
+    x = 64
+    dr.text((x, 74), "“The snuggle is real”",
+            font=font(64), fill=ink)
+    sub = ["evolving quadcopter frame geometry",
+           "for Wh/km, with Claude as an",
+           "occasional co-designer"]
+    for i, line in enumerate(sub):
+        dr.text((x, 175 + i * 40), line, font=font(30, 1), fill=muted)
+    y = 355
+    if improvement is not None:
+        dr.text((x, y), f"{improvement:.0f}% more efficient",
+                font=font(46, 2), fill=accent)
+        y += 62
+    dr.text((x, y), f"{champ_fit:.3f} Wh/km champion, bred over "
+            f"{n_gens} generations", font=font(26), fill=ink)
+    dr.text((x, y + 40), f"{n_cands} candidates · six weather "
+            "scenarios · real CFD streamlines",
+            font=font(26), fill=ink)
+    dr.text((x, H - 74), "alexisrondeau.me/airloom · free software, "
+            "GPLv3", font=font(22, 1), fill=muted)
+    dr.rectangle([12, 12, W - 13, H - 13], outline=rule, width=2)
+
+    out = results_dir / "share.png"
+    im.save(out)
+    return out
+
+
 INTRO_TITLE = ("&ldquo;The snuggle is real&rdquo;: &mdash; evolving "
                "quadcopter frame geometry for Wh/km, with Claude as an "
                "occasional co-designer")
@@ -223,11 +288,48 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
     gens = store.generations_with_population(run_id)
     n_gens = (max(gens) + 1) if gens else 0
 
+    # social cards: dynamic copy + a share image rebuilt per champion
+    champ_png_path = (cands[champ_hash]["png_path"]
+                      if champ_hash and cands[champ_hash]["png_path"]
+                      else None)
+    improvement_early = ((base_fit - champ_fit) / base_fit * 100
+                         if champ_hash is not None
+                         and math.isfinite(base_fit) and base_fit > 0
+                         else None)
+    if champ_hash is not None:
+        write_share_card(results_dir, champ_png_path, improvement_early,
+                         champ_fit, n_gens, len(cands))
+    og_title = ("\u201cThe snuggle is real\u201d \u2014 evolving "
+                "quadcopter frame geometry for Wh/km")
+    og_desc = ("A genetic algorithm with Claude as an occasional "
+               "co-designer bred a 7-inch quad frame"
+               + (f" {improvement_early:.0f}% more efficient"
+                  if improvement_early is not None else "")
+               + " across six simulated weather scenarios. Every "
+               "candidate explorable in 3D, with real OpenFOAM "
+               "streamlines. Free software, GPLv3.")
+    social_meta = [
+        f'<meta name="description" content="{og_desc}">',
+        '<meta property="og:type" content="website">',
+        '<meta property="og:site_name" content="Airloom">',
+        f'<meta property="og:title" content="{og_title}">',
+        f'<meta property="og:description" content="{og_desc}">',
+        f'<meta property="og:url" content="{SITE_URL}">',
+        f'<meta property="og:image" content="{SITE_URL}share.png">',
+        '<meta property="og:image:width" content="1200">',
+        '<meta property="og:image:height" content="630">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        f'<meta name="twitter:title" content="{og_title}">',
+        f'<meta name="twitter:description" content="{og_desc}">',
+        f'<meta name="twitter:image" content="{SITE_URL}share.png">',
+    ]
+
     parts = ["<!doctype html>",
              '<meta charset="utf-8">',
              '<meta name="viewport" content="width=device-width,'
              'initial-scale=1">',
              "<title>Airloom &mdash; an evolved drone frame</title>",
+             *social_meta,
              f"<style>{LANDING_CSS}{TIMELINE_TWEAKS_CSS}</style>",
              '<div class="wrap">',
              nav_html("the result")]
