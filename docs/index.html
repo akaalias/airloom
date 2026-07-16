@@ -318,7 +318,8 @@ svg.lens-perf .im{display:none}
 /* breeding column: operators & provenance only, no outcomes */
 svg.lens-breed .nd{fill:#e7e4d6;stroke:#c9c5b4}
 svg.lens-breed .bs,svg.lens-breed .ch,svg.lens-breed .xm{display:none}
-.note{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}
+.tree-note{font-style:italic;color:var(--faint);font-size:14px;
+  margin-top:14px;text-align:center}
 /* hover interactivity: dim everything outside the hovered ancestry */
 .nd,.ed,.el,.bs,.ch,.cl,.im,.xm{transition:opacity .12s ease}
 .hit{cursor:pointer}
@@ -415,8 +416,19 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
   margin:0 0 4px}
 .panel p{font-size:14.5px;font-style:italic;color:var(--muted);
   line-height:1.65;margin:0 0 10px;max-width:820px}
+/* a quiet border marks where the wheel drives the model, not the page */
 .panel canvas{width:100%;height:420px;display:block;cursor:grab;
-  background:var(--paper)}
+  background:var(--paper);border:1px solid var(--rule);border-radius:6px}
+/* performance row: one small flight view per scenario, cameras shared;
+   full-bleed -- the row breaks out of the column to browser width */
+#perf-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;
+  justify-content:center;width:100vw;margin-left:calc(50% - 50vw);
+  padding:0 28px}
+#perf-row .pf{flex:1;min-width:150px;margin:0}
+#perf-row canvas{width:100%;aspect-ratio:1/1;display:block;cursor:grab;
+  border:1px solid var(--rule);border-radius:6px;touch-action:none}
+#perf-row figcaption{font:12px var(--mono);color:var(--faint);
+  text-align:center;margin-top:4px}
 .panel .cap{font:12px var(--mono);color:var(--faint);margin:6px 0 0;
   min-height:16px}
 /* replay controls reuse the research log's visual language */
@@ -5807,6 +5819,9 @@ if(typeof window.TREE_PIN==="string"&&META[window.TREE_PIN]){
 }
 })();
 </script>
+<h2>performance: the champion flying all 6 weather scenarios</h2>
+<p class="sub">the actual scored flights, replayed from simulation telemetry &mdash; attitude and rotor speed are what the simulator graded. Drag inside any box and all 6 cameras orbit in unison; the <b>view candidate performance</b> button on the card above opens the full-screen replay with live telemetry.</p>
+<div id="perf-row"><figure class="pf"><canvas data-scen="calm_warm"></canvas><figcaption>calm warm &middot; 3.179 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="cold_headwind"></canvas><figcaption>cold headwind &middot; 3.869 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="crosswind"></canvas><figcaption>crosswind &middot; 3.723 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="gusty_light"></canvas><figcaption>gusty light &middot; 3.568 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="hot_thin"></canvas><figcaption>hot thin &middot; 3.391 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="storm"></canvas><figcaption>storm &middot; 4.645 Wh/km</figcaption></figure></div>
 <div id="ovl"><div class="ovl-bar"><span class="hash"></span><span class="ovl-tabs" id="evo-tabs"><button data-tab="solo" class="on">full kit</button><button data-tab="evolved">evolved parts</button><button data-tab="compare">vs baseline</button><button data-tab="diff">net change</button><button data-tab="fulldiff">lineage trail</button><button data-tab="walk">replay</button></span><span class="ovl-tabs" id="perf-tabs"></span><button id="ovl-close" title="close (esc)">&#215;</button></div><div class="ovl-lgd"><div class="lgd parts"><span class="lg gl">evolved:</span><span class="lg"><span class="sw"><span class="dot" style="background:#8c2f1f"></span></span>arms<span class="tip"><b>arms</b><br>Evolved part: the four arms &mdash; length, width, waist, thickness and sweep genes reshape them.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#34322e"></span></span>deck plates + standoffs<span class="tip"><b>deck plates + standoffs</b><br>Evolved part: the stacked deck plates and standoffs &mdash; plate size, thickness and deck gap genes reshape them.</span></span><span class="lg gl">fixed kit:</span><span class="lg"><span class="sw"><span class="dot" style="background:#4a6fa5"></span></span>battery<span class="tip"><b>battery</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#5a7a52"></span></span>FC/ESC stack<span class="tip"><b>FC/ESC stack</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#8a6a1e"></span></span>wiring/XT60<span class="tip"><b>wiring/XT60</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#55534c"></span></span>motors<span class="tip"><b>motors</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#d8d5c8"></span></span>prop disks<span class="tip"><b>prop disks</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span></div></div><div class="ovl-body on" data-tab="solo" style="position:relative"><div class="pane"><canvas id="ovl-solo"></canvas></div><div class="ovl-hint">drag to rotate &middot; &#8984;-drag pans &middot; scroll to zoom &middot; double-click resets &middot; esc closes</div></div><div class="ovl-body" data-tab="evolved" style="position:relative"><div class="pane"><canvas id="ovl-evo"></canvas></div><div class="ovl-hint">only the evolved parts (deck + arms) are shown &middot; fixed kit hidden</div></div><div class="ovl-body" data-tab="compare" style="position:relative"><div class="pane"><div class="cap">baseline <span class="hash" id="anc-hash"></span></div><canvas id="ovl-anc"></canvas></div><div class="pane"><div class="cap">this candidate <span class="hash" id="cur-hash"></span></div><canvas id="ovl-cur"></canvas></div><div class="ovl-hint">evolved parts only &middot; the two models rotate and zoom in sync</div></div><div class="ovl-body" data-tab="diff" style="position:relative"><div class="pane"><div class="cap">net change <span class="hash" id="diff-hash"></span><span style="font-style:italic;text-transform:none;letter-spacing:0;font-weight:400">solid color = this candidate &middot; gray ghost = baseline &middot; fixed kit hidden</span></div><canvas id="ovl-diff"></canvas></div><div class="ovl-hint">only the parts evolution changes are shown, superimposed</div></div><div class="ovl-body" data-tab="fulldiff" style="position:relative"><div class="pane"><div class="cap">lineage trail <span class="hash" id="full-hash"></span><span style="font-style:italic;text-transform:none;letter-spacing:0;font-weight:400">solid color = this candidate &middot; gray ghosts = the baseline + every ancestor, fainter = older</span></div><canvas id="ovl-full"></canvas></div><div class="ovl-hint">the whole lineage superimposed &middot; evolved parts only</div></div><div class="ovl-body" data-tab="walk" style="position:relative"><div class="pane"><div class="cap"><button class="wbtn" id="walk-prev">&#8249; older</button><button class="wbtn" id="walk-next">newer &#8250;</button><span class="hash" id="walk-lab"></span></div><canvas id="ovl-walk"></canvas><div class="wtl" id="walk-tl"></div></div><div class="ovl-hint">solid = current step &middot; gray ghost = next in line &middot; click a thumbnail to morph there &middot; &#8592;/&#8594; step &middot; evolved parts only</div></div><div class="ovl-body" data-tab="flight" style="position:relative"><div class="pane" style="position:relative"><div class="cap"><span class="hash" id="fl-lab"></span><button class="wbtn" id="fl-split-btn">vs baseline</button></div><canvas id="ovl-flight"></canvas><div class="fl-hud" id="fl-hud"></div><div class="wtl fl-bar"><button class="wplay" id="fl-play" title="play/pause">&#9654;</button><button class="wplay" id="fl-speed" title="replay speed">8&times;</button><input type="range" id="fl-scrub" min="0" max="999" value="0"><span class="fl-time" id="fl-time"></span></div></div><div class="pane fl-b" style="position:relative"><div class="cap">baseline <span class="hash" id="flb-anc"></span><span class="hash" id="flb-lab"></span></div><canvas id="ovl-flight-b"></canvas><div class="fl-hud" id="flb-hud"></div></div><div class="ovl-hint">the actual scored flight, replayed from simulation telemetry &middot; attitude = thrust vector &middot; rotors at telemetry rpm &middot; drag to orbit &middot; <b>vs baseline</b> slides in a second replay flying the same weather in sync</div></div><div class="ovl-views"><button data-view="fit" title="zoom to fit, keep orientation">fit</button><button data-view="front">front</button><button data-view="top">top</button><button data-view="bottom">bottom</button><button data-view="left">left</button><button data-view="right">right</button><button data-view="default" title="default view (double-click)">default</button></div>
 <script>(function(){var all=document.querySelectorAll("img[data-src]");function loadNow(im){im.src=im.dataset.src;im.removeAttribute("data-src")}if(!("IntersectionObserver" in window)){all.forEach(loadNow);return}var ob=new IntersectionObserver(function(es){es.forEach(function(en){if(!en.isIntersecting)return;loadNow(en.target);ob.unobserve(en.target)})},{rootMargin:"1600px"});all.forEach(function(im){ob.observe(im)});})()</script>
 <script type="application/json" id="walk-meta">{"7792e42599f3":{"p":null,"q":null,"g":0,"f":"6.886","i":"frames/gen_0000/7792e42599f3.png"},"913f15a5a9be":{"p":"0166abd4d36e","q":"ca88346c95ae","g":39,"f":"6.051","i":"frames/gen_0039/913f15a5a9be.png"},"ca88346c95ae":{"p":null,"q":null,"g":36,"f":"6.113","i":"frames/gen_0036/ca88346c95ae.png"},"0166abd4d36e":{"p":"ca88346c95ae","q":"4d5a5ecbbe0d","g":38,"f":"6.115","i":"frames/gen_0038/0166abd4d36e.png"},"4d5a5ecbbe0d":{"p":"b5fd89cd1e22","q":"ec81aaaf05c6","g":37,"f":"6.140","i":"frames/gen_0037/4d5a5ecbbe0d.png"},"ec81aaaf05c6":{"p":"b5fd89cd1e22","q":null,"g":36,"f":"6.131","i":"frames/gen_0036/ec81aaaf05c6.png"},"b5fd89cd1e22":{"p":null,"q":null,"g":24,"f":"6.144","i":"frames/gen_0024/b5fd89cd1e22.png"}}</script>
@@ -6301,15 +6316,69 @@ AL.ensureBlobs(need).then(function(){
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
     timeline:document.getElementById("replay-tl"),
     label:document.getElementById("replay-lab")});
-  if(!rep.open(CH)){
+  if(rep.open(CH)){
+    var redraw=function(){rep.redraw()};
+    requestAnimationFrame(redraw);
+    setTimeout(redraw,80);
+    window.addEventListener("resize",redraw);
+  }else{
     var rp=document.getElementById("replay-panel");
     if(rp)rp.style.display="none";
-    return;
   }
-  function redraw(){rep.redraw()}
-  requestAnimationFrame(redraw);
-  setTimeout(redraw,80);
-  window.addEventListener("resize",redraw);
+  // ---- performance row: the champion flying every scenario at once.
+  // All the mini views share ONE camera state, so orbiting any box
+  // orbits them all; each poses the model from its own telemetry.
+  var boxes=[].slice.call(document.querySelectorAll("#perf-row canvas"));
+  if(!boxes.length)return;
+  var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
+  var views=[];
+  boxes.forEach(function(cv){
+    var v=AL.makeViewer(cv,pst);
+    if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
+  });
+  if(!views.length)return;
+  Promise.all(views.map(function(w){return AL.ensureFlight(CH,w.scen)}))
+  .then(function(){
+    views.forEach(function(w){w.v.load([{id:"m-"+CH,propSpin:true}])});
+    var row=document.getElementById("perf-row"),on=true,last=null;
+    if("IntersectionObserver" in window){
+      new IntersectionObserver(function(es){
+        es.forEach(function(en){on=en.isIntersecting;last=null});
+      }).observe(row);
+    }
+    function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
+    function tick(ts){
+      requestAnimationFrame(tick);
+      if(!on)return; // parked offscreen: no work
+      if(last===null)last=ts;
+      var dt=Math.min((ts-last)/1000,0.1);last=ts;
+      views.forEach(function(w){
+        var d=AL.FLIGHTS[CH+"|"+w.scen];
+        if(!d)return;
+        var n=d.x.length;
+        w.t=(w.t+dt*8)%(n/d.hz); // 8x replay, looped per scenario
+        var fx=Math.min(w.t*d.hz,n-1.001),i=Math.floor(fx),
+            j=Math.min(i+1,n-1),f0=fx-i;
+        // attitude: body z = thrust vector, body x follows the motion
+        var tx=lerp(d,"tx",f0,i,j),ty=lerp(d,"ty",f0,i,j),
+            tz=lerp(d,"tz",f0,i,j);
+        var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
+        var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
+        var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
+        if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
+        var dot=hx*tx+hy*ty;
+        var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
+        var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
+        bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
+        var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
+        w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+        w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
+        w.v.setPropAngle(w.th);
+      });
+      pst.redraw(); // one shared state: draws every box in the row
+    }
+    requestAnimationFrame(tick);
+  });
 });
 })();
 </script>

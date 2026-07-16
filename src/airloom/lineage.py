@@ -267,7 +267,8 @@ svg.lens-perf .im{display:none}
 /* breeding column: operators & provenance only, no outcomes */
 svg.lens-breed .nd{fill:#e7e4d6;stroke:#c9c5b4}
 svg.lens-breed .bs,svg.lens-breed .ch,svg.lens-breed .xm{display:none}
-.note{font-style:italic;color:var(--faint);font-size:14px;margin-top:14px;text-align:center}
+.tree-note{font-style:italic;color:var(--faint);font-size:14px;
+  margin-top:14px;text-align:center}
 /* hover interactivity: dim everything outside the hovered ancestry */
 .nd,.ed,.el,.bs,.ch,.cl,.im,.xm{transition:opacity .12s ease}
 .hit{cursor:pointer}
@@ -580,7 +581,7 @@ click to pin (esc releases). Node size everywhere:
 large&thinsp;=&thinsp;born that generation,
 small&thinsp;=&thinsp;elite carried over.</p>
 {tree_section_html(store, run_id, results_dir, pin=champion)}
-<p class="note">The same graph is exported as Graphviz DOT
+<p class="tree-note">The same graph is exported as Graphviz DOT
 (<a href="lineage.dot">lineage.dot</a>) and raw SVG
 (<a href="lineage.svg">lineage.svg</a>); ancestry of any candidate:
 <code style="font-size:13px">airloom lineage &lt;hash&gt;</code>.</p>

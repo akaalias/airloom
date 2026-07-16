@@ -48,8 +48,19 @@ h2{font-weight:400;font-size:24px;margin:64px 0 6px;text-align:center}
   margin:0 0 4px}
 .panel p{font-size:14.5px;font-style:italic;color:var(--muted);
   line-height:1.65;margin:0 0 10px;max-width:820px}
+/* a quiet border marks where the wheel drives the model, not the page */
 .panel canvas{width:100%;height:420px;display:block;cursor:grab;
-  background:var(--paper)}
+  background:var(--paper);border:1px solid var(--rule);border-radius:6px}
+/* performance row: one small flight view per scenario, cameras shared;
+   full-bleed -- the row breaks out of the column to browser width */
+#perf-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;
+  justify-content:center;width:100vw;margin-left:calc(50% - 50vw);
+  padding:0 28px}
+#perf-row .pf{flex:1;min-width:150px;margin:0}
+#perf-row canvas{width:100%;aspect-ratio:1/1;display:block;cursor:grab;
+  border:1px solid var(--rule);border-radius:6px;touch-action:none}
+#perf-row figcaption{font:12px var(--mono);color:var(--faint);
+  text-align:center;margin-top:4px}
 .panel .cap{font:12px var(--mono);color:var(--faint);margin:6px 0 0;
   min-height:16px}
 /* replay controls reuse the research log's visual language */
@@ -86,15 +97,69 @@ AL.ensureBlobs(need).then(function(){
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
     timeline:document.getElementById("replay-tl"),
     label:document.getElementById("replay-lab")});
-  if(!rep.open(CH)){
+  if(rep.open(CH)){
+    var redraw=function(){rep.redraw()};
+    requestAnimationFrame(redraw);
+    setTimeout(redraw,80);
+    window.addEventListener("resize",redraw);
+  }else{
     var rp=document.getElementById("replay-panel");
     if(rp)rp.style.display="none";
-    return;
   }
-  function redraw(){rep.redraw()}
-  requestAnimationFrame(redraw);
-  setTimeout(redraw,80);
-  window.addEventListener("resize",redraw);
+  // ---- performance row: the champion flying every scenario at once.
+  // All the mini views share ONE camera state, so orbiting any box
+  // orbits them all; each poses the model from its own telemetry.
+  var boxes=[].slice.call(document.querySelectorAll("#perf-row canvas"));
+  if(!boxes.length)return;
+  var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
+  var views=[];
+  boxes.forEach(function(cv){
+    var v=AL.makeViewer(cv,pst);
+    if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
+  });
+  if(!views.length)return;
+  Promise.all(views.map(function(w){return AL.ensureFlight(CH,w.scen)}))
+  .then(function(){
+    views.forEach(function(w){w.v.load([{id:"m-"+CH,propSpin:true}])});
+    var row=document.getElementById("perf-row"),on=true,last=null;
+    if("IntersectionObserver" in window){
+      new IntersectionObserver(function(es){
+        es.forEach(function(en){on=en.isIntersecting;last=null});
+      }).observe(row);
+    }
+    function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
+    function tick(ts){
+      requestAnimationFrame(tick);
+      if(!on)return; // parked offscreen: no work
+      if(last===null)last=ts;
+      var dt=Math.min((ts-last)/1000,0.1);last=ts;
+      views.forEach(function(w){
+        var d=AL.FLIGHTS[CH+"|"+w.scen];
+        if(!d)return;
+        var n=d.x.length;
+        w.t=(w.t+dt*8)%(n/d.hz); // 8x replay, looped per scenario
+        var fx=Math.min(w.t*d.hz,n-1.001),i=Math.floor(fx),
+            j=Math.min(i+1,n-1),f0=fx-i;
+        // attitude: body z = thrust vector, body x follows the motion
+        var tx=lerp(d,"tx",f0,i,j),ty=lerp(d,"ty",f0,i,j),
+            tz=lerp(d,"tz",f0,i,j);
+        var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
+        var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
+        var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
+        if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
+        var dot=hx*tx+hy*ty;
+        var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
+        var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
+        bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
+        var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
+        w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+        w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
+        w.v.setPropAngle(w.th);
+      });
+      pst.redraw(); // one shared state: draws every box in the row
+    }
+    requestAnimationFrame(tick);
+  });
 });
 })();
 """
@@ -228,6 +293,30 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         'story, and the <a href="log.html">research log</a> has every '
         "candidate in full.</p>",
         tree_section_html(store, run_id, results_dir, pin=champ_hash)]
+
+    # performance: every scored flight replayed side by side, cameras
+    # locked together (all the mini views share one orbit state)
+    if flight_src.get(champ_hash):
+        scen_ws = {s["scenario"]: s["wh_per_km"]
+                   for s in store.scenario_results_for(run_id, champ_hash)}
+        boxes = "".join(
+            f'<figure class="pf"><canvas data-scen="{s}"></canvas>'
+            f"<figcaption>{s.replace('_', ' ')}"
+            + (f" &middot; {_fmt(scen_ws[s])} Wh/km"
+               if scen_ws.get(s) is not None else "")
+            + "</figcaption></figure>"
+            for s in flight_src[champ_hash])
+        n_scen = len(flight_src[champ_hash])
+        parts += [
+            f"<h2>performance: the champion flying all {n_scen} weather "
+            "scenarios</h2>",
+            '<p class="sub">the actual scored flights, replayed from '
+            "simulation telemetry &mdash; attitude and rotor speed are "
+            "what the simulator graded. Drag inside any box and all "
+            f"{n_scen} cameras orbit in unison; the <b>view candidate "
+            "performance</b> button on the card above opens the "
+            "full-screen replay with live telemetry.</p>",
+            f'<div id="perf-row">{boxes}</div>']
 
     # data payloads for the shared engine: only the champion's ancestry
     walk_meta: dict[str, dict] = {}
