@@ -219,7 +219,8 @@ def cmd_cfd_flow(args: argparse.Namespace) -> int:
     from .cfd import run_flow
     cfg = load_config(args.root, results_dir=args.results)
     run_flow(cfg, Path(args.root).resolve() / "cfd",
-             h=args.genome_hash, solve=args.solve, extract=args.extract)
+             h=args.genome_hash, solve=args.solve, extract=args.extract,
+             run_id=args.run_id)
     return 0
 
 
@@ -341,6 +342,11 @@ def main(argv: list[str] | None = None) -> int:
     _add_common(p)
     p.add_argument("genome_hash", nargs="?", default=None,
                    help="candidate hash (default: the run champion)")
+    p.add_argument("--run-id", default=None,
+                   help="run to look the candidate up in (default: the"
+                        " most recently CREATED run, which is not always"
+                        " the one you want -- pass this explicitly when"
+                        " an abandoned/superseded run is newer)")
     p.add_argument("--solve", action="store_true",
                    help="run the cases through Docker; CPU-heavy (~1-2h)")
     p.add_argument("--extract", action="store_true",

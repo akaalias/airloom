@@ -914,11 +914,12 @@ def extract_flow(out_root: Path, store, run_id: str, h: str) -> list[Path]:
 
 
 def run_flow(cfg: Config, out_root: Path, h: str | None = None,
-             solve: bool = False, extract: bool = False) -> None:
+             solve: bool = False, extract: bool = False,
+             run_id: str | None = None) -> None:
     from .dbstore import Store
     results = cfg.evolution.results_dir
     store = Store(results / "run.db")
-    run_id = store.latest_run_id(with_data=True)
+    run_id = run_id or store.latest_run_id(with_data=True)
     if run_id is None:
         raise SystemExit("no runs found")
     if h is None:  # default: the run champion
