@@ -6,10 +6,11 @@ import math
 import numpy as np
 import pytest
 
-from airloom.champion import analyze_arm, morphed_front_arm
 from airloom.config import Material
+from airloom.frame_gen import build_arm_front
 from airloom.genome import Genome
 from airloom.realgeo import ArmOutline
+from airloom.structures import analyze_arm
 
 CF = Material(name="cf_plate", density_kg_m3=1600.0,
               tensile_strength_pa=600.0e6, youngs_modulus_pa=70.0e9,
@@ -80,10 +81,12 @@ def test_real_baseline_arm_is_sound(cfg):
     """The actual Source One V6 6 mm carbon arm at a realistic flight load
     must come out comfortably safe -- if this fails, the refined model is
     broken, not the arm (the V6 flies)."""
-    arm, t_m, material = morphed_front_arm(Genome.baseline().as_dict(), cfg)
+    arm, t_m, tip_scale, material = build_arm_front(Genome.baseline().as_dict(),
+                                                    cfg.platform)
     assert material.name == "cf_plate"
     v = analyze_arm(arm, t_m, material, 8.0 * cfg.platform.safety_factor,
-                    cfg.platform.max_tip_deflection_frac)
+                    cfg.platform.max_tip_deflection_frac,
+                    tip_thickness_scale=tip_scale)
     assert v.margin > 2.0
     assert v.tip_deflection_m < v.deflection_limit_m
     assert math.isfinite(v.predicted_failure_load_n)

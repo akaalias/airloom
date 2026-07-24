@@ -180,6 +180,10 @@ def cmd_gallery(args: argparse.Namespace) -> int:
     if glossary.exists():
         import shutil
         shutil.copyfile(glossary, results / "glossary.html")
+    lab_notebook = cfg.root / "docs" / "lab-notebook.html"
+    if lab_notebook.exists():
+        import shutil
+        shutil.copyfile(lab_notebook, results / "lab-notebook.html")
     # the champion's flat templates + build spec, before the cards that
     # link to them render
     gallery.export_champion_parts(store, run_id, cfg.platform)

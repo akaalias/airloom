@@ -16,18 +16,36 @@ import numpy as np
 
 # (name, low, high) -- scales are relative to the real V6 part; lengths in
 # meters, angles in degrees.
+#
+# arm_width_scale, arm_waist_scale, arm_thickness and plate_thickness_scale
+# were widened downward on 2026-07-24: a run post-mortem (run_20260714,
+# 40 gens) found the champions boundary-pinned at the OLD floors (0.75,
+# 0.55, 0.004, 0.7) rather than at the actual physical limit -- the box
+# itself, not the structural/geometric hard constraints, was stopping the
+# search from going thinner/narrower. The real limits (stress, deflection,
+# resonance, per-material min plate thickness) are unchanged and still
+# enforced in structures.py/frame_gen.py; this just lets the search reach
+# them.
 GENOME_SPEC: tuple[tuple[str, float, float], ...] = (
     ("arm_length_scale", 0.75, 1.35),   # shaft stretch (wheelbase)
-    ("arm_width_scale", 0.75, 1.40),    # shaft width at the zone borders
-    ("arm_waist_scale", 0.55, 1.30),    # extra narrowing at mid-shaft
-    ("arm_thickness", 0.004, 0.009),    # real: 6 mm plate
+    ("arm_width_scale", 0.55, 1.40),    # shaft width at the zone borders
+    ("arm_waist_scale", 0.40, 1.30),    # extra narrowing at mid-shaft
+    ("arm_thickness", 0.0025, 0.009),   # real: 6 mm plate
+    # tip_thickness_scale/arm_cutout_scale added 2026-07-24: the arm was a
+    # single uniform-thickness prismatic extrusion with no way to shed
+    # material where the bending moment is low. 1.0/0.0 reproduce that
+    # exact prior behaviour (see realgeo.extrude_tapered/add_lightening_holes).
+    ("tip_thickness_scale", 0.5, 1.0),  # mid-shaft thickness dip (bump
+                                         # profile, full at root+mount)
+    ("arm_cutout_scale", 0.0, 0.6),     # 3 lightening holes along the
+                                         # shaft, sized off local half-width
     ("front_sweep_deg", 30.0, 52.0),    # front arm azimuth from +x (nose)
     ("rear_sweep_deg", 34.0, 62.0),     # rear arm azimuth from -x (tail)
     ("plate_length_scale", 0.85, 1.30),
     ("plate_width_scale", 0.85, 1.25),
     ("deck_gap", 0.020, 0.045),         # standoff length; real: M3x30
     ("battery_wedge_deg", 0.0, 15.0),
-    ("plate_thickness_scale", 0.7, 1.6),  # x 2 mm real plates
+    ("plate_thickness_scale", 0.5, 1.6),  # x 2 mm real plates
     ("material", 0.0, 0.999),
 )
 
@@ -42,7 +60,8 @@ RANGE = UPPER - LOWER
 # bolt-hole registration against the main plate, carbon plate material.
 BASELINE = {
     "arm_length_scale": 1.0, "arm_width_scale": 1.0, "arm_waist_scale": 1.0,
-    "arm_thickness": 0.006, "front_sweep_deg": 31.4, "rear_sweep_deg": 36.0,
+    "arm_thickness": 0.006, "tip_thickness_scale": 1.0, "arm_cutout_scale": 0.0,
+    "front_sweep_deg": 31.4, "rear_sweep_deg": 36.0,
     "plate_length_scale": 1.0, "plate_width_scale": 1.0, "deck_gap": 0.030,
     "battery_wedge_deg": 2.0, "plate_thickness_scale": 1.0,
     "material": 0.05,  # cf_plate
@@ -54,6 +73,8 @@ GENE_FORMAT: tuple[tuple[str, str, str], ...] = (
     ("arm_width_scale", "arm width", "x"),
     ("arm_waist_scale", "arm waist", "x"),
     ("arm_thickness", "arm thickness", "mm"),
+    ("tip_thickness_scale", "tip thickness", "x"),
+    ("arm_cutout_scale", "arm cutouts", "x"),
     ("front_sweep_deg", "front sweep", "deg"),
     ("rear_sweep_deg", "rear sweep", "deg"),
     ("plate_length_scale", "plate length", "x"),

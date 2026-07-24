@@ -16,6 +16,19 @@ ga:
   mutation_sigma_decay: 0.97   # per generation
   mutation_sigma_min: 0.03
   immigrant_prob: 0.10         # chance a non-elite slot is a fresh random genome
+  repair:
+    # Hard constraints are pure geometry (no simulation) -- cheap to check
+    # before spending a population slot. See run_20260714_015948 post-
+    # mortem: 43% of all 562 evaluations were invalid over the run
+    # (immigrant 90%, seed 73%, pivot 60%, crossover 37%, designer only
+    # 10%) -- almost entirely tongue/rotor/deck-gap geometry and per-
+    # material plate-thickness failures the pre-screen catches for free.
+    enabled: true
+    max_bisect_steps: 6          # crossover/mutation/pivot: bisect an
+                                  # infeasible child back toward its parent
+    immigrant_max_resamples: 8   # immigrants/gen-0 seeds: resample the box
+                                  # instead of accepting the first (usually
+                                  # infeasible) draw
   # -- patience: how long the run may plateau before pivoting.
   # Derived from run data: healthy searches improve the best-so-far by
   # >=0.5% every 1-4 generations; plateaus coincide with population
@@ -28,9 +41,27 @@ ga:
   patience:
     enabled: true
     generations: 3
-    min_rel_improvement: 0.005   # what counts as "moving the needle"
+    # was 0.005 (0.5%): gens_since_significant_improvement compares each
+    # generation against the running best, which itself creeps down every
+    # generation once the search is this converged -- real, compounding
+    # progress (6.051->5.992 agg, ~1% over 13 gens in run_20260714_015948)
+    # never crossed a 0.5% SINGLE-STEP bar, so pivot rank grew unbounded
+    # (13 stalled gens -> rank 3, fully escalated) and every designer round
+    # became a "pivot" that explicitly forbids refining the elites -- see
+    # 2026-07-24 post-mortem. Re-run against that same history: 0.0015
+    # brings stall down to 3 gens / pivot_rank 1 (a mild far-parent pivot,
+    # not full random-abandon), while still catching genuinely flat
+    # stretches like gens 13-38 of that run.
+    min_rel_improvement: 0.0015  # what counts as "moving the needle"
     pivot_fraction: 0.5          # non-elite slots bred with a far parent
-    sigma_boost: 3.0             # hypermutation multiplier while pivoting
+    # sigma_boost was 3.0: in run_20260714_015948, pivots fired almost
+    # every generation from g13 onward (patience kept re-triggering) yet
+    # had a WORSE invalid rate (60%) than plain crossover (37%) and never
+    # beat crossover's best fitness -- the boosted mutation was mostly
+    # overshooting straight into infeasible geometry, not finding real
+    # diversity. Lowered now that `repair` (above) reclaims most of those
+    # overshoots instead of wasting the slot; revisit alongside repair.
+    sigma_boost: 1.6              # hypermutation multiplier while pivoting
     decent_factor: 1.3           # far parents must be within 30% of best
 
 cmaes:

@@ -1,7 +1,7 @@
 """The material gene: library mapping, mass effect, structural consequences."""
 import pytest
 
-from airloom.frame_gen import build_frame
+from airloom.frame_gen import build_arm_front, build_frame
 from airloom.genome import Genome
 from airloom.structures import check_structure
 
@@ -28,11 +28,12 @@ def test_soft_print_material_fails_where_carbon_passes(cfg):
     g = Genome.baseline().as_dict()
     g.update(arm_length_scale=1.3, arm_waist_scale=0.6, arm_thickness=0.0045)
     frame = build_frame(Genome.from_dict(g), cfg.platform)
+    arm, t_m, tip_scale, _material = build_arm_front(g, cfg.platform)
     load, hover_hz = 8.0, 150.0
-    cf = check_structure(frame.arm, load, hover_hz, cfg.platform,
-                         cfg.platform.material_for(0.05))
-    petg = check_structure(frame.arm, load, hover_hz, cfg.platform,
-                           cfg.platform.material_for(0.75))
+    cf = check_structure(arm, t_m, tip_scale, frame.arm.mass, load, hover_hz,
+                         cfg.platform, cfg.platform.material_for(0.05))
+    petg = check_structure(arm, t_m, tip_scale, frame.arm.mass, load, hover_hz,
+                           cfg.platform, cfg.platform.material_for(0.75))
     assert cf.ok, cf.reason
     assert not petg.ok
     assert petg.tip_deflection_m > cf.tip_deflection_m
@@ -44,5 +45,7 @@ def test_stiff_print_material_is_usable(cfg):
     g.update(arm_width_scale=1.35, arm_waist_scale=1.25, arm_thickness=0.009,
              material=0.2)  # pa12_cf
     frame = build_frame(Genome.from_dict(g), cfg.platform)
-    res = check_structure(frame.arm, 8.0, 150.0, cfg.platform, frame.material)
+    arm, t_m, tip_scale, material = build_arm_front(g, cfg.platform)
+    res = check_structure(arm, t_m, tip_scale, frame.arm.mass, 8.0, 150.0,
+                          cfg.platform, material)
     assert res.ok, res.reason

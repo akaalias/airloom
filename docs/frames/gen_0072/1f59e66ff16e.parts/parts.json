@@ -1,0 +1,52 @@
+{
+  "material": "cf_plate",
+  "material_label": "CNC-cut carbon-fiber laminate",
+  "arm_thickness_mm": 2.5,
+  "plate_thickness_mm": 1.3,
+  "clamp_holes_recut": true,
+  "parts": [
+    {
+      "file": "arm_front.stl",
+      "svg": "arm_front.svg",
+      "label": "front arm",
+      "qty": 2,
+      "length_mm": 158.8,
+      "width_mm": 31.3,
+      "note": "print one mirrored"
+    },
+    {
+      "file": "arm_rear.stl",
+      "svg": "arm_rear.svg",
+      "label": "rear arm",
+      "qty": 2,
+      "length_mm": 137.0,
+      "width_mm": 29.4,
+      "note": "print one mirrored"
+    },
+    {
+      "file": "plate_main.stl",
+      "svg": "plate_main.svg",
+      "label": "main plate",
+      "qty": 1,
+      "length_mm": 102.1,
+      "width_mm": 48.5
+    },
+    {
+      "file": "plate_mid.stl",
+      "svg": "plate_mid.svg",
+      "label": "mid plate",
+      "qty": 1,
+      "length_mm": 102.6,
+      "width_mm": 48.5
+    },
+    {
+      "file": "plate_top.stl",
+      "svg": "plate_top.svg",
+      "label": "top plate",
+      "qty": 1,
+      "length_mm": 152.7,
+      "width_mm": 42.5
+    }
+  ],
+  "assembled": "frame_assembled.stl"
+}

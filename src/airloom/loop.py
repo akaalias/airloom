@@ -118,13 +118,16 @@ class EvolutionLoop:
                 proposals = [Proposal(Genome.from_normalized(x), None, None,
                                       "cmaes", cmaes.sigma) for x in xs]
             elif gen == 0:
-                proposals = propose_gen0(ev.population, rng)
+                proposals = propose_gen0(ev.population, rng,
+                                         platform=self.cfg.platform,
+                                         repair=ev.ga.repair)
                 proposals = self._designer_round(gen, proposals)
             else:
                 prev = self._load_population(gen - 1)
                 pivot, far = self._patience_state(gen)
                 proposals = propose_next(prev, gen, ev.ga, rng,
-                                         pivot=pivot, far_parents=far)
+                                         pivot=pivot, far_parents=far,
+                                         platform=self.cfg.platform)
                 proposals = self._designer_round(gen, proposals, pivot=pivot)
 
             new_hashes = [p.genome.hash for p in proposals
@@ -263,8 +266,8 @@ class EvolutionLoop:
                 peak = max((r.peak_rotor_thrust_n for r in results
                             if math.isfinite(r.peak_rotor_thrust_n)), default=0.0)
                 ok, struct_reason, f1_hz = structural_check(
-                    self.root, bv["arm"], bv["total_mass"], peak,
-                    bv["material_gene"])
+                    self.root, p.genome.as_dict(), bv["arm"]["mass"],
+                    bv["total_mass"], peak)
                 if not ok:
                     valid = False
                     reason = struct_reason
@@ -433,6 +436,9 @@ class EvolutionLoop:
         glossary = self.cfg.root / "docs" / "glossary.html"
         if glossary.exists():  # keep the gallery's glossary link file://-local
             shutil.copyfile(glossary, self.results / "glossary.html")
+        lab_notebook = self.cfg.root / "docs" / "lab-notebook.html"
+        if lab_notebook.exists():  # same pattern: hand-authored, source in docs/
+            shutil.copyfile(lab_notebook, self.results / "lab-notebook.html")
         # the champion's flat templates + build spec, before the cards
         # that link to them render
         gallery_mod.export_champion_parts(self.store, self.run_id,

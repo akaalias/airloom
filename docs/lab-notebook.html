@@ -1,0 +1,520 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=1100">
+<title>Lab notebook &mdash; Airloom</title>
+<meta name="description" content="What we actually did, day by day, building Airloom &mdash; compiled from the project's session history and commit log.">
+<style>
+:root{
+  --paper:#fffff8; --ink:#111111; --muted:#6b6a60; --faint:#9b998c;
+  --rule:#d9d5c3; --rule-soft:#ece9da; --accent:#8c2f1f;
+  --serif:"Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:16px/1.55 var(--serif);font-feature-settings:"onum" 1,"liga" 1;
+  -webkit-font-smoothing:antialiased;overflow-x:auto;padding-bottom:40px}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--accent)}
+.mono{font-family:var(--mono);font-size:12px}
+
+#gh-ribbon{position:fixed;right:-56px;bottom:36px;z-index:80;
+  transform:rotate(-45deg);background:#111111;color:#fffff8;
+  font:600 11px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.12em;white-space:nowrap;
+  padding:7px 64px;text-decoration:none;border:none;
+  outline:1px solid rgba(255,255,248,.4);outline-offset:-4px;
+  box-shadow:0 1px 8px rgba(0,0,0,.3)}
+#gh-ribbon:hover{background:#8c2f1f;color:#fffff8}
+
+.topnav{display:flex;gap:28px;justify-content:center;align-items:baseline;
+  border-bottom:1px solid var(--rule);padding:18px 0 12px;margin:0}
+.topnav .brand{font:italic 14px var(--serif);color:var(--faint)}
+.topnav a{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  border-bottom:2px solid transparent;padding-bottom:3px}
+.topnav a:hover{color:var(--ink);border-bottom-color:transparent}
+.topnav a.on{color:var(--ink);border-bottom-color:var(--ink)}
+
+header.page-head{max-width:900px;margin:34px auto 4px;padding:0 16px;text-align:center}
+header.page-head .eyebrow{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:10px}
+header.page-head h1{font:400 34px/1.15 var(--serif);color:var(--ink);margin:10px 0 14px}
+header.page-head .page-sub{font:15.5px/1.6 var(--serif);color:var(--muted);
+  margin:0 auto;max-width:820px}
+.page-head .page-sub b{color:var(--ink)}
+.page-head .page-sub a{color:var(--accent)}
+
+.nb-wrap{max-width:980px;margin:0 auto;padding:16px 28px 110px}
+.nb-day{padding:38px 0 6px;border-top:1px solid var(--rule)}
+.nb-day:first-child{border-top:none;padding-top:14px}
+.nb-day h2{font:400 24px var(--serif);color:var(--ink);margin:0 0 2px}
+.nb-day .daysub{font:italic 14.5px var(--serif);color:var(--muted);margin:0 0 26px}
+.nb-row{display:grid;grid-template-columns:150px 1fr;column-gap:26px;
+  margin:0 0 24px;align-items:baseline}
+.nb-row .nb-time{min-width:0;font:600 11.5px var(--mono);color:var(--faint);
+  letter-spacing:.02em;text-align:right;white-space:normal}
+.nb-row .nb-text{min-width:0;font-size:16px;line-height:1.7;color:var(--ink)}
+.nb-row .nb-text code{font:12.5px var(--mono);background:var(--rule-soft);
+  padding:1px 4px;border-radius:2px}
+.nb-pull{display:grid;grid-template-columns:150px 1fr;column-gap:26px;margin:8px 0 30px}
+.nb-pull .nb-time{min-width:0;font:600 11px var(--mono);color:var(--ink);
+  text-align:right;padding-top:3px}
+.nb-pull .nb-quote{min-width:0;border-left:2px solid var(--ink);padding-left:22px}
+.nb-pull .nb-quote p{font:italic 20px/1.5 var(--serif);color:var(--ink);margin:0}
+.nb-text b,.nb-quote b{font-weight:600}
+.nb-inline-spark{display:inline-block;vertical-align:-3px;margin:0 2px 0 6px}
+.nb-source{font:13px var(--serif);color:var(--faint);font-style:italic;
+  text-align:center;margin:40px 28px 0;padding-top:18px;border-top:1px solid var(--rule)}
+@media (max-width:640px){
+  .nb-row,.nb-pull{grid-template-columns:1fr}
+  .nb-row .nb-time,.nb-pull .nb-time{text-align:left;padding-top:0}
+}
+
+.nb-timeline{max-width:980px;margin:26px auto 0;padding:0 28px}
+.nb-timeline svg{width:100%;height:auto;display:block}
+.nb-timeline a{border-bottom:none}
+.nb-timeline a:hover rect{stroke:var(--ink);stroke-width:1.5}
+.nb-timeline a:hover text{fill:var(--ink)}
+.nb-timeline-cap{max-width:820px;margin:8px auto 0;padding:0 28px;
+  font-size:12.5px;line-height:1.6;color:var(--faint);font-style:italic;text-align:center}
+</style></head><body>
+<nav class="topnav"><span class="brand">Airloom</span><a href="index.html">the result</a><a href="log.html">research log</a><a href="lineage.html">family tree</a><a href="glossary.html">glossary</a><a href="lab-notebook.html" class="on">lab notebook</a></nav>
+<header class="page-head">
+<div class="eyebrow">Alexis Rondeau &middot; an autonomous research project</div>
+<h1>Lab notebook</h1>
+<p class="page-sub">What we actually did, day by day &mdash; compiled from
+the project&rsquo;s session history and commit log, not just the experiment
+record. The <a href="log.html">research log</a> and <a
+href="lineage.html">family tree</a> pages show what the loop tried; this
+page is the surrounding story: the decisions, dead ends, and the odd bug
+that only shows up once, at 2am.</p></header>
+<div class="nb-timeline">
+<svg viewBox="0 0 940 108" role="img" aria-label="project timeline">
+<line x1="20" y1="78" x2="920" y2="78" stroke="var(--rule)" stroke-width="1"/>
+<a href="#d0712"><rect x="20.0" y="34" width="97.9" height="30" fill="#8f8c78" opacity="0.10" stroke="var(--rule)" stroke-width="1"/>
+<text x="68.9" y="25" text-anchor="middle" font-size="11.5" font-weight="600" letter-spacing=".02em" fill="var(--ink)" font-family="var(--serif)">12 Jul</text>
+<text x="68.9" y="53.0" text-anchor="middle" font-size="10.5" font-style="italic" fill="var(--muted)" font-family="var(--serif)">bootstrap<title>3 logged moments &mdash; click to jump</title></text>
+</a>
+<line x1="36.3" y1="64" x2="36.3" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="68.9" y1="64" x2="68.9" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="101.6" y1="64" x2="101.6" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<a href="#d0713"><rect x="131.9" y="34" width="195.8" height="30" fill="#8f8c78" opacity="0.055" stroke="var(--rule)" stroke-width="1"/>
+<text x="229.8" y="25" text-anchor="middle" font-size="11.5" font-weight="600" letter-spacing=".02em" fill="var(--ink)" font-family="var(--serif)">13 Jul</text>
+<text x="229.8" y="53.0" text-anchor="middle" font-size="10.5" font-style="italic" fill="var(--muted)" font-family="var(--serif)">real-geometry rebuild<title>8 logged moments &mdash; click to jump</title></text>
+</a>
+<line x1="144.1" y1="64" x2="144.1" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="168.6" y1="64" x2="168.6" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="193.1" y1="64" x2="193.1" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="217.5" y1="64" x2="217.5" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="242.0" y1="64" x2="242.0" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="266.5" y1="64" x2="266.5" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="290.9" y1="64" x2="290.9" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="315.4" y1="64" x2="315.4" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<a href="#d0714"><rect x="341.6" y="34" width="171.3" height="30" fill="#8f8c78" opacity="0.10" stroke="var(--rule)" stroke-width="1"/>
+<text x="427.3" y="25" text-anchor="middle" font-size="11.5" font-weight="600" letter-spacing=".02em" fill="var(--ink)" font-family="var(--serif)">14 Jul</text>
+<text x="427.3" y="53.0" text-anchor="middle" font-size="10.5" font-style="italic" fill="var(--muted)" font-family="var(--serif)">CFD calibration + rebrand<title>7 logged moments &mdash; click to jump</title></text>
+</a>
+<line x1="353.9" y1="64" x2="353.9" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="378.4" y1="64" x2="378.4" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="402.8" y1="64" x2="402.8" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="427.3" y1="64" x2="427.3" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="451.8" y1="64" x2="451.8" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="476.2" y1="64" x2="476.2" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="500.7" y1="64" x2="500.7" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<a href="#d0716"><rect x="526.9" y="34" width="171.3" height="30" fill="#8f8c78" opacity="0.055" stroke="var(--rule)" stroke-width="1"/>
+<text x="612.6" y="25" text-anchor="middle" font-size="11.5" font-weight="600" letter-spacing=".02em" fill="var(--ink)" font-family="var(--serif)">16–17 Jul</text>
+<text x="612.6" y="53.0" text-anchor="middle" font-size="10.5" font-style="italic" fill="var(--muted)" font-family="var(--serif)">landing overhaul + real CFD flow<title>7 logged moments &mdash; click to jump</title></text>
+</a>
+<line x1="539.2" y1="64" x2="539.2" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="563.6" y1="64" x2="563.6" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="588.1" y1="64" x2="588.1" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="612.6" y1="64" x2="612.6" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="637.1" y1="64" x2="637.1" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="661.5" y1="64" x2="661.5" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="686.0" y1="64" x2="686.0" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<text x="705.2" y="53.0" text-anchor="middle" font-size="13" fill="var(--faint)" font-family="var(--serif)">&#8943;<title>17–23 July: no commits &mdash; the project sat idle for a week</title></text>
+<a href="#d0724"><rect x="738.2" y="34" width="195.8" height="30" fill="#8c2f1f" opacity="0.09" stroke="var(--rule)" stroke-width="1"/>
+<text x="836.1" y="25" text-anchor="middle" font-size="11.5" font-weight="600" letter-spacing=".02em" fill="var(--ink)" font-family="var(--serif)">24 Jul</text>
+<text x="836.1" y="53.0" text-anchor="middle" font-size="10.5" font-style="italic" fill="var(--muted)" font-family="var(--serif)">search-quality fixes<title>8 logged moments &mdash; click to jump</title></text>
+</a>
+<line x1="750.5" y1="64" x2="750.5" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="774.9" y1="64" x2="774.9" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="799.4" y1="64" x2="799.4" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="823.9" y1="64" x2="823.9" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="848.4" y1="64" x2="848.4" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="872.8" y1="64" x2="872.8" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="897.3" y1="64" x2="897.3" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+<line x1="921.8" y1="64" x2="921.8" y2="72" stroke="var(--faint)" stroke-width="1.3"/>
+</svg>
+</div>
+<p class="nb-timeline-cap">Each band is one working stretch, sized by how much happened in it, not by literal duration &mdash; the &#8943; marks a real idle week. Ticks are logged moments below; click a band to jump there.</p>
+<div class="nb-wrap">
+
+<section class="nb-day" id="d0712">
+<h2>12 July 2026</h2>
+<p class="daysub">Bootstrap &mdash; from nothing to a working Phase A pipeline in about ninety minutes</p>
+
+<div class="nb-row"><span class="nb-time">20:10&ndash;21:21</span>
+<p class="nb-text"><b>The project (then &ldquo;framevo&rdquo;) goes from
+empty repo to a working research loop in one sitting.</b> A DXF-calibrated
+DroneAid 7-inch kit platform, a 14-gene genome including print material, a
+six-scenario portfolio with seeded Dryden turbulence, a GA with full
+lineage tracking, SQLite persistence with resume, and a Tufte-styled gallery
+with WebGL viewers &mdash; committed together as &ldquo;Phase A
+complete,&rdquo; co-authored by Claude Fable 5.</p></div>
+
+<div class="nb-row"><span class="nb-time">22:01</span>
+<p class="nb-text"><b>The patience/pivot mechanism is designed before the
+project has even run long enough to need it.</b> Six generations without a
+&ge;0.5% best-so-far improvement triggers a pivot: half the non-elite slots
+get bred from a tournament winner crossed with the most genetically distant
+still-decent candidate in the run&rsquo;s history, mutation boosted,
+escalating to fully random far parents if the plateau survives another
+window. The threshold itself is grounded in run data gathered that
+evening: healthy improvement gaps run 1&ndash;4 generations; real plateaus
+coincide with population diversity collapsing below about 0.1.</p></div>
+
+<div class="nb-row"><span class="nb-time">22:37&ndash;22:56</span>
+<p class="nb-text"><b>The gallery is hardened for runs longer than a demo,
+then the day closes on a deliberate checkpoint.</b> A density-adaptive
+progress chart and viewer-embedding caps go in so the report stays usable
+past a few hundred candidates. The last commit of the night is explicit
+about what&rsquo;s coming: &ldquo;parametric-primitive era complete before
+real-parts rebuild&rdquo; &mdash; the genome so far deforms abstract
+primitive shapes, not a real drone. That rebuild is tomorrow&rsquo;s
+job.</p></div>
+</section>
+
+<section class="nb-day" id="d0713">
+<h2>13 July 2026</h2>
+<p class="daysub">The real-geometry rebuild &mdash; and the day the designer and narrator roles are born</p>
+
+<div class="nb-row"><span class="nb-time">10:10</span>
+<p class="nb-text"><b>The genome stops deforming shapes and starts morphing
+a real drone.</b> It now bends the official TBS Source One V6 DXF plate
+outlines &mdash; real bolt holes, real cutouts &mdash; instead of abstract
+primitives. The first live headless-Claude &ldquo;designer&rdquo; round
+fires at generation 6 of the validating run, reasoning in plain
+aerodynamic language: one proposal, a &ldquo;low-disk-loading cruiser,&rdquo;
+bets that long, thick-section, waisted arms will cut induced power in storm
+and cold-headwind at the cost of stiffness margin.</p></div>
+
+<div class="nb-pull"><span class="nb-time">~13:00</span>
+<div class="nb-quote"><p><b>The new geometry immediately exposes a coupling
+the old primitives never had &mdash; and the narrator finds it before any
+human reads the code.</b> Early candidates fail on &ldquo;arm tongue bolts
+miss the main plate&rdquo; and &ldquo;arm root tongues collide,&rdquo; and
+one lab-notebook note is blunt about a whole failed lineage: crossing plate
+size and arm length independently is &ldquo;geometrically broken at the
+arm-plate joint regardless of material.&rdquo;</p></div></div>
+
+<div class="nb-row"><span class="nb-time">~15:00</span>
+<p class="nb-text"><b>A screenshot-driven UI session turns up a real bug in
+one line.</b> Iterating the 3D overlay&rsquo;s default camera purely from
+before/after screenshots, a detail-card metric table renders with invisible
+text on the inverted dark band &mdash; no CSS rule explains it. The
+generated HTML was missing <code>&lt;!doctype html&gt;</code>: Chrome&rsquo;s
+quirks-mode stylesheet silently blocks color inheritance into tables. One
+line fixed it.</p></div>
+
+<div class="nb-row"><span class="nb-time">15:13&ndash;16:28</span>
+<p class="nb-text"><b>A fast polish loop, verified live in the browser every
+round.</b> Batches of screenshots &mdash; invalid-candidate overlays,
+inverted champion cards, pan and view-preset buttons &mdash; get fixed
+against a temporary local server (file:// can&rsquo;t be scripted). One
+concrete miss: the new &ldquo;front&rdquo; view preset first showed the
+<i>tail</i>, not the nose &mdash; the yaw-to-view mapping had to be flipped
+before &ldquo;front&rdquo; actually faced the FPV camera forward.</p></div>
+
+<div class="nb-row"><span class="nb-time">16:35&ndash;16:51</span>
+<p class="nb-text"><b>A gut-check on the shapes themselves turns up the
+real gap of the day.</b> Some plate sections look &ldquo;pointy,
+fragile-looking&rdquo; in the viewer; traced to the interactive blob
+decimating the whole deck to a 3200-face budget purely for display &mdash; a
+full-resolution render of the same plate is clean. While chasing that,
+Claude finds the thing that actually matters: arms had a structural check
+by this point, but <b>plates had none at all.</b></p></div>
+
+<div class="nb-row"><span class="nb-time">~15:10</span>
+<p class="nb-text"><b>&ldquo;We seem to again have lost 13 notes this
+round.&rdquo;</b> The narrator&rsquo;s free-text JSON parsing keeps
+salvaging only partial results. Both narrator and designer move onto the
+<code>claude -p</code> CLI&rsquo;s native <code>--json-schema</code>
+structured output, ending the malformed-JSON note losses for good &mdash;
+and picking up exact-model capture as a side effect.</p></div>
+
+<div class="nb-row"><span class="nb-time">17:54&ndash;19:52</span>
+<p class="nb-text"><b>Work pauses mid-task on a Claude Code session
+limit,</b> right in the middle of building the plate hard-constraints Alexis
+had just asked for. It resumes about two hours later on a bare
+&ldquo;continue&rdquo; &mdash; the hard-constraints commit lands at 20:00,
+right on schedule after the reset.</p></div>
+
+<div class="nb-row"><span class="nb-time">19:52&ndash;20:00</span>
+<p class="nb-text"><b>Hard constraints land, specified exactly as the
+morning&rsquo;s investigation had flagged them:</b> plate web width
+&ge;80% of stock, checked on the morphed outlines the same way arm
+tongue-bolt placement already was. A 300-genome random sample shows 30% of
+the raw gene space is now correctly rejected for web collapse; by 21:42 the
+check is already catching a live immigrant candidate: &ldquo;plate web too
+thin (plate_main 1.51&nbsp;mm, stock 1.90&nbsp;mm).&rdquo;</p></div>
+</section>
+
+<section class="nb-day" id="d0714">
+<h2>14 July 2026</h2>
+<p class="daysub">CFD calibration finds the drag model was wrong by 2&times; &mdash; and the project becomes Airloom</p>
+
+<div class="nb-row"><span class="nb-time">00:02&ndash;00:46</span>
+<p class="nb-text"><b>The day opens mid-flight.</b> A 30-generation run is
+already evolving under the previous night&rsquo;s new battery-sag physics,
+seeded with a frog-inspiration file &mdash; the designer proposes an
+asymmetric &ldquo;mid-leap&rdquo; sweep and &ldquo;webbed-foot&rdquo;
+wide-thin arms once the search plateaus. In parallel, 12 OpenFOAM
+drag-calibration cases are queued and <code>cfd-calibrate --jobs
+N</code> is added so they solve concurrently &mdash; turning a projected
+half-day serial batch into an overnight job.</p></div>
+
+<div class="nb-row"><span class="nb-time">00:34</span>
+<p class="nb-text"><b>A real scaling problem gets fixed before it becomes a
+blocker.</b> <code>index.html</code> had grown to 66&nbsp;MB because every
+candidate&rsquo;s 3D mesh was inlined directly into the page. Splitting
+meshes into lazy-loaded <code>.mesh.js</code> blobs drops it to
+2.6&nbsp;MB &mdash; removing an embed budget that would have made a
+100-generation run too big to push to GitHub.</p></div>
+
+<div class="nb-row"><span class="nb-time">00:57</span>
+<p class="nb-text"><b>The project is renamed &mdash; carefully.</b>
+&ldquo;framevo&rdquo; becomes &ldquo;Airloom&rdquo; (heirloom + air) at the
+display level first: gallery, lineage, glossary, README. The package and
+CLI stay <code>framevo</code> underneath for now, a deliberately staged
+rename to de-risk it before touching code.</p></div>
+
+<div class="nb-pull"><span class="nb-time">01:43</span>
+<div class="nb-quote"><p><b>The overnight calibration lands the biggest
+surprise of the project so far: the handbook drag model was wrong by
+roughly 2&times; at cruise tilt.</b> Assembly interference turns out to be
+NEGATIVE &mdash; wake shielding and silhouette double-counting, &minus;6% /
+&minus;27% / &minus;37% at 0&deg;/20&deg;/40&deg; &mdash; and a contrasting
+genome comes back with nearly identical ratios, meaning the error is
+systematic, not gene-dependent. Applying the correction flips the
+robustness verdict from FRAGILE to STABLE and drops the champion&rsquo;s own
+score from 8.13 to 6.21&nbsp;Wh/km overnight, purely from fixing the
+model.</p></div></div>
+
+<div class="nb-row"><span class="nb-time">01:44</span>
+<p class="nb-text"><b>A near miss right behind it.</b> The calibration
+commit had shipped its docs and tests but not <code>aero.py</code> itself
+&mdash; a failed <code>git add</code> on an ignored path had silently
+aborted staging mid-command, and a red test slipped past. Fixed a minute
+later, along with a note that under the corrected (lower) drag, the
+baseline essentially stops saturating in the storm scenario at all &mdash;
+expected, not a regression.</p></div>
+
+<div class="nb-row"><span class="nb-time">01:50&ndash;01:55</span>
+<p class="nb-text"><b>The gallery&rsquo;s benchmark lines get re-derived
+under the new physics,</b> and the rename finishes in one pass:
+<code>src/framevo</code> &rarr; <code>src/airloom</code>, 85 tests green,
+the GitHub repo moved to <code>akaalias/airloom</code>. A fresh run under
+the corrected model opens at generation 0 with 6.886&nbsp;Wh/km &mdash;
+already dramatically below the old model&rsquo;s 8.126 plateau.</p></div>
+
+<div class="nb-row"><span class="nb-time">02:52</span>
+<p class="nb-text"><b>A flight-replay tab ships, and one idea is
+deliberately cut.</b> Champion flights across all six scenarios get
+re-simulated (fixed gust seeds give exact replays) into a 3D tab with a
+live HUD &mdash; speed, tilt, RPM, sagging pack voltage, a THRUST LIMITED
+flag. A weather-visualization overlay is prototyped alongside it and cut
+before shipping; the HUD alone carries the story. The real version of that
+idea would resurface two days later.</p></div>
+</section>
+
+<section class="nb-day" id="d0716">
+<h2>16 July 2026</h2>
+<p class="daysub">The landing page leads with the result; a rejected decorative sketch becomes real CFD, by that evening</p>
+
+<div class="nb-row"><span class="nb-time">10:32&ndash;14:00</span>
+<p class="nb-text"><b>A small UX request quietly sets up the rest of the
+week.</b> The single overlay button splits into &ldquo;evolution&rdquo; and
+a new &ldquo;performance&rdquo; view; baseline gets defined precisely as the
+first winning candidate of generation 0; every overlay view becomes a
+shareable deep link. Lazy-loading switches from native
+<code>loading=lazy</code> to an IntersectionObserver, specifically because
+Chromium prefetches lazy images in background tabs &mdash; which would have
+silently defeated lazy-loading on every shared link.</p></div>
+
+<div class="nb-pull"><span class="nb-time">12:41</span>
+<div class="nb-quote"><p><b>&ldquo;The result is really the most interesting
+part for anyone not as obsessed about the process as I am.&rdquo;</b> That
+single request rebuilds the landing page around the champion and its score
+first, the full research log second &mdash; and cascades through the rest
+of the day: a shared viewer component library, live 3D candidate cards, an
+evolution-replay section, and a family tree later flipped so the newest
+generation renders on top, champion leading.</p></div></div>
+
+<div class="nb-pull"><span class="nb-time">15:05&ndash;15:56</span>
+<div class="nb-quote"><p><b>The sharpest dead end of the week, and the best
+recovery.</b> Asked to revive &ldquo;wind gust&rdquo; lines on the weather
+views, two decorative attempts get rejected outright &mdash; &ldquo;these
+are super duper weird&hellip; not like these random shitty strokes drawn on
+the background&rdquo; &mdash; before Alexis asks directly whether the lines
+are simulating real airflow. They aren&rsquo;t: only the free-stream
+direction was real. His answer is unambiguous: &ldquo;we of course want
+real CFD streamlines.&rdquo; <code>airloom cfd-flow</code> gets built the
+same day, reusing the calibration pipeline to solve real RANS flow over the
+champion&rsquo;s assembly. First real streamlines render around
+15:56&nbsp;UTC.</p></div></div>
+
+<div class="nb-row"><span class="nb-time">17:53</span>
+<p class="nb-text"><b>A real production bug follows.</b> The crosswind
+solve silently diverges around iteration 163 &mdash; pressure residuals
+never converge, continuity blows up, the container ends in a floating-point
+crash &mdash; and hangs the whole solve queue for roughly 1&frac34; hours
+before anyone notices. Fixed by hardening every flow case with a
+<code>potentialFoam</code> initialization pass and gentler relaxation
+factors.</p></div>
+
+<div class="nb-row"><span class="nb-time">18:30</span>
+<p class="nb-text"><b>A second, more conceptual bug: the atmosphere itself
+looked wrong.</b> Posing the flow at the craft&rsquo;s instantaneous replay
+attitude made the whole wind field tilt with it &mdash; &ldquo;locked
+together unrealistically.&rdquo; A first fix anchors the flow to the mean
+attitude instead (an acknowledged approximation); it&rsquo;s superseded the
+same evening by solving several angles of attack around the mean and
+cross-fading live by the telemetry&rsquo;s actual angle each frame, so the
+near field genuinely re-wraps as the craft pitches.</p></div>
+
+<div class="nb-row"><span class="nb-time">19:38&ndash;20:21</span>
+<p class="nb-text"><b>A second track running in parallel: can this actually
+be built?</b> After confirming the champion&rsquo;s 70&nbsp;g frame mass and
+rendering printable SVG templates (&ldquo;LOVE IT! They look
+fantastic.&rdquo;), Alexis asks the load-bearing question: &ldquo;our
+design&rsquo;s arm holes match the plate holes? Like this could really be
+printed and assembled, correct?&rdquo; Not yet &mdash; the bolt holes were
+still the stock pattern, unaware the sweep genes had rotated the arms off
+it. The fix re-cuts the arm-clamp holes into the actual placed-tongue
+positions, verified to 0.00&nbsp;mm on all eight main-plate bolts. The
+validity checks are deliberately left seeing the old stock pattern, since
+feeding them the re-cut plates would have retroactively flipped 178 of the
+run&rsquo;s 562 scored candidates&rsquo; validity.</p></div>
+
+<div class="nb-row"><span class="nb-time">19:13&ndash;23:30</span>
+<p class="nb-text"><b>The day closes on a share card, rejected and rebuilt,
+and a completed feature.</b> An early share-image attempt is rejected hard
+for not matching the project&rsquo;s own Tufte visual language, before
+converging on the final version: 84 real candidate silhouettes on bare
+paper, ink-only markers, regenerated fresh every run. By late evening, all
+six weather scenarios have their own quasi-steady CFD sweep &mdash; a
+feature that started as a rejected decorative sketch nine hours
+earlier.<svg class="nb-inline-spark" width="64" height="15" viewBox="0 0 64 15"><polyline points="2.0,3.0 17.5,9.0 33.0,5.0 48.5,11.0 62.0,2.0" fill="none" stroke="var(--ink)" stroke-width="1.1"/><circle cx="2.0" cy="3.0" r="1.6" fill="var(--ink)"/><circle cx="17.5" cy="9.0" r="1.6" fill="var(--faint)"/><circle cx="33.0" cy="5.0" r="1.6" fill="var(--faint)"/><circle cx="48.5" cy="11.0" r="1.6" fill="var(--faint)"/><circle cx="62.0" cy="2.0" r="1.6" fill="var(--ink)"/></svg></p></div>
+</section>
+
+<section class="nb-day" id="d0724">
+<h2>24 July 2026</h2>
+<p class="daysub">The 40-generation plateau gets a real diagnosis &mdash; twice in one day</p>
+
+<div class="nb-row"><span class="nb-time">morning</span>
+<p class="nb-text"><b>A finished 40-generation run reads as a plateau on
+the progress chart:</b> 12% better than the baseline target, but flat for
+most of the back half. Rather than guess, the question gets answered
+against the actual database: <code>run_20260714_015948</code>, 562
+candidates, 321 valid.</p></div>
+
+<div class="nb-pull"><span class="nb-time">midday</span>
+<div class="nb-quote"><p><b>Fitness turns out to be about 98% explained by
+frame mass alone.</b> All six weather scenarios correlate above 0.99 with
+each other and with <code>frame_mass</code>; storm, which is always the
+worst-case scenario, carries roughly two-thirds of the fitness weight under
+the mean-plus-worst aggregation &mdash; so the elaborate six-scenario
+portfolio was behaving like a nearly one-dimensional &ldquo;minimize
+mass&rdquo; search. Separately, the champions turn out to be pinned exactly
+at the genome&rsquo;s own artificial floor on four genes, not at the real
+structural limit &mdash; the box, not the physics, was stopping the
+search.</p></div></div>
+
+<div class="nb-row"><span class="nb-time">midday</span>
+<p class="nb-text"><b>A second finding: 43% of every evaluation in the run
+was invalid,</b> wildly unevenly &mdash; immigrant candidates 90%,
+generation-0 seeds 73%, pivot breeding 60%, plain crossover 37%, the Claude
+designer only 10%. Almost all of it was pure geometry (tongue collisions,
+rotor overlaps, plate-too-thin-for-material) that doesn&rsquo;t need a
+flight simulation to catch &mdash; and the designer&rsquo;s own low rate
+turns out to be because it already runs every proposal through that same
+cheap geometry check before committing to it.</p></div>
+
+<div class="nb-row"><span class="nb-time">afternoon</span>
+<p class="nb-text"><b>Four changes land together, tested before touching
+the real run:</b> the four floor-pinned gene bounds get widened; a
+repair/projection pass gives the GA&rsquo;s own crossover, mutation and
+pivot operators the same cheap pre-screen the designer already had,
+bisecting an infeasible child back toward its parent instead of wasting the
+slot; blind immigrant sampling is replaced with resampling against that
+screen; and the pivot mechanism&rsquo;s hypermutation is turned down from
+3.0&times; to 1.6&times;, after the data shows pivot children had a
+<i>worse</i> invalid rate (60%) than plain crossover (37%) and never beat
+its best result.</p></div>
+
+<div class="nb-row"><span class="nb-time">afternoon</span>
+<p class="nb-text"><b>A real near-miss during testing, caught and fully
+reverted.</b> A first sandboxed smoke test overwrites the project&rsquo;s
+real published <code>docs/</code> &mdash; the publish step mirrors
+<code>results/</code> into <code>docs/</code> unconditionally, regardless
+of a <code>--results</code> override, and only a full <code>--root</code>
+sandbox actually isolates it. Caught within the same exchange, fully
+restored via <code>git checkout</code> and <code>git clean</code>; the real
+run database (562 candidates) was never touched.</p></div>
+
+<div class="nb-row"><span class="nb-time">afternoon</span>
+<p class="nb-text"><b>The fix is verified against real physics before it
+touches the live run.</b> A properly sandboxed end-to-end test shows
+crossover&rsquo;s invalid rate drop from 37% to 0%, and every remaining
+failure across every operator is now a structural (flight-load) failure
+&mdash; the entire class of geometry/packing failures, 93% of the
+run&rsquo;s historical invalid pool, is gone. The real run turns out to be
+fully resume-compatible (the genome-spec check only compares gene names,
+not bounds), so it resumes at generation 40 with its full 39-generation
+history intact rather than starting over. Generations 40&ndash;44 land at
+86% valid against a historical average of 57%.</p></div>
+
+<div class="nb-pull"><span class="nb-time">evening</span>
+<div class="nb-quote"><p><b>Even with the fix landed, the chart still shows
+no quantum leaps &mdash; and the designer&rsquo;s wildcard proposals keep
+scoring worse than the current best.</b> The cause is a second, independent
+bug: the plateau detector compares each generation to a running best that
+itself creeps down every generation, so real, compounding progress
+(6.051&rarr;5.992 over 13 generations, about 1%) never crosses its 0.5%
+single-step bar &mdash; every designer round from generation 43 on fires as
+a &ldquo;pivot&rdquo; round, and the pivot prompt explicitly forbids
+refining the elites. Claude isn&rsquo;t reasoning badly; it&rsquo;s being
+told, every single generation, not to do the one thing that&rsquo;s
+actually working &mdash; and its proposals dutifully go test PLA+ and ASA,
+materials the run&rsquo;s own history already shows lose on
+mass.</p></div></div>
+
+<div class="nb-row"><span class="nb-time">evening</span>
+<p class="nb-text"><b>Both fixes land, checked against the real trajectory
+rather than guessed.</b> <code>min_rel_improvement</code> drops from 0.5%
+to 0.15% &mdash; replayed against the run&rsquo;s actual history, that turns
+a 13-generation stall reading (fully escalated, random-parent pivot) into a
+3-generation one (a mild far-parent pivot, not full abandonment). The pivot
+prompt itself is softened: still mostly exploratory, but now explicitly
+permitted to spend one of its proposals pushing the current winning family
+further into newly-widened headroom instead of treating that headroom as
+another reason to abandon it. The loop restarts at generation 57 of a new
+80-generation target, running now.</p></div>
+</section>
+
+<p class="nb-source">Compiled from git history and Claude Code session
+transcripts, 12&ndash;24 July 2026 &mdash; condensed for readability. The
+project&rsquo;s own headless-Claude designer and narrator rounds are the
+loop&rsquo;s research record, not conversations, and aren&rsquo;t counted
+here as sessions. See the <a href="log.html">research log</a> for the
+complete, machine-generated experiment record.</p>
+</div>
+<footer style="margin:48px auto 24px;max-width:960px;color:#9b998c;
+font-size:12.5px;line-height:1.5;border-top:1px solid #e6e4da;padding-top:10px">
+Free software, GPLv3 &mdash;
+<a href="https://github.com/akaalias/airloom" style="color:inherit">source repository</a>.
+</footer>
+<a id="gh-ribbon" href="https://github.com/akaalias/airloom"
+target="_blank" rel="noopener">view on GitHub</a></body></html>

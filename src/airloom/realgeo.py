@@ -211,6 +211,49 @@ def morph_arm(arm: ArmOutline, length_scale: float, width_scale: float,
                    motor_xy=(arm.motor_xy[0] + shift, arm.motor_xy[1]))
 
 
+def _densify(pts: np.ndarray, step: float = 0.7) -> np.ndarray:
+    """Polyline -> evenly-resampled points, ~`step` mm apart. Shared by the
+    width-sampling helpers below (shaft_min_width, add_lightening_holes)."""
+    out = []
+    for a, b in zip(pts, np.roll(pts, -1, axis=0)):
+        n = max(int(np.linalg.norm(b - a) / step), 1)
+        out += [a + (b - a) * t for t in np.linspace(0, 1, n, endpoint=False)]
+    return np.array(out)
+
+
+def _width_at_x(dense: np.ndarray, x: float, band: float = 1.0) -> float:
+    ys = dense[np.abs(dense[:, 0] - x) < band][:, 1]
+    return float(ys.max() - ys.min()) if len(ys) > 1 else 0.0
+
+
+def add_lightening_holes(arm: ArmOutline, cutout_scale: float,
+                         n: int = 3) -> ArmOutline:
+    """Add `n` circular lightening holes evenly spaced along the shaft
+    centerline (tongue_end -> mount_start, avoiding the rigid tongue and
+    motor-mount zones), radius scaled off the LOCAL half-width so a hole
+    never approaches the full section width. `cutout_scale` below ~0.01 is
+    a no-op -- exact baseline preservation, no stray zero-radius holes.
+
+    The structural effect of these holes (net-width reduction, stress
+    concentration) needs no separate handling here: analyze_arm already
+    reduces net width from ANY entry in `arm.holes`."""
+    if cutout_scale < 0.01:
+        return arm
+    t0, m0 = arm.tongue_end, arm.mount_start
+    shaft = m0 - t0
+    if shaft <= 0:
+        return arm
+    dense = _densify(arm.shell)
+    new_holes = []
+    for frac in np.linspace(0.15, 0.85, n):
+        x = t0 + shaft * frac
+        hw = _width_at_x(dense, x) / 2.0
+        if hw <= 0.0:
+            continue
+        new_holes.append((float(x), 0.0, float(cutout_scale * hw)))
+    return replace(arm, holes=arm.holes + tuple(new_holes))
+
+
 def morph_plate(plate: Outline, sx: float, sy: float,
                 rigid_holes_r_min: float = 0.0) -> Outline:
     """Scale a deck plate; the 30.5 mm stack pattern (the four r<=1.6 holes
@@ -256,6 +299,77 @@ def extrude(outline: Outline, thickness_m: float,
         mesh.merge_vertices()
         trimesh.repair.fill_holes(mesh)
     return mesh
+
+
+def try_union(parts: list[trimesh.Trimesh]) -> trimesh.Trimesh:
+    try:
+        return trimesh.boolean.union(parts, engine="manifold")
+    except Exception:
+        return trimesh.util.concatenate(parts)
+
+
+def _clip_outline_x(outline: Outline, x0: float, x1: float) -> Outline | None:
+    """`outline`'s shell clipped to local-x in [x0, x1]; None if the clip
+    misses the shell entirely (a slab past the outline's real extent)."""
+    from shapely.geometry import box
+    from shapely.geometry import Polygon as ShPoly
+
+    poly = ShPoly(outline.shell)
+    if not poly.is_valid:
+        poly = poly.buffer(0)
+    clipped = poly.intersection(box(x0, -1e6, x1, 1e6))
+    if clipped.is_empty:
+        return None
+    if clipped.geom_type == "MultiPolygon":
+        clipped = max(clipped.geoms, key=lambda g: g.area)
+    if clipped.area < 1e-6:
+        return None
+    shell = np.array(clipped.exterior.coords)[:-1]
+    return replace(outline, shell=shell)
+
+
+def extrude_tapered(outline: Outline, root_thickness_m: float,
+                    tip_thickness_m: float, tongue_end_mm: float,
+                    mount_start_mm: float, n_slabs: int = 14,
+                    drop_small_cutouts: bool = False) -> trimesh.Trimesh:
+    """Like extrude(), but the top face follows a bump profile: full
+    root_thickness_m at/before tongue_end_mm and at/after mount_start_mm,
+    dipping to tip_thickness_m at mid-shaft (see genome.py's
+    tip_thickness_scale). Bottom face stays flat at z=0, matching extrude().
+
+    Built as a stack of x-sliced sub-extrusions unioned together, each just
+    a thickness-only call into extrude() -- reuses its already-correct
+    hole/cutout boolean logic per slab rather than a new loft/mesh path."""
+    if abs(tip_thickness_m - root_thickness_m) < 1e-9:
+        return extrude(outline, root_thickness_m, drop_small_cutouts)
+
+    x_lo = float(outline.shell[:, 0].min())
+    x_hi = float(outline.shell[:, 0].max())
+    shaft = mount_start_mm - tongue_end_mm
+
+    def thickness_at(x_mid: float) -> float:
+        s = min(max((x_mid - tongue_end_mm) / shaft, 0.0), 1.0) if shaft > 0 else 0.0
+        bump = math.sin(math.pi * s) ** 2
+        return root_thickness_m - (root_thickness_m - tip_thickness_m) * bump
+
+    bounds = sorted({x_lo, min(max(tongue_end_mm, x_lo), x_hi),
+                     *np.linspace(min(max(tongue_end_mm, x_lo), x_hi),
+                                 min(max(mount_start_mm, x_lo), x_hi),
+                                 n_slabs + 1),
+                     min(max(mount_start_mm, x_lo), x_hi), x_hi})
+
+    slabs = []
+    for x0, x1 in zip(bounds, bounds[1:]):
+        if x1 - x0 < 1e-6:
+            continue
+        sub = _clip_outline_x(outline, x0, x1)
+        if sub is None:
+            continue
+        t = thickness_at(0.5 * (x0 + x1))
+        slabs.append(extrude(sub, t, drop_small_cutouts))
+    if not slabs:
+        return extrude(outline, root_thickness_m, drop_small_cutouts)
+    return try_union(slabs)
 
 
 def mirror_y(outline: Outline) -> Outline:

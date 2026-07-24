@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .config import GAParams
+from .config import GAParams, Platform, Repair
 from .genome import LOWER, N_GENES, RANGE, Genome
 
 
@@ -36,11 +36,17 @@ def generation_rng(base_seed: int, generation: int) -> np.random.Generator:
     return np.random.default_rng(base_seed + 1000 * generation)
 
 
-def propose_gen0(population: int, rng: np.random.Generator) -> list[Proposal]:
-    """Seeded generation 0: the conventional X-frame baseline plus randoms."""
+def propose_gen0(population: int, rng: np.random.Generator,
+                 platform: Platform | None = None,
+                 repair: Repair | None = None) -> list[Proposal]:
+    """Seeded generation 0: the conventional X-frame baseline plus randoms.
+
+    `platform`/`repair`: if given, random seeds are resampled against the
+    cheap geometry pre-screen (see `_propose_immigrant`) instead of a
+    single blind draw -- gen-0 randoms had a 73% invalid rate in practice."""
     out = [Proposal(Genome.baseline(), None, None, "seed", None)]
     while len(out) < population:
-        out.append(Proposal(Genome.random(rng), None, None, "seed", None))
+        out.append(_propose_immigrant(rng, platform, repair, operator="seed"))
     return out
 
 
@@ -75,6 +81,71 @@ def mutation_sigma(params: GAParams, generation: int) -> float:
     """Adaptive (decaying) mutation sigma as a fraction of each gene range."""
     return max(params.mutation_sigma0 * params.mutation_sigma_decay ** generation,
                params.mutation_sigma_min)
+
+
+# ---------------------------------------------------------------------------
+# Repair: hard constraints are pure geometry (no simulation, see
+# frame_gen.build_frame(want_mesh=False)), so they are cheap to check BEFORE
+# spending a population slot on a design they will reject anyway. This is
+# the same pre-screen the Claude designer round already uses
+# (designer.py:_prescreen, ~10% invalid there vs. 37-90% for the blind
+# mechanical operators in run_20260714_015948) -- giving the rest of the
+# operators the same trick.
+# ---------------------------------------------------------------------------
+def _is_feasible(values: np.ndarray, platform: Platform | None) -> bool:
+    if platform is None:
+        return True
+    from .frame_gen import build_frame
+    try:
+        return build_frame(Genome.from_array(values), platform,
+                           want_mesh=False).valid
+    except Exception:
+        return False
+
+
+def _repair(child: np.ndarray, reference: np.ndarray, platform: Platform | None,
+           max_steps: int) -> np.ndarray:
+    """If `child` fails the cheap geometry pre-screen, bisect the segment
+    back toward a known-feasible `reference` (its selected parent) until it
+    passes, or give up after `max_steps` and fall all the way back to
+    `reference`. A partial step toward the parent is still a novel,
+    evaluable candidate -- unlike the discarded-slot status quo, no search
+    budget is spent on a design geometry was always going to reject."""
+    if platform is None or max_steps <= 0 or _is_feasible(child, platform):
+        return child
+    lo, hi = 0.0, 1.0  # blend fraction toward `reference`; hi stays feasible
+    for _ in range(max_steps):
+        mid = 0.5 * (lo + hi)
+        blend = child + (reference - child) * mid
+        if _is_feasible(blend, platform):
+            hi = mid
+        else:
+            lo = mid
+    return child + (reference - child) * hi
+
+
+def _propose_immigrant(rng: np.random.Generator, platform: Platform | None,
+                       repair: Repair | None, operator: str = "immigrant"
+                       ) -> Proposal:
+    """A uniform-random draw is ~90% infeasible in this tightly-constrained
+    genome (run_20260714_015948 post-mortem). Resample within the box
+    against the cheap pre-screen instead of accepting the first draw; if the
+    box won't yield a feasible point in time, fall back to an exploratory
+    perturbation of the known-good baseline (still novel, but not a near-
+    certain waste)."""
+    if platform is not None and repair is not None and repair.enabled:
+        for _ in range(repair.immigrant_max_resamples):
+            g = Genome.random(rng)
+            if _is_feasible(g.array, platform):
+                return Proposal(g, None, None, operator, None)
+        base = Genome.baseline().array
+        delta = rng.standard_normal(N_GENES) * 0.25 * RANGE
+        perturbed = np.clip(base + delta, LOWER, LOWER + RANGE)
+        # baseline is always feasible, so this is guaranteed to terminate
+        # feasible (worst case: falls all the way back to baseline itself)
+        repaired = _repair(perturbed, base, platform, repair.max_bisect_steps)
+        return Proposal(Genome.from_array(repaired), None, None, operator, None)
+    return Proposal(Genome.random(rng), None, None, operator, None)
 
 
 # ---------------------------------------------------------------------------
@@ -124,19 +195,28 @@ def select_far_parents(history: list[tuple[str, Genome, float]],
 def propose_next(prev: list[tuple[str, Genome, float]], generation: int,
                  params: GAParams, rng: np.random.Generator,
                  pivot: int = 0,
-                 far_parents: list[tuple[str, Genome]] | None = None
+                 far_parents: list[tuple[str, Genome]] | None = None,
+                 platform: Platform | None = None
                  ) -> list[Proposal]:
     """prev: (hash, genome, fitness) of the previous generation's population.
 
     pivot > 0 turns this into a pivot generation: `pivot_fraction` of the
     non-elite slots are bred by crossing a tournament winner with a FAR
     parent (rank 1: a distant-but-decent candidate from `far_parents`;
-    rank >= 2: a fully random genome), with mutation sigma boosted."""
+    rank >= 2: a fully random genome), with mutation sigma boosted.
+
+    `platform`: if given (and `params.repair.enabled`), every bred child is
+    passed through the cheap geometry pre-screen (see `_repair`) and
+    immigrants are resampled instead of drawn blind (see
+    `_propose_immigrant`). Omit to reproduce the pre-repair GA exactly
+    (existing tests rely on this)."""
     population = len(prev)
     ranked = sorted(prev, key=lambda t: t[2])
     sigma = mutation_sigma(params, generation)
     pt = params.patience
+    rp = params.repair
     pivot_sigma = min(max(sigma * pt.sigma_boost, sigma), 0.30)
+    max_steps = rp.max_bisect_steps if rp.enabled else 0
 
     out: list[Proposal] = []
     seen: set[str] = set()
@@ -158,19 +238,22 @@ def propose_next(prev: list[tuple[str, Genome, float]], generation: int,
             child = _sbx(pa[1].array, pb_genome.array, params.sbx_eta, rng)
             child, mag = _mutate(child, pivot_sigma,
                                  params.mutation_prob_per_gene, rng)
+            child = _repair(child, pa[1].array, platform, max_steps)
             prop = Proposal(Genome.from_array(child), pa[0], pb_hash, "pivot", mag)
         elif rng.random() < params.immigrant_prob:
-            prop = Proposal(Genome.random(rng), None, None, "immigrant", None)
+            prop = _propose_immigrant(rng, platform, rp)
         elif rng.random() < params.crossover_prob:
             pa = _tournament(prev, params.tournament_k, rng)
             pb = _tournament(prev, params.tournament_k, rng)
             child = _sbx(pa[1].array, pb[1].array, params.sbx_eta, rng)
             child, mag = _mutate(child, sigma, params.mutation_prob_per_gene, rng)
+            child = _repair(child, pa[1].array, platform, max_steps)
             prop = Proposal(Genome.from_array(child), pa[0], pb[0], "crossover", mag)
         else:
             pa = _tournament(prev, params.tournament_k, rng)
             child, mag = _mutate(pa[1].array, sigma,
                                  params.mutation_prob_per_gene, rng)
+            child = _repair(child, pa[1].array, platform, max_steps)
             prop = Proposal(Genome.from_array(child), pa[0], None, "mutation", mag)
         h = prop.genome.hash
         if h in seen and attempts < 20 * population:

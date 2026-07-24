@@ -71,7 +71,8 @@ NAV_CSS = """
 _NAV_PAGES = [("index.html", "the result"),
               ("log.html", "research log"),
               ("lineage.html", "family tree"),
-              ("glossary.html", "glossary")]
+              ("glossary.html", "glossary"),
+              ("lab-notebook.html", "lab notebook")]
 
 
 def nav_html(active: str) -> str:
@@ -175,6 +176,16 @@ img[data-src]{visibility:hidden}
 .dmeta .headline{font-size:17px;margin:4px 0 10px}
 .dmeta .headline b{font-size:21px}
 .dmeta .tables{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
+.dmeta .tables table.dt{width:100%;table-layout:fixed}
+/* explicit, matching column widths so "max tilt" (scenario table, col 4)
+   and "value" (gene table, col 2) start at the same x: scenario's first
+   three columns together equal gene's first column. */
+.dmeta .tables table.sc-tbl th:nth-child(1),.dmeta .tables table.sc-tbl td:nth-child(1){width:25%}
+.dmeta .tables table.sc-tbl th:nth-child(2),.dmeta .tables table.sc-tbl td:nth-child(2){width:13%}
+.dmeta .tables table.sc-tbl th:nth-child(3),.dmeta .tables table.sc-tbl td:nth-child(3){width:21%}
+.dmeta .tables table.sc-tbl th:nth-child(4),.dmeta .tables table.sc-tbl td:nth-child(4){width:16%}
+.dmeta .tables table.gene-tbl th:nth-child(1),.dmeta .tables table.gene-tbl td:nth-child(1){width:59%}
+.dmeta .tables table.gene-tbl th:nth-child(2),.dmeta .tables table.gene-tbl td:nth-child(2){width:16%}
 table.dt{border-collapse:collapse;font-size:14px;margin-top:2px}
 table.dt td,table.dt th{text-align:left;padding:3px 18px 3px 0;border-bottom:1px solid var(--rule-soft)}
 table.dt th{font:600 11px/1.2 var(--serif);font-feature-settings:"smcp" 1;
@@ -384,7 +395,7 @@ OVERLAY_CSS = """
 """
 
 CSS = TUFTE_TOKENS + NAV_CSS + CARD_CSS + OVERLAY_CSS + """
-.wrap{max-width:92vw;margin:0 auto;padding:40px 0 96px}
+.wrap{max-width:97vw;margin:0 auto;padding:40px 0 96px}
 @media(max-width:1100px){.wrap{max-width:none;padding-left:28px;padding-right:28px}}
 h1{font-weight:400;font-size:34px;line-height:1.12;letter-spacing:-.01em;
   margin:0 0 6px;text-align:center}
@@ -2350,7 +2361,7 @@ def progress_chart_svg(store: Store, run_id: str,
     if y_max <= 0:
         y_max = 1.0
 
-    W, H = 1180, 470
+    W, H = 1900, 500
     # tall top margin: the invalid strip lives ~100px above the finite
     # scale, in its own tinted band (a different value space)
     ml, mr, mt, mb = 64, 24, 116, 42
@@ -2448,7 +2459,7 @@ def progress_chart_svg(store: Store, run_id: str,
     # discarded dots + invalid marks; both shrink as the run grows so a
     # 100-generation chart stays legible. Past ~400 candidates the invalid
     # strip switches from x glyphs to a barcode of thin ticks.
-    r_dot = max(1.6, min(3.4, 1500.0 / n))
+    r_dot = max(1.0, min(2.6, 1400.0 / n))
     dense = n > 400
     for i, (c, f) in enumerate(zip(cands, fits)):
         x = xat(i)
@@ -2515,19 +2526,23 @@ def progress_chart_svg(store: Store, run_id: str,
     if target_whkm:
         yt = yat(target_whkm)
         s.append(f'<line x1="{ml}" y1="{yt:.1f}" x2="{W - mr}" y2="{yt:.1f}" '
-                 f'stroke="#8c2f1f" stroke-width="1.2" stroke-dasharray="6,4"/>')
+                 f'stroke="#8c2f1f" stroke-width="1.2" stroke-dasharray="6,4">'
+                 f'<title>{target_whkm:g} &#183; minimum target (current '
+                 f'7-inch long-range practice, &#8776;8 g/W)</title></line>')
         s.append(f'<text x="{ml + 8}" y="{yt - 6:.1f}" font-size="12.5" '
-                 f'font-style="italic" fill="#8c2f1f">{target_whkm:g} &#183; '
-                 f'minimum target (current 7-inch long-range practice, '
-                 f'&#8776;8 g/W)</text>')
+                 f'font-style="italic" fill="#8c2f1f">{target_whkm:g}'
+                 f'<title>minimum target (current 7-inch long-range '
+                 f'practice, &#8776;8 g/W)</title></text>')
     if record_whkm:
         yr = yat(record_whkm)
         s.append(f'<line x1="{ml}" y1="{yr:.1f}" x2="{W - mr}" y2="{yr:.1f}" '
-                 f'stroke="#8a6a1e" stroke-width="1.1" stroke-dasharray="2,5"/>')
+                 f'stroke="#8a6a1e" stroke-width="1.1" stroke-dasharray="2,5">'
+                 f'<title>{record_whkm:g} &#183; record-class stretch '
+                 f'(&#8776;2 Wh/km calm cruise, Dave_C-style builds)</title></line>')
         s.append(f'<text x="{ml + 8}" y="{yr - 6:.1f}" font-size="12.5" '
-                 f'font-style="italic" fill="#8a6a1e">{record_whkm:g} &#183; '
-                 f'record-class stretch (&#8776;2 Wh/km calm cruise, '
-                 f'Dave_C-style builds)</text>')
+                 f'font-style="italic" fill="#8a6a1e">{record_whkm:g}'
+                 f'<title>record-class stretch (&#8776;2 Wh/km calm cruise, '
+                 f'Dave_C-style builds)</title></text>')
     s.append(f'<text x="{ml + pw / 2}" y="{H - 8}" text-anchor="middle" '
              f'font-size="13" font-style="italic" fill="#6b6a60">'
              f'candidate # (evaluation order) &#8212; lower is better</text>')
@@ -2781,7 +2796,7 @@ def _generation_input_html(store: Store, run_id: str, g: int, cands: dict,
 def _gameboard_html(cfg) -> str:
     """The rules of the game, right under the progress chart: what is
     bolted down (the kit + hard constraints), what the search may move
-    (the 12 genes), and what every candidate must fly through (the
+    (the 14 genes), and what every candidate must fly through (the
     scenario portfolio)."""
     if cfg is None:
         return ""
@@ -2831,7 +2846,7 @@ def _gameboard_html(cfg) -> str:
         ("x", lambda v: f"&times;{v:.2f}"), ("mm", lambda v: f"{v * 1000:.0f}"),
         ("deg", lambda v: f"{v:.0f}&deg;"), ("", lambda v: f"{v:.2f}"))}
     lo_hi = {name: (lo, hi) for name, lo, hi in GENOME_SPEC}
-    levers = ['<div><h3>the levers &mdash; 12 genes</h3>',
+    levers = [f'<div><h3>the levers &mdash; {len(GENOME_SPEC)} genes</h3>',
               '<table class="dt"><tr><th></th><th>min</th><th>seed</th>'
               '<th>max</th></tr>']
     for gene, label, unit in GENE_FORMAT:
@@ -3116,7 +3131,7 @@ def candidate_card_html(store, run_id: str, results_dir: Path,
     mass = f"{c['frame_mass'] * 1e3:.1f}" if c["frame_mass"] else "&mdash;"
     genes = describe_genome(json.loads(c["genome_json"]), c["material"])
     gene_rows = "".join(
-        f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td></tr>"
+        f"<tr><td>{html.escape(lab)}</td><td>{html.escape(val)}</td><td></td></tr>"
         for lab, val in genes)
     badge = ""
     if h == best_hash:
@@ -3187,13 +3202,13 @@ def candidate_card_html(store, run_id: str, results_dir: Path,
     dcls = "detail" + (" setter" if is_setter else "") + \
         (" champion" if h == best_hash else "") + \
         (" claude" if c["operator"] == "designer" else "")
-    gene_table = (f'<table class="dt"><tr><th>gene</th><th>value</th></tr>'
-                  f"{gene_rows}</table>")
+    gene_table = (f'<table class="dt gene-tbl"><tr><th>gene</th><th>value</th>'
+                  f"<th></th></tr>{gene_rows}</table>")
     if invalid:  # never flew: a scenario table would be a dead header
         tlab, tables = "genome", gene_table
     else:
         tlab = "scenario results &amp; genome"
-        tables = (f'<table class="dt"><tr><th>scenario</th><th>wh/km</th>'
+        tables = (f'<table class="dt sc-tbl"><tr><th>scenario</th><th>wh/km</th>'
                   f"<th>avg power, w</th><th>max tilt</th><th></th></tr>"
                   f"{sc_rows}</table>" + gene_table)
     return (
@@ -3440,8 +3455,8 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
     docs_dir.mkdir(parents=True, exist_ok=True)
     for name in ("index.html", "log.html", "viewer.js", "share.png",
                  "lineage.html", "lineage.svg", "lineage.dot",
-                 "glossary.html", "convergence.png", "leaderboard.md",
-                 "designer_log.md"):
+                 "glossary.html", "lab-notebook.html", "convergence.png",
+                 "leaderboard.md", "designer_log.md"):
         src = results_dir / name
         if src.exists():
             shutil.copyfile(src, docs_dir / name)

@@ -184,6 +184,19 @@ class Patience:
 
 
 @dataclass(frozen=True)
+class Repair:
+    # Hard constraints are pure geometry (no simulation) -- cheap to check
+    # before spending a population slot. enabled: crossover/mutation/pivot
+    # children that fail the cheap pre-screen get bisected back toward
+    # their known-valid parent instead of being evaluated (and wasted) as
+    # generated; immigrants (and gen-0 random seeds) get resampled within
+    # the box instead of a single blind draw.
+    enabled: bool
+    max_bisect_steps: int
+    immigrant_max_resamples: int
+
+
+@dataclass(frozen=True)
 class GAParams:
     tournament_k: int
     elitism: int
@@ -195,6 +208,7 @@ class GAParams:
     mutation_sigma_min: float
     immigrant_prob: float
     patience: Patience
+    repair: Repair
 
 
 @dataclass(frozen=True)
@@ -372,6 +386,12 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         sigma_boost=float(pt.get("sigma_boost", 3.0)),
         decent_factor=float(pt.get("decent_factor", 1.3)),
     )
+    rp = ga.get("repair", {})
+    repair = Repair(
+        enabled=bool(rp.get("enabled", True)),
+        max_bisect_steps=int(rp.get("max_bisect_steps", 6)),
+        immigrant_max_resamples=int(rp.get("immigrant_max_resamples", 8)),
+    )
     ga_params = GAParams(
         tournament_k=int(ga["tournament_k"]), elitism=int(ga["elitism"]),
         crossover_prob=float(ga["crossover_prob"]), sbx_eta=float(ga["sbx_eta"]),
@@ -381,6 +401,7 @@ def load_config(root: Path | str = ".", config_dir: str = "config",
         mutation_sigma_min=float(ga["mutation_sigma_min"]),
         immigrant_prob=float(ga["immigrant_prob"]),
         patience=patience,
+        repair=repair,
     )
     ex = evo["execution"]
     workers = overrides.get("workers")

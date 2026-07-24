@@ -205,20 +205,22 @@ def robustness_task(root: str, genome_dict: dict[str, float],
     return out
 
 
-def structural_check(root: str, arm_fields: dict[str, Any], total_mass: float,
-                     peak_rotor_thrust: float,
-                     material_gene: float) -> tuple[bool, str | None, float]:
+def structural_check(root: str, genome_dict: dict[str, float],
+                     arm_mass_kg: float, total_mass: float,
+                     peak_rotor_thrust: float) -> tuple[bool, str | None, float]:
     """Worst-case-across-scenarios structural constraint (runs in-parent:
-    it is a closed-form beam calculation)."""
-    from .frame_gen import ArmProperties
+    re-derives the morphed+holed front-arm outline directly from the
+    genome -- cheap, no meshing -- and runs the station-by-station beam
+    check; see structures.check_structure)."""
+    from .frame_gen import build_arm_front
     from .structures import check_structure
 
     cfg, rotor = _context(root)
     # hover rotor frequency (1P) for the resonance band, ISA sea level
     hover_n, _ = rotor.hover(total_mass, 1.225)
-    res = check_structure(ArmProperties(**arm_fields), peak_rotor_thrust,
-                          hover_n, cfg.platform,
-                          cfg.platform.material_for(material_gene))
+    arm, t_m, tip_scale, material = build_arm_front(genome_dict, cfg.platform)
+    res = check_structure(arm, t_m, tip_scale, arm_mass_kg, peak_rotor_thrust,
+                          hover_n, cfg.platform, material)
     return res.ok, res.reason, res.f1_hz
 
 

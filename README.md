@@ -84,12 +84,12 @@ Restore any past state with `git -C results log` +
   FRAGILE verdict. Answers "is the leaderboard a frame property or a model
   artifact?" and names the knob where Phase B fidelity would matter first.
 - `champion_check.md` (on demand, `airloom verify-champions`) — the top
-  frames re-analyzed with a station-by-station variable-section bending
-  model along the real morphed arm outline: net-section stress
-  concentration at holes/cutouts (Peterson Kt) and as-built strength
-  knockdowns for printed materials — the two optimisms the in-loop beam
-  constraint cannot see — plus a bench print-and-test protocol with hold
-  and predicted-failure loads.
+  frames re-analyzed with the same station-by-station variable-section
+  bending model the in-loop constraint now runs (net-section stress
+  concentration at holes/cutouts via Peterson Kt, and the taper gene),
+  adding the one thing the fast in-loop gate deliberately doesn't apply:
+  as-built strength knockdowns for printed materials — plus a bench
+  print-and-test protocol with hold and predicted-failure loads.
 - `run.db` — SQLite: genomes, lineage (self-referencing, `WITH RECURSIVE`
   ancestry), per-scenario metrics, populations, lab-notebook notes, config
   snapshot, git hash. Written by an older schema? It gets archived
@@ -123,7 +123,7 @@ are modeled visually. The best candidate of each generation is also exported
 as individual print/cut-ready pieces in `gen_XXXX_best_parts/`
 (bottom_plate, top_plate, arm ×4).
 
-## The genome: morphs of the REAL parts (12 genes)
+## The genome: morphs of the REAL parts (14 genes)
 
 The genome no longer describes primitives — it deforms the **official
 Source One V6 7in DC plate drawings** (`data/source_one/`, parsed from the
@@ -133,6 +133,12 @@ each candidate a printable/cuttable derivative of the real design:
 - `arm_length_scale`, `arm_width_scale`, `arm_waist_scale`, `arm_thickness`
   — stretch/reshape the real arm outlines; the bolt tongue and the 16×19 mm
   motor-mount end stay rigid.
+- `tip_thickness_scale` — mid-shaft thickness dip as a fraction of root
+  thickness (a bump profile: full thickness stays at the tongue and the
+  motor mount, where it's needed for the plate-sandwich fit and screw
+  engagement; 1.0 = uniform, no dip).
+- `arm_cutout_scale` — three lightening holes drilled along each arm's
+  shaft centerline, radius scaled off the local width there (0 = none).
 - `front_sweep_deg`, `rear_sweep_deg` — rotate the arms about their
   drawing-registered plate anchors (front anchors are exact bolt-pattern
   registrations; DC arms keep their true left/right mirrored chirality).
@@ -213,7 +219,7 @@ candidates a finite penalized fitness without flying the other five.
 | rain | (a) water-film added mass ∝ top area, (b) momentum drag via equivalent suspended-water density + vertical impact force, (c) 15 % thrust-coefficient penalty | empirical knobs, see NASA TP-2671 (Dunham et al.) heavy-rain research; all in config |
 | flight | 100 Hz point-mass 3-DOF sim; quasi-static attitude (the quad tilts into the relative wind), P velocity loop with accel limits; rotor speeds solved each step from the CT tables; electrical energy integrated | zero-wind mission unit-tested against a quasi-static analytic power balance (±6 %) |
 | battery | quasi-static pack model: V = V0 − I·R, current solved from demanded motor power each step; energy integrated at the pack terminals (incl. I²R loss); RPM ceiling scales with sagged voltage; deliverable-power (V0²/4R ≈ 820 W) and cell-current (45 A) limits feed the saturation clock | P42A-class DC IR + discharge-curve sag; unit-tested (quadratic solve, IR-loss share, storm clamp behavior) |
-| structure | Euler–Bernoulli cantilever arm: worst-case per-rotor thrust across all scenarios × 1.5 safety factor; stress ≤ material strength, tip deflection ≤ 5 % L, first bending mode outside ±15 % of hover 1P — all with the genome-selected material's properties | stress/deflection unit-tested against hand calculations |
+| structure | station-by-station variable-section Euler–Bernoulli bending along the real morphed arm outline (net width minus any hole/cutout, Peterson Kt where one pierces a station, genome-selected thickness taper): worst-case per-rotor thrust across all scenarios × 1.5 safety factor; max stress ≤ material strength, tip deflection ≤ 5 % L, first bending mode outside ±15 % of hover 1P | stress/deflection unit-tested against hand calculations on a plain (untapered, unpierced) section, which reduces to the classic constant-section formulas |
 
 Sanity anchors (unit-tested): the original spec anchor — a 5-inch quad at
 1.1 kg AUW hovers at ~195 W (180–280 W band), checked against the cached
@@ -242,11 +248,13 @@ the MA GF 7×4 data.
 - **Print-material properties are XY/datasheet values.** FDM parts are
   weaker across layer lines (often 40–60 % in Z); in the LOOP the 1.5
   safety factor is the only allowance for anisotropy, print quality, or
-  temperature. `airloom verify-champions` re-checks the top frames with
-  per-material as-built strength knockdowns and hole/cutout stress
-  concentrations, and emits a bench print-and-test protocol.
-- Structural model checks the arms only (root stress, tip deflection,
-  resonance); the deck is assumed rigid and the standoffs ideal.
+  temperature — datasheet strength, not as-built. `airloom
+  verify-champions` re-checks the top frames with per-material as-built
+  strength knockdowns on top of the same station-by-station model, and
+  emits a bench print-and-test protocol.
+- Structural model checks the arms only (station-by-station stress along
+  the shaft, tip deflection, resonance off the root station's stiffness);
+  the deck is assumed rigid and the standoffs ideal.
 - **The battery model is quasi-static.** Constant open-circuit voltage at
   the nominal 3.7 V/cell (no state-of-charge curve — conservative for a
   short mission that only uses ~15 % of the pack), constant DC internal

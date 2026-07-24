@@ -96,8 +96,16 @@ grow with them (rule of thumb: keep sweeps within ~6 deg of stock unless \
 you also raise the plate scales by ~0.1 per extra 5 deg); the FC-stack \
 holes stay PINNED while the plates scale, so plate scales below ~0.95 \
 crush the material webs between holes and cutouts (min 80% of the stock \
-web is enforced); and printed materials (anything but cf_plate) need \
-plate_thickness_scale >= 0.8 (>= 1.6 mm plates)."""
+web is enforced); printed materials (anything but cf_plate) need \
+plate_thickness_scale >= 0.8 (>= 1.6 mm plates); tip_thickness_scale below \
+1.0 thins the MIDDLE of the shaft, not the tip itself (full thickness stays \
+at the tongue and the motor mount, a bump-shaped dip in between) -- the \
+structural check now covers the whole shaft station-by-station, so a \
+design can fail on a mid-shaft station even when the root looks fine; and \
+arm_cutout_scale places 3 lightening holes along the shaft sized off the \
+LOCAL width there -- values above ~0.4 usually start failing on stress \
+concentration at the holes, especially stacked with a low \
+tip_thickness_scale in the same region."""
 
 ASK_PERIODIC = """Propose exactly {n} NEW genome vectors that are \
 meaningfully DIFFERENT from the elites and from each other — design \
@@ -109,10 +117,18 @@ ASK_PIVOT = """THE SEARCH HAS PLATEAUED: the best-so-far has not improved \
 significantly for {stall} generation(s). This is a PIVOT round. Take a step \
 back: reason about WHY the current elite family has stopped improving — \
 what shared trait is this local optimum built on, and what does the \
-per-scenario data say it costs? Then propose exactly {n} PIVOTAL designs \
-that abandon that trait and stake out genuinely different regions of the \
-genome space. Do NOT refine the elites — a pivot that lands near them is a \
-wasted round. """ + COUPLINGS
+per-scenario data say it costs? Then propose exactly {n} designs. MOST \
+should be PIVOTAL: abandon that shared trait and stake out genuinely \
+different regions of the genome space (a pivot that lands near the elites \
+is usually a wasted round). BUT check first whether the elites are sitting \
+short of a GENE BOUND (including one that was recently widened) rather \
+than short of a hard constraint or a worse-material tradeoff — that is \
+unexploited headroom, not a dead local optimum, and abandoning it wastes a \
+proposal on a hypothesis (a different material, a different shape family) \
+that the run's own history may already show loses on mass. When you find \
+that headroom, spend ONE of your {n} proposals aggressively pushing the \
+CURRENT winning family further into it instead of discarding it. """ \
+    + COUPLINGS
 
 
 def _gene_spec_text() -> str:
@@ -120,7 +136,11 @@ def _gene_spec_text() -> str:
         "arm_length_scale": "arm shaft stretch (wheelbase / disk loading)",
         "arm_width_scale": "arm width at shaft ends (stiffness vs drag)",
         "arm_waist_scale": "extra mid-shaft narrowing (drag vs stiffness)",
-        "arm_thickness": "arm plate thickness in meters",
+        "arm_thickness": "arm plate thickness in meters (the ROOT thickness)",
+        "tip_thickness_scale": "mid-shaft thickness dip as a fraction of "
+                               "root thickness (1.0 = uniform, no dip)",
+        "arm_cutout_scale": "3 lightening holes along the shaft, radius as "
+                            "a fraction of the local width there (0 = none)",
         "front_sweep_deg": "front arm azimuth from nose",
         "rear_sweep_deg": "rear arm azimuth from tail",
         "plate_length_scale": "deck plate stretch along flight axis",

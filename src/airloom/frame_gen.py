@@ -28,9 +28,10 @@ from .config import Material, Platform
 from .genome import Genome
 from functools import lru_cache
 
-from .realgeo import (STOCK_ANCHORS, ArmOutline, Outline, extrude,
-                      load_outlines, min_web_width, mirror_y, morph_arm,
-                      morph_plate, shaft_min_width)
+from .realgeo import (STOCK_ANCHORS, ArmOutline, Outline, add_lightening_holes,
+                      extrude, extrude_tapered, load_outlines, min_web_width,
+                      mirror_y, morph_arm, morph_plate, shaft_min_width,
+                      try_union)
 
 MOTOR_H = 0.026            # motor stack height above the arm mount
 STACK_H = 0.0216           # FC + ESC stack height inside the gap
@@ -96,13 +97,6 @@ def _rot_z(mesh: trimesh.Trimesh, angle: float) -> trimesh.Trimesh:
     return mesh
 
 
-def _try_union(parts: list[trimesh.Trimesh]) -> trimesh.Trimesh:
-    try:
-        return trimesh.boolean.union(parts, engine="manifold")
-    except Exception:
-        return trimesh.util.concatenate(parts)
-
-
 def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> FrameModel:
     """want_mesh=False runs only the geometric hard-constraint checks (2D
     outlines + rotor placement) and skips meshing/mass: a cheap validity
@@ -127,6 +121,8 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                           g["arm_width_scale"], g["arm_waist_scale"])
     arm_rear = morph_arm(outlines["arm_rear"], g["arm_length_scale"],
                          g["arm_width_scale"], g["arm_waist_scale"])
+    arm_front = add_lightening_holes(arm_front, g["arm_cutout_scale"])
+    arm_rear = add_lightening_holes(arm_rear, g["arm_cutout_scale"])
     sx, sy = g["plate_length_scale"], g["plate_width_scale"]
     p_main = morph_plate(outlines["plate_main"], sx, sy)
     p_mid = morph_plate(outlines["plate_mid"], sx, sy)
@@ -288,15 +284,16 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                 so = trimesh.creation.cylinder(radius=STANDOFF_R, height=gap, sections=12)
                 so.apply_translation([px, py, ta + tp + gap / 2.0])
                 standoffs.append(so)
-            deck_mesh = _try_union([main_mesh, mid_mesh, top_mesh] + standoffs)
+            deck_mesh = try_union([main_mesh, mid_mesh, top_mesh] + standoffs)
 
             arm_meshes = []
             for outline, az, t_m in placements:
-                am = extrude(outline, ta)
+                am = extrude_tapered(outline, ta, ta * g["tip_thickness_scale"],
+                                     outline.tongue_end, outline.mount_start)
                 _rot_z(am, az)
                 am.apply_translation([t_m[0], t_m[1], 0.0])
                 arm_meshes.append(am)
-            arms_mesh = _try_union(arm_meshes)
+            arms_mesh = try_union(arm_meshes)
 
             # frame mass from the REAL volumes
             plate_vol = main_mesh.volume + mid_mesh.volume + top_mesh.volume
@@ -378,7 +375,7 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
             # frontal area but thousands of triangles.
             body_mesh = trimesh.util.concatenate(
                 [deck_mesh, battery, stack, camera, parts["motors"]])
-            mesh = _try_union([deck_mesh, arms_mesh])
+            mesh = try_union([deck_mesh, arms_mesh])
             if failure is None and not mesh.is_watertight:
                 failure = "mesh not watertight"
         except Exception:
@@ -408,6 +405,23 @@ def build_frame(genome: Genome, platform: Platform, want_mesh: bool = True) -> F
                       material=material,
                       top_area_footprint=max(p_top.length * p_top.width,
                                              batt_l * batt_w * 1e6) * 1e-6)
+
+
+def build_arm_front(genome_dict: dict[str, float], platform: Platform
+                    ) -> tuple[ArmOutline, float, float, Material]:
+    """(morphed+holed front-arm outline, root thickness m,
+    tip_thickness_scale, material) for one genome -- the exact arm geometry
+    build_frame() builds, without meshing. Shared by the in-loop structural
+    check (evaluate.structural_check) and the post-hoc verifier
+    (champion.verify_champions) so both analyze identical geometry."""
+    material = platform.material_for(genome_dict["material"])
+    src_dir = str(platform.propulsion.uiuc_data_dir.parent / "source_one")
+    outlines = load_outlines(src_dir)
+    arm = morph_arm(outlines["arm_front"], genome_dict["arm_length_scale"],
+                    genome_dict["arm_width_scale"], genome_dict["arm_waist_scale"])
+    arm = add_lightening_holes(arm, genome_dict["arm_cutout_scale"])
+    return (arm, genome_dict["arm_thickness"],
+            genome_dict["tip_thickness_scale"], material)
 
 
 # human-readable names for the material gene's choices, keyed by the

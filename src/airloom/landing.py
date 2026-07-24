@@ -321,7 +321,7 @@ INTRO_TITLE = ("&ldquo;The snuggle is real&rdquo;: &mdash; evolving "
 INTRO_TEXT = (
     "I let a genetic algorithm loose on the geometry of a 7-inch "
     "quadcopter frame &mdash; the real, GPLv3 Source One V6 plate "
-    "drawings, morphed by twelve genes and flown through six simulated "
+    "drawings, morphed by fourteen genes and flown through six simulated "
     "weather scenarios, with Claude sitting in every few generations to "
     "propose designs from the run&rsquo;s own telemetry. Every candidate "
     'ever flown is in the <a href="log.html">gallery</a>, failures '
