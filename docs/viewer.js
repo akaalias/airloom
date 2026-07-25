@@ -807,7 +807,23 @@ function makeViewer(canvas,state,opts){
     state.hovAnim=requestAnimationFrame(step);
   }
   var dragging=false,panning=false,lastX=0,lastY=0,downX=0,downY=0;
+  // touch has no scroll wheel, so a second finger down means "pinch to
+  // zoom" instead of "drag to rotate" -- pointers is keyed by pointerId
+  // so a mouse drag and independent touches never get confused
+  var pointers={},pinchDist=0;
+  function pinchPoints(){
+    var ids=Object.keys(pointers);
+    return ids.length===2?[pointers[ids[0]],pointers[ids[1]]]:null;
+  }
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
   canvas.addEventListener("pointerdown",function(e){
+    pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    canvas.setPointerCapture(e.pointerId);
+    var pts=pinchPoints();
+    if(pts){ // second finger just landed: switch to pinch-zoom
+      dragging=false;pinchDist=dist(pts[0],pts[1]);
+      return;
+    }
     dragging=true;panning=e.metaKey||e.ctrlKey; // cmd/ctrl-drag pans
     downX=e.clientX;downY=e.clientY;
     // freeze the lean where it is: fold it into the real camera so the
@@ -816,8 +832,17 @@ function makeViewer(canvas,state,opts){
     state.yaw+=(state.hovX||0);state.pitch+=(state.hovY||0);
     state.hovX=state.hovY=state.hovTX=state.hovTY=0;
     lastX=e.clientX;lastY=e.clientY;
-    canvas.setPointerCapture(e.pointerId);canvas.style.cursor="grabbing"});
+    canvas.style.cursor="grabbing"});
   canvas.addEventListener("pointermove",function(e){
+    if(pointers[e.pointerId])pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var pts=pinchPoints();
+    if(pts){ // two fingers down: pinch overrides rotate entirely
+      var d=dist(pts[0],pts[1]);
+      if(pinchDist>0)
+        state.zoom=Math.max(0.3,Math.min(8,state.zoom*(d/pinchDist)));
+      pinchDist=d;state.redraw();
+      return;
+    }
     if(!dragging){
       if(!PARALLAX)return;
       var r=canvas.getBoundingClientRect();
@@ -836,12 +861,26 @@ function makeViewer(canvas,state,opts){
     lastX=e.clientX;lastY=e.clientY;state.redraw()});
   canvas.addEventListener("pointerleave",function(){
     if(state.hovTX||state.hovTY||state.hovX||state.hovY)hovTo(0,0)});
-  canvas.addEventListener("pointerup",function(e){
-    dragging=false;canvas.style.cursor="grab";
+  function pointerEnd(e){
+    delete pointers[e.pointerId];
+    var remaining=Object.keys(pointers);
+    if(remaining.length===2){ // dropped from 3 to 2 fingers: resume pinch
+      var pts=pinchPoints();pinchDist=dist(pts[0],pts[1]);
+      return;
+    }
+    if(remaining.length===1){ // dropped from 2 to 1: resume single-finger
+      var p=pointers[remaining[0]];                        // drag, from
+      dragging=true;panning=false;pinchDist=0;              // where that
+      lastX=p.x;lastY=p.y;                                  // finger is
+      return;
+    }
+    dragging=false;pinchDist=0;canvas.style.cursor="grab";
     // a press that never moved is a tap, not a grab
     if(opts.onTap&&Math.abs(e.clientX-downX)<5&&
        Math.abs(e.clientY-downY)<5)opts.onTap();
-  });
+  }
+  canvas.addEventListener("pointerup",pointerEnd);
+  canvas.addEventListener("pointercancel",pointerEnd);
   if(opts.wheel!==false) // card viewers keep the page's scroll wheel
     canvas.addEventListener("wheel",function(e){
       e.preventDefault();

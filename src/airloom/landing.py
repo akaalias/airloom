@@ -129,9 +129,30 @@ AL.ensureBlobs(need).then(function(){
     requestAnimationFrame(redraw);
     setTimeout(redraw,80);
     window.addEventListener("resize",redraw);
+    // the lineage trail: same chain the replay just opened, all steps
+    // superimposed at once instead of stepped through -- near-top-down
+    // pitch (1.2), same as the overlay's own "lineage trail" tab, since
+    // the plan shape is what reads best from above
+    var trailCv=document.getElementById("trail-canvas");
+    if(trailCv){
+      var trailState=AL.makeState(1.2);
+      var trailV=AL.makeViewer(trailCv,trailState);
+      if(trailV&&rep.chain.length>1){
+        trailV.load(AL.trailSpecs(rep.chain),rep.frame);
+        var trailRedraw=function(){trailState.redraw()};
+        requestAnimationFrame(trailRedraw);
+        setTimeout(trailRedraw,80);
+        window.addEventListener("resize",trailRedraw);
+      }else{
+        var tp=document.getElementById("trail-panel");
+        if(tp)tp.style.display="none";
+      }
+    }
   }else{
     var rp=document.getElementById("replay-panel");
     if(rp)rp.style.display="none";
+    var tp2=document.getElementById("trail-panel");
+    if(tp2)tp2.style.display="none";
   }
   // ---- performance row: the champion flying every scenario at once.
   // All the mini views share ONE camera state, so orbiting any box
@@ -565,10 +586,22 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             '<div id="perf-open"><button>view candidate '
             "performance</button></div>"]
 
-    # the evolution: replay the champion's own line
+    # the evolution: the whole lineage superimposed, then the replay of
+    # the champion's own line -- the trail comes first (the net shape
+    # change, all at once) so the step-by-step replay that follows reads
+    # as "how it got there," not a repeat of the same information
     parts += [
-        f"<h2>watch the champion evolve: {n_gens} generations, "
-        "replayed step by step</h2>",
+        f"<h2>the lineage trail: {n_gens} generations, superimposed</h2>",
+        '<p class="sub">'
+        f"every ancestor on the champion&rsquo;s line, from the baseline "
+        "to the winner, drawn on top of each other &mdash; the winner "
+        "solid, each ancestor a fainter gray ghost the further back it "
+        "goes. Evolved parts only, so the shape change itself is what "
+        "reads.</p>",
+        '<div class="panel" id="trail-panel">'
+        '<canvas id="trail-canvas"></canvas></div>',
+
+        "<h2>watch it evolve: the same line, step by step</h2>",
         '<p class="sub">'
         f"{len(cands)} candidate frames flew six weather scenarios "
         f"across {n_gens} generations, breeding lower-energy designs "
