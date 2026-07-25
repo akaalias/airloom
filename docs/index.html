@@ -33,8 +33,10 @@ a:hover{border-bottom-color:var(--accent)}
 .smallcaps{font-feature-settings:"smcp" 1;text-transform:uppercase;
   letter-spacing:.06em;color:var(--muted)}
 
-.topnav{display:flex;gap:28px;justify-content:center;align-items:baseline;
-  border-bottom:1px solid var(--rule);padding:0 0 12px;margin:0 0 34px}
+.topnav{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:center;
+  align-items:baseline;border-bottom:1px solid var(--rule);padding:0 0 12px;
+  margin:0 0 34px}
+@media(max-width:600px){.topnav{gap:8px 16px}}
 .topnav .brand{font:italic 14px var(--serif);color:var(--faint)}
 .topnav a{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.09em;color:var(--muted);

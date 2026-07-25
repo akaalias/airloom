@@ -819,6 +819,10 @@ function makeViewer(canvas,state,opts){
   canvas.addEventListener("pointerdown",function(e){
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     canvas.setPointerCapture(e.pointerId);
+    e.preventDefault(); // belt-and-suspenders alongside touch-action:none
+                        // below -- some mobile WebKit versions have only
+                        // partially honored touch-action:none for pinch
+                        // specifically, not just pan/scroll
     var pts=pinchPoints();
     if(pts){ // second finger just landed: switch to pinch-zoom
       dragging=false;pinchDist=dist(pts[0],pts[1]);
@@ -837,6 +841,7 @@ function makeViewer(canvas,state,opts){
     if(pointers[e.pointerId])pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var pts=pinchPoints();
     if(pts){ // two fingers down: pinch overrides rotate entirely
+      e.preventDefault();
       var d=dist(pts[0],pts[1]);
       if(pinchDist>0)
         state.zoom=Math.max(0.3,Math.min(8,state.zoom*(d/pinchDist)));
@@ -850,6 +855,7 @@ function makeViewer(canvas,state,opts){
             ((e.clientY-r.top)/r.height-0.5)*0.08);
       return;
     }
+    e.preventDefault();
     PARALLAX=false; // the invitation worked: the user is driving now
     if(panning){
       state.panX+=(e.clientX-lastX)*2/Math.max(1,canvas.clientWidth);

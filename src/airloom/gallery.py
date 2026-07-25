@@ -58,8 +58,10 @@ a:hover{border-bottom-color:var(--accent)}
 """
 
 NAV_CSS = """
-.topnav{display:flex;gap:28px;justify-content:center;align-items:baseline;
-  border-bottom:1px solid var(--rule);padding:0 0 12px;margin:0 0 34px}
+.topnav{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:center;
+  align-items:baseline;border-bottom:1px solid var(--rule);padding:0 0 12px;
+  margin:0 0 34px}
+@media(max-width:600px){.topnav{gap:8px 16px}}
 .topnav .brand{font:italic 14px var(--serif);color:var(--faint)}
 .topnav a{font:600 12px var(--serif);font-feature-settings:"smcp" 1;
   text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
@@ -1385,6 +1387,10 @@ function makeViewer(canvas,state,opts){
   canvas.addEventListener("pointerdown",function(e){
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     canvas.setPointerCapture(e.pointerId);
+    e.preventDefault(); // belt-and-suspenders alongside touch-action:none
+                        // below -- some mobile WebKit versions have only
+                        // partially honored touch-action:none for pinch
+                        // specifically, not just pan/scroll
     var pts=pinchPoints();
     if(pts){ // second finger just landed: switch to pinch-zoom
       dragging=false;pinchDist=dist(pts[0],pts[1]);
@@ -1403,6 +1409,7 @@ function makeViewer(canvas,state,opts){
     if(pointers[e.pointerId])pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var pts=pinchPoints();
     if(pts){ // two fingers down: pinch overrides rotate entirely
+      e.preventDefault();
       var d=dist(pts[0],pts[1]);
       if(pinchDist>0)
         state.zoom=Math.max(0.3,Math.min(8,state.zoom*(d/pinchDist)));
@@ -1416,6 +1423,7 @@ function makeViewer(canvas,state,opts){
             ((e.clientY-r.top)/r.height-0.5)*0.08);
       return;
     }
+    e.preventDefault();
     PARALLAX=false; // the invitation worked: the user is driving now
     if(panning){
       state.panX+=(e.clientX-lastX)*2/Math.max(1,canvas.clientWidth);
@@ -3305,6 +3313,16 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     parts = ["<!doctype html>",  # quirks mode breaks color inheritance into tables
              f"<style>{CSS}</style>",
              '<meta charset="utf-8">',
+             # without this, mobile browsers lay the page out at a fake
+             # desktop width (~980px) and shrink-to-fit the whole render --
+             # every max-width media query silently never engages, and
+             # native pinch-zoom rasterizes the already-downscaled page
+             # instead of the browser re-rendering canvases at full res
+             # (this is very likely why WebGL views looked "chunkier" on
+             # mobile here specifically -- landing.py's page already had
+             # this tag and didn't show the same symptom)
+             '<meta name="viewport" content="width=device-width,'
+             'initial-scale=1">',
              # auto-refresh is JS-based so an open overlay is never killed
              "<title>Airloom — the frame gallery</title>",
              '<div class="wrap">',
