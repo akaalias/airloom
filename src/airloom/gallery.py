@@ -1190,6 +1190,7 @@ function makeViewer(canvas,state,opts){
     destroy:function(){
       var i=state.viewers.indexOf(view);
       if(i>=0)state.viewers.splice(i,1);
+      if(ro)ro.disconnect();
       var ext=gl.getExtension("WEBGL_lose_context");
       if(ext)ext.loseContext();
     },
@@ -1355,6 +1356,20 @@ function makeViewer(canvas,state,opts){
     }
   };
   state.viewers.push(view);
+  // the canvas backing store is only resynced to its CSS box size
+  // inside draw() -- fine while something keeps calling redraw(), but
+  // a layout shift with no window "resize" event (a late webfont
+  // swap, a sibling column changing width, a lazy image finishing
+  // load) leaves it stale: CSS then stretches an already-rendered,
+  // too-small bitmap over the new box, which reads as a blocky,
+  // low-res render. A ResizeObserver on the canvas itself catches
+  // every such shift, not just the ones the rest of the page happens
+  // to redraw for.
+  var ro=null;
+  if("ResizeObserver" in window){
+    ro=new ResizeObserver(function(){view.draw()});
+    ro.observe(canvas);
+  }
   // ease the hover lean toward its target; a tiny rAF loop that stops
   // itself the moment the offsets settle
   function hovTo(tx,ty){

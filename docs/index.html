@@ -473,7 +473,8 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   line-height:1.65;margin:0 0 10px;max-width:820px}
 /* a quiet border marks where the wheel drives the model, not the page */
 .panel canvas{width:100%;height:420px;display:block;cursor:grab;
-  background:var(--paper);border:1px solid var(--rule);border-radius:6px}
+  background:var(--paper);border:1px solid var(--rule);border-radius:6px;
+  touch-action:none}
 /* performance row: one small flight view per scenario, cameras shared;
    full-bleed -- the row breaks out of the column to browser width */
 #perf-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;
@@ -11324,68 +11325,86 @@ AL.ensureBlobs(need).then(function(){
   // ---- performance row: the champion flying every scenario at once.
   // All the mini views share ONE camera state, so orbiting any box
   // orbits them all; each poses the model from its own telemetry.
+  // WebGL contexts are a scarce, capped resource on mobile browsers --
+  // six of them created up front (on top of the hero card, replay and
+  // trail views above) can push a page past that cap and get an
+  // already-open context silently evicted. Defer creation until the
+  // row is actually about to scroll into view.
   var boxes=[].slice.call(document.querySelectorAll("#perf-row canvas"));
-  if(!boxes.length)return;
-  var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
-  var views=[];
-  boxes.forEach(function(cv){
-    var v=AL.makeViewer(cv,pst,{flowLines:30});
-    if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
-  });
-  if(!views.length)return;
-  Promise.all(views.map(function(w){return AL.ensureFlight(CH,w.scen)}))
-  .then(function(){
-    views.forEach(function(w){
-      w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
-      // real CFD streamlines where solved; analytic field otherwise.
-      // Anchored at the trace's mean attitude: the wind stays
-      // world-fixed while the craft oscillates within it.
-      AL.ensureFlowLines(CH,w.scen).then(function(d){
-        var fd=AL.FLIGHTS[CH+"|"+w.scen];
-        w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
+  var perfRow=document.getElementById("perf-row");
+  if(!boxes.length||!perfRow)return;
+  function startPerfRow(){
+    var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
+    var views=[];
+    boxes.forEach(function(cv){
+      var v=AL.makeViewer(cv,pst,{flowLines:30});
+      if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
     });
-    var row=document.getElementById("perf-row"),on=true,last=null;
-    if("IntersectionObserver" in window){
-      new IntersectionObserver(function(es){
-        es.forEach(function(en){on=en.isIntersecting;last=null});
-      }).observe(row);
-    }
-    function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
-    function tick(ts){
-      requestAnimationFrame(tick);
-      if(!on)return; // parked offscreen: no work
-      if(last===null)last=ts;
-      var dt=Math.min((ts-last)/1000,0.1);last=ts;
+    if(!views.length)return;
+    Promise.all(views.map(function(w){return AL.ensureFlight(CH,w.scen)}))
+    .then(function(){
       views.forEach(function(w){
-        var d=AL.FLIGHTS[CH+"|"+w.scen];
-        if(!d)return;
-        var n=d.x.length;
-        w.t=(w.t+dt*8)%(n/d.hz); // 8x replay, looped per scenario
-        var fx=Math.min(w.t*d.hz,n-1.001),i=Math.floor(fx),
-            j=Math.min(i+1,n-1),f0=fx-i;
-        // attitude: body z = thrust vector, body x follows the motion
-        var tx=lerp(d,"tx",f0,i,j),ty=lerp(d,"ty",f0,i,j),
-            tz=lerp(d,"tz",f0,i,j);
-        var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
-        var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
-        var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
-        if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
-        var dot=hx*tx+hy*ty;
-        var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
-        var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
-        bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
-        var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
-        w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
-        w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
-        w.v.setPropAngle(w.th);
-        // the wind channel is what tells the six boxes apart
-        w.v.windUpdate([lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
-                        lerp(d,"wz",f0,i,j)],dt);
+        w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
+        // real CFD streamlines where solved; analytic field otherwise.
+        // Anchored at the trace's mean attitude: the wind stays
+        // world-fixed while the craft oscillates within it.
+        AL.ensureFlowLines(CH,w.scen).then(function(d){
+          var fd=AL.FLIGHTS[CH+"|"+w.scen];
+          w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
       });
-      pst.redraw(); // one shared state: draws every box in the row
-    }
-    requestAnimationFrame(tick);
-  });
+      var on=true,last=null;
+      if("IntersectionObserver" in window){
+        new IntersectionObserver(function(es){
+          es.forEach(function(en){on=en.isIntersecting;last=null});
+        }).observe(perfRow);
+      }
+      function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
+      function tick(ts){
+        requestAnimationFrame(tick);
+        if(!on)return; // parked offscreen: no work
+        if(last===null)last=ts;
+        var dt=Math.min((ts-last)/1000,0.1);last=ts;
+        views.forEach(function(w){
+          var d=AL.FLIGHTS[CH+"|"+w.scen];
+          if(!d)return;
+          var n=d.x.length;
+          w.t=(w.t+dt*8)%(n/d.hz); // 8x replay, looped per scenario
+          var fx=Math.min(w.t*d.hz,n-1.001),i=Math.floor(fx),
+              j=Math.min(i+1,n-1),f0=fx-i;
+          // attitude: body z = thrust vector, body x follows the motion
+          var tx=lerp(d,"tx",f0,i,j),ty=lerp(d,"ty",f0,i,j),
+              tz=lerp(d,"tz",f0,i,j);
+          var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
+          var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
+          var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
+          if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
+          var dot=hx*tx+hy*ty;
+          var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
+          var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
+          bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
+          var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
+          w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+          w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
+          w.v.setPropAngle(w.th);
+          // the wind channel is what tells the six boxes apart
+          w.v.windUpdate([lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
+                          lerp(d,"wz",f0,i,j)],dt);
+        });
+        pst.redraw(); // one shared state: draws every box in the row
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+  if("IntersectionObserver" in window){
+    var startObs=new IntersectionObserver(function(es){
+      es.forEach(function(en){
+        if(en.isIntersecting){startObs.disconnect();startPerfRow()}
+      });
+    },{rootMargin:"400px"});
+    startObs.observe(perfRow);
+  }else{
+    startPerfRow();
+  }
 });
 })();
 </script>
