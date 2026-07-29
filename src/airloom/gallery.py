@@ -588,11 +588,12 @@ var FS="precision mediump float;varying vec3 vN;varying vec4 vC;"+
 // traveling ripple is computed here too, so animation costs no
 // per-frame uploads at all (phase is a uniform)
 var FLOW_VS="attribute vec3 aP;attribute vec3 aQ;attribute vec2 aE;"+
-  "attribute vec3 aF;"+ // (arc length, line length, speed factor)
+  "attribute vec3 aF;attribute vec3 aC2;"+ // aF=(arc len,line len,speed
+                                           // factor); aC2=local-speed color
   "uniform mat3 uR;uniform vec3 uT;uniform float uS;uniform vec2 uA;"+
   "uniform vec2 uPn;uniform vec2 uVP;uniform float uW;"+
   "uniform float uPh;uniform float uAl;uniform float uPer;"+
-  "varying float vA;varying float vW;"+
+  "varying float vA;varying float vW;varying vec3 vCol2;"+
   "void main(){"+
   "vec3 p=uR*(aP-uT);vec3 q=uR*(aQ-uT);"+
   "vec2 sp=vec2(p.x*uS*uA.x+uPn.x,p.y*uS*uA.y+uPn.y);"+
@@ -606,11 +607,14 @@ var FLOW_VS="attribute vec3 aP;attribute vec3 aQ;attribute vec2 aE;"+
   "vW=0.5+0.5*cos(ph*6.2832);"+
   "float t=aF.x/aF.y;"+
   "float env=clamp(min(t/0.12,(1.0-t)/0.12),0.0,1.0);"+
-  "vA=uAl*env*aF.z;}";
+  "vA=uAl*env*aF.z;vCol2=aC2;}";
 var FLOW_FS="precision mediump float;"+
-  "varying float vA;varying float vW;"+
-  "uniform vec3 uCol;uniform vec3 uCol2;"+
-  "void main(){gl_FragColor=vec4(mix(uCol,uCol2,vW),vA);}";
+  "varying float vA;varying float vW;varying vec3 vCol2;"+
+  // base hue is the LOCAL velocity magnitude (sequential viridis,
+  // dark purple slow -> yellow fast, baked per-vertex in buildRibbon);
+  // the traveling shimmer modulates brightness on top of that, instead
+  // of replacing it with a fixed light/dark pair
+  "void main(){gl_FragColor=vec4(vCol2*(0.65+0.35*vW),vA);}";
 
 // default camera: nose-side three-quarter view (the FPV camera faces the
 // viewer); the pre-flip back view was DEF_YAW=-0.9
@@ -711,6 +715,73 @@ function ensureFlowLines(h,scen){ // resolves with the payload or null
     document.head.appendChild(s);
   });
 }
+// ---- surface-pressure (Pa) payloads: same JSONP pattern as the flow
+// lines, but kept in a fully separate namespace/data-attribute so the
+// pressure tiles never share state with the streamline viewer instances
+var PRESSURES={},PRESSURE_PENDING={};
+var psEl=document.getElementById("pressure-src");
+var PRESSURE_SRC=psEl?JSON.parse(psEl.textContent):{};
+window.airloomPressure=function(h,scen,data){
+  var k=h+"|"+scen;
+  PRESSURES[k]=data;
+  (PRESSURE_PENDING[k]||[]).forEach(function(r){r()});
+  delete PRESSURE_PENDING[k];
+};
+function ensurePressure(h,scen){ // resolves with the payload or null
+  var k=h+"|"+scen,src=(PRESSURE_SRC[h]||{})[scen];
+  if(PRESSURES[k]||!src)return Promise.resolve(PRESSURES[k]||null);
+  return new Promise(function(res){
+    var done=function(){res(PRESSURES[k]||null)};
+    if(PRESSURE_PENDING[k]){PRESSURE_PENDING[k].push(done);return}
+    PRESSURE_PENDING[k]=[done];
+    var s=document.createElement("script");
+    s.src=src;
+    s.onerror=function(){
+      (PRESSURE_PENDING[k]||[]).forEach(function(r){r()});
+      delete PRESSURE_PENDING[k];
+    };
+    document.head.appendChild(s);
+  });
+}
+// diverging pressure colormap (deep blue = suction/low pressure, near-white =
+// freestream, deep red = stagnation/high pressure) -- the common CFD
+// pressure-plot convention
+function cpColor(t){
+  t=Math.max(0,Math.min(1,t));
+  var c0=[0.10,0.25,0.65],c1=[0.95,0.95,0.92],c2=[0.75,0.08,0.08];
+  var a=t<0.5?c0:c1,b=t<0.5?c1:c2,f=t<0.5?t/0.5:(t-0.5)/0.5;
+  return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];
+}
+// sequential viridis-style colormap for velocity magnitude -- unlike
+// pressure, speed has no meaningful zero-crossing to diverge around (it's
+// always >= 0), so a perceptually-uniform sequential map is the standard
+// CFD convention here rather than the diverging blue-white-red scheme
+// pressure uses (5-stop approximation of matplotlib's viridis)
+function speedColor(t){
+  t=Math.max(0,Math.min(1,t));
+  var stops=[[0.267,0.005,0.329],[0.253,0.265,0.530],
+            [0.164,0.471,0.558],[0.135,0.659,0.518],
+            [0.993,0.906,0.144]];
+  var n=stops.length-1,f=t*n,i=Math.min(n-1,Math.floor(f)),frac=f-i;
+  var a=stops[i],b=stops[i+1];
+  return [a[0]+(b[0]-a[0])*frac,a[1]+(b[1]-a[1])*frac,
+         a[2]+(b[2]-a[2])*frac];
+}
+// per-vertex color buffer from a face-order-aligned pressure array: d2.list
+// maps each opacity-sorted draw slot k back to its ORIGINAL face index
+// (the same order cfd.py's _mesh_face_centroids/extract_pressure_sweep
+// used), since decodeBlob re-sorts faces by opacity for the draw call
+function cpColorBuffer(d2,cpArr,lo,hi){
+  var nf=d2.nf,list=d2.list,C=new Float32Array(nf*12),span=(hi-lo)||1;
+  for(var k=0;k<nf;k++){
+    var of=list[k],col=cpColor((cpArr[of]-lo)/span);
+    for(var vtx=0;vtx<3;vtx++){
+      var co=12*k+4*vtx;
+      C[co]=col[0];C[co+1]=col[1];C[co+2]=col[2];C[co+3]=1.0;
+    }
+  }
+  return C;
+}
 function decodeBlob(id){
   if(blobCache[id])return blobCache[id];
   var d=BLOBS[id];
@@ -752,7 +823,8 @@ function decodeBlob(id){
       }
     }
   }
-  var entry={P:P,N:N,C:C,M:M,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3,ev:null};
+  var entry={P:P,N:N,C:C,M:M,nf:nf,nOpq:nOpq,c:d.c,r:d.r||0.3,ev:null,
+             list:list};
   // projected extents at the default yaw (pitch folded in at draw time)
   // -> lets each viewer start zoomed to fit regardless of model size
   var cyw=Math.cos(DEF_YAW),syw=Math.sin(DEF_YAW),mx=0,my=0,mz=0;
@@ -831,10 +903,10 @@ function makeViewer(canvas,state,opts){
   gl.attachShader(prog2,shader(gl.FRAGMENT_SHADER,FLOW_FS));
   gl.linkProgram(prog2);
   var f2={};
-  ["uR","uT","uS","uA","uPn","uVP","uW","uPh","uAl","uPer","uCol","uCol2"]
+  ["uR","uT","uS","uA","uPn","uVP","uW","uPh","uAl","uPer"]
     .forEach(function(u){f2[u]=gl.getUniformLocation(prog2,u)});
   var f2loc={};
-  ["aP","aQ","aE","aF"].forEach(function(a){
+  ["aP","aQ","aE","aF","aC2"].forEach(function(a){
     f2loc[a]=gl.getAttribLocation(prog2,a)});
   function bind2(buf,attr,size){
     gl.bindBuffer(gl.ARRAY_BUFFER,buf);
@@ -873,6 +945,8 @@ function makeViewer(canvas,state,opts){
   var flow={on:false,phase:0,n:0,bufs:null,
     P:new Float32Array(FLN*FST*6),Nb:new Float32Array(FLN*FST*6),
     Cb:new Float32Array(FLN*FST*8),seeds:[]};
+  // surface-pressure overlay state -- deliberately separate from `flow`
+  var press={sw:null,alpha:0,data:null};
   // stable seed pattern on the upwind disc, biased INTO the craft: most
   // lines start inside the body's shadow so they bow visibly around it;
   // only a few ride the outer tube (and those render fainter)
@@ -944,15 +1018,22 @@ function makeViewer(canvas,state,opts){
     gl.bindBuffer(gl.ARRAY_BUFFER,flow.bufs.aC);
     gl.bufferData(gl.ARRAY_BUFFER,flow.Cb.subarray(0,co),gl.DYNAMIC_DRAW);
   }
-  // build the ribbon-quad buffers for one set of streamlines
-  function buildRibbon(lines,umag){
+  // build the ribbon-quad buffers for one set of streamlines. spdLo/
+  // spdHi (m/s, shared across every scenario tile -- see
+  // normalize_flow_speed_range's pointSpeedRange) set the sequential
+  // viridis colormap range baked per-vertex, so local flow acceleration
+  // reads as real velocity magnitude, comparable tile to tile, the way
+  // CFD postprocessing tools usually color streamlines
+  function buildRibbon(lines,umag,spdLo,spdHi){
     var segs=0;
     lines.forEach(function(l){segs+=l.p.length/3-1});
     var V=segs*6; // 6 verts per segment: two triangles of the ribbon
     var P=new Float32Array(V*3),Q=new Float32Array(V*3),
-        E=new Float32Array(V*2),F=new Float32Array(V*3);
+        E=new Float32Array(V*2),F=new Float32Array(V*3),
+        C2=new Float32Array(V*3);
     var CORNERS=[[0,-1],[0,1],[1,1],[0,-1],[1,1],[1,-1]];
-    var vi=0;
+    var vi=0,lo=(spdLo!==undefined?spdLo:0.5*umag),
+        hi=(spdHi!==undefined?spdHi:1.3*umag),span=(hi-lo)||1;
     lines.forEach(function(l){
       var n=l.p.length/3,total=0,acc=[0];
       for(var i=1;i<n;i++){
@@ -964,6 +1045,8 @@ function makeViewer(canvas,state,opts){
       for(var i2=1;i2<n;i2++){
         var fA=0.45+0.55*Math.min(1.4,(l.s[i2-1]||0)/umag);
         var fB=0.45+0.55*Math.min(1.4,(l.s[i2]||0)/umag);
+        var colA=speedColor(((l.s[i2-1]||0)-lo)/span);
+        var colB=speedColor(((l.s[i2]||0)-lo)/span);
         for(var c9=0;c9<6;c9++){
           var e=CORNERS[c9];
           for(var q=0;q<3;q++){
@@ -974,13 +1057,16 @@ function makeViewer(canvas,state,opts){
           F[3*vi]=e[0]?acc[i2]:acc[i2-1];
           F[3*vi+1]=total;
           F[3*vi+2]=e[0]?fB:fA;
+          var col=e[0]?colB:colA;
+          C2[3*vi]=col[0];C2[3*vi+1]=col[1];C2[3*vi+2]=col[2];
           vi++;
         }
       }
     });
     var bufs={aP:gl.createBuffer(),aQ:gl.createBuffer(),
-              aE:gl.createBuffer(),aF:gl.createBuffer()};
-    [[bufs.aP,P],[bufs.aQ,Q],[bufs.aE,E],[bufs.aF,F]]
+              aE:gl.createBuffer(),aF:gl.createBuffer(),
+              aC2:gl.createBuffer()};
+    [[bufs.aP,P],[bufs.aQ,Q],[bufs.aE,E],[bufs.aF,F],[bufs.aC2,C2]]
       .forEach(function(b){
         gl.bindBuffer(gl.ARRAY_BUFFER,b[0]);
         gl.bufferData(gl.ARRAY_BUFFER,b[1],gl.STATIC_DRAW);
@@ -1036,7 +1122,7 @@ function makeViewer(canvas,state,opts){
           // buffers -- split them into a dynamic model so setPropAngle can
           // spin each rotor about its own axis, diagonal pairs opposed
           models.push({bufs:upload(d2.P,d2.N,CC),nf:d2.nOpq,nOpq:d2.nOpq,
-                       fade:sp.fade==null?1:sp.fade});
+                       fade:sp.fade==null?1:sp.fade,d2:d2});
           var off=d2.nOpq*9,pP=d2.P.slice(off),pN=d2.N.slice(off),
               pC=CC.slice(d2.nOpq*12),np=pP.length/3;
           // assign blades to their 4 rotors: farthest-point seeding +
@@ -1112,7 +1198,7 @@ function makeViewer(canvas,state,opts){
                              scr:new Float32Array(pP.length)}});
         }else{
           models.push({bufs:upload(d2.P,d2.N,CC),nf:d2.nf,nOpq:d2.nOpq,
-                       fade:sp.fade==null?1:sp.fade});
+                       fade:sp.fade==null?1:sp.fade,d2:d2});
         }
         var ext=sp.evolved?d2.ev:d2;
         if(fixedFrame)continue;
@@ -1132,13 +1218,19 @@ function makeViewer(canvas,state,opts){
       if(!data||(!data.lines&&!data.sets)){flow.cfd=null;return}
       // a SWEEP payload carries one field per attitude: the draw pass
       // blends the two nearest by the live angle of attack, so the
-      // near field re-wraps as the craft pitches (quasi-steady)
+      // near field re-wraps as the craft pitches (quasi-steady).
+      // pointSpeedRange (written by normalize_flow_speed_range) is the
+      // shared blue-red colormap domain for LOCAL velocity magnitude,
+      // baked per-vertex in buildRibbon -- same range for every
+      // scenario tile, so a genuinely faster patch of flow reads the
+      // same red everywhere, not just relative to its own scenario
+      var pr=data.pointSpeedRange;
       if(data.sets&&data.sets.length){
         var sets=[];
         data.sets.forEach(function(st2){
           if(!st2.lines.length)return;
           var um=Math.hypot(st2.u[0],st2.u[1],st2.u[2])||1;
-          var b=buildRibbon(st2.lines,um);
+          var b=buildRibbon(st2.lines,um,pr&&pr[0],pr&&pr[1]);
           sets.push({a:st2.a,nv:b.nv,bufs:b.bufs});
         });
         if(!sets.length){flow.cfd=null;return}
@@ -1147,7 +1239,7 @@ function makeViewer(canvas,state,opts){
         return;
       }
       var um=Math.hypot(data.u[0],data.u[1],data.u[2])||1;
-      var b=buildRibbon(data.lines,um);
+      var b=buildRibbon(data.lines,um,pr&&pr[0],pr&&pr[1]);
       flow.cfd={nv:b.nv,bufs:b.bufs,umag:um,pose:pose||null};
     },
     // feed the wind-channel layer: wv = the telemetry's relative wind
@@ -1184,6 +1276,53 @@ function makeViewer(canvas,state,opts){
         return; // CFD geometry is static; only phase/blend animate
       }
       flowRebuild(flow.sw,m);
+    },
+    // ---- surface pressure (Pa): a SEPARATE overlay from the streamline
+    // machinery above, on purpose -- pressure tiles never touch `flow`,
+    // so they can run with no streamlines/wind-channel at all. A sweep
+    // payload ({u, range, sets:[{a,cp}...]}) blends the two attitude
+    // buckets bracketing the live angle of attack, exactly like the
+    // streamline sets do, then repaints the mesh's own color buffer.
+    setPressureData:function(data){
+      press.data=(data&&data.sets&&data.sets.length)?data:null;
+    },
+    // wv = relative wind (world frame, m/s), same input as windUpdate
+    pressureUpdate:function(wv,dt){
+      var ax=-wv[0],ay=-wv[1],az=-wv[2];
+      if(!press.sw)press.sw=[ax,ay,az];
+      var k2=1-Math.exp(-(dt||0)*4);
+      press.sw[0]+=(ax-press.sw[0])*k2;press.sw[1]+=(ay-press.sw[1])*k2;
+      press.sw[2]+=(az-press.sw[2])*k2;
+      if(!press.data||!view.modelR||!models.length)return;
+      var MR=view.modelR,u0=press.data.u,sw=press.sw;
+      var abx=MR[0]*sw[0]+MR[1]*sw[1]+MR[2]*sw[2];
+      var abz=MR[6]*sw[0]+MR[7]*sw[1]+MR[8]*sw[2];
+      press.alpha=Math.atan2(u0[0]*abz-u0[2]*abx,
+                             u0[0]*abx+u0[2]*abz)*57.2958;
+      // repainting ~23k faces is a real CPU loop + a full GPU buffer
+      // re-upload, not a cheap uniform tweak like the streamline blend
+      // -- doing that on every rAF (up to 60/sec, x6 tiles at once) was
+      // visibly janky. The field only needs to look smoothly time-
+      // varying, not literally recomputed every frame, so throttle it.
+      press.since=(press.since||0)+(dt||0);
+      if(press.since<0.1&&press.lastAlpha!==undefined)return;
+      press.since=0;press.lastAlpha=press.alpha;
+      var ss=press.data.sets,al=press.alpha,lo=ss[0],hi=ss[0];
+      if(al>=ss[ss.length-1].a){lo=hi=ss[ss.length-1]}
+      else if(al>ss[0].a)
+        for(var si=0;si<ss.length-1;si++)
+          if(al>=ss[si].a&&al<=ss[si+1].a){lo=ss[si];hi=ss[si+1];break}
+      var wb=(lo===hi)?0:(al-lo.a)/(hi.a-lo.a),range=press.data.range;
+      for(var m5=0;m5<models.length;m5++){
+        var mo=models[m5];
+        if(!mo.d2||!mo.d2.list)continue;
+        var nf=mo.d2.nf,pArr=new Float32Array(nf);
+        for(var of=0;of<nf;of++)
+          pArr[of]=lo.p[of]*(1-wb)+(hi.p[of]!==undefined?hi.p[of]:lo.p[of])*wb;
+        var C=cpColorBuffer(mo.d2,pArr,range[0],range[1]);
+        gl.bindBuffer(gl.ARRAY_BUFFER,mo.bufs.aC);
+        gl.bufferData(gl.ARRAY_BUFFER,C,gl.DYNAMIC_DRAW);
+      }
     },
     // release the GL context (card viewers churn as the page scrolls;
     // without this the browser's per-page context cap bites)
@@ -1308,14 +1447,17 @@ function makeViewer(canvas,state,opts){
           1.2*dpr*Math.max(0.45,Math.min(1,canvas.clientHeight/420)));
         gl.uniform1f(f2.uPh,flow.phase);
         gl.uniform1f(f2.uPer,0.7*frame.r);
-        gl.uniform3f(f2.uCol,0.55,0.72,0.67);  // light emerald
-        gl.uniform3f(f2.uCol2,0.09,0.30,0.26); // dark emerald
+        // ribbon hue now comes from the per-vertex aC2 buffer baked in
+        // buildRibbon (local velocity magnitude, sequential viridis --
+        // dark purple slow -> yellow fast, shared scale across every
+        // scenario tile) -- no uniform needed
         var baseAl=0.55+0.3*Math.min(1,(flow.liveM||FB.umag)/12);
         var drawSet=function(bs,wgt){
           if(!bs||!bs.nv||wgt<=0.02)return;
           gl.uniform1f(f2.uAl,baseAl*wgt);
           bind2(bs.bufs.aP,"aP",3);bind2(bs.bufs.aQ,"aQ",3);
           bind2(bs.bufs.aE,"aE",2);bind2(bs.bufs.aF,"aF",3);
+          bind2(bs.bufs.aC2,"aC2",3);
           gl.drawArrays(gl.TRIANGLES,0,bs.nv);
         };
         gl.enable(gl.BLEND);
@@ -1338,7 +1480,7 @@ function makeViewer(canvas,state,opts){
         }
         gl.depthMask(true);
         gl.disable(gl.BLEND);
-        ["aP","aQ","aE","aF"].forEach(function(a){
+        ["aP","aQ","aE","aF","aC2"].forEach(function(a){
           gl.disableVertexAttribArray(f2loc[a])});
         gl.useProgram(prog);
       }else if(flow.on&&flow.n>0&&flow.bufs){
@@ -1445,7 +1587,13 @@ function makeViewer(canvas,state,opts){
       state.panY-=(e.clientY-lastY)*2/Math.max(1,canvas.clientHeight);
     }else{
       state.yaw+=(e.clientX-lastX)*0.011;
-      state.pitch=Math.max(-1.6,Math.min(1.6,state.pitch+(e.clientY-lastY)*0.011));
+      // clamp strictly short of vertical (Math.PI/2 ~ 1.5708): crossing
+      // the pole is where yaw-pitch camera math gimbal-locks -- past
+      // it, further yaw dragging visually reverses and the model looks
+      // like it snapped 180 degrees. This one handler is shared by
+      // every 3D viewer on the page (makeViewer is instantiated per
+      // canvas), so the old +-1.6 clamp (past the pole) hit it anywhere
+      state.pitch=Math.max(-1.55,Math.min(1.55,state.pitch+(e.clientY-lastY)*0.011));
     }
     lastX=e.clientX;lastY=e.clientY;state.redraw()});
   canvas.addEventListener("pointerleave",function(){
@@ -1769,7 +1917,7 @@ function meanPose(d){
 
 window.AL={makeState:makeState,makeViewer:makeViewer,
   decodeBlob:decodeBlob,ensureBlobs:ensureBlobs,ensureFlight:ensureFlight,
-  ensureFlowLines:ensureFlowLines,
+  ensureFlowLines:ensureFlowLines,ensurePressure:ensurePressure,
   blobAvailable:blobAvailable,FLIGHTS:FLIGHTS,FLIGHT_SRC:FLIGHT_SRC,
   WMETA:WMETA,BASELINE:BASELINE,DEF_YAW:DEF_YAW,DEF_PITCH:DEF_PITCH,
   walkChainFor:walkChainFor,chainFrame:chainFrame,trailSpecs:trailSpecs,
@@ -2222,8 +2370,11 @@ openFromHash();
 // quick view presets act on whichever tab is showing
 // nose (FPV camera) = +X in mesh space; yaw/pitch pairs put it facing
 // the viewer (front), pointing left/right in profile, or up in plan views
+// top/bottom sit just short of the pole (+-1.55, not +-PI/2 exactly) --
+// same reason the drag clamp does: landing exactly on it means the
+// very next drag move snaps back off it
 var VIEWS={front:[Math.PI/2,0],left:[Math.PI,0],right:[0,0],
-           top:[-Math.PI/2,Math.PI/2],bottom:[Math.PI/2,-Math.PI/2]};
+           top:[-Math.PI/2,1.55],bottom:[Math.PI/2,-1.55]};
 function activeState(){
   if(ovl.classList.contains("perf"))return flState;
   var b=ovl.querySelector(".ovl-tabs button.on");
@@ -3431,12 +3582,21 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
     # real CFD streamline payloads (written by `airloom cfd-flow`):
     # purely opportunistic -- whatever exists on disk gets shipped
     flow_src: dict[str, dict[str, str]] = {}
+    # surface-pressure (Pa) payloads (written by `airloom cfd-flow
+    # --pressure`): same opportunistic discovery, kept in its own dict/
+    # data-attribute so the pressure tiles never share state with the
+    # streamline viewer instances
+    pressure_src: dict[str, dict[str, str]] = {}
     for fh in flight_src:
         fdir = Path(cands[fh]["png_path"]).parent
         scens = {p.name.split(".")[1]: _rel(results_dir, str(p))
                  for p in sorted(fdir.glob(f"{fh}.*.flow.js"))}
         if scens:
             flow_src[fh] = scens
+        pscens = {p.name.split(".")[1]: _rel(results_dir, str(p))
+                 for p in sorted(fdir.glob(f"{fh}.*.pressure.js"))}
+        if pscens:
+            pressure_src[fh] = pscens
 
     parts.append("<h2>candidate details &amp; parentage</h2>")
     parts.append('<p class="sub" style="font-style:italic">click a model or '
@@ -3483,6 +3643,8 @@ def write_gallery(store: Store, run_id: str, results_dir: Path,
                  f"{json.dumps(flight_src, separators=(',', ':'))}</script>")
     parts.append('<script type="application/json" id="flow-src">'
                  f"{json.dumps(flow_src, separators=(',', ':'))}</script>")
+    parts.append('<script type="application/json" id="pressure-src">'
+                 f"{json.dumps(pressure_src, separators=(',', ':'))}</script>")
     # shared 3D engine (viewer + blobs + replay components); the landing
     # page loads the same file, so it must come before the page scripts
     (results_dir / "viewer.js").write_text(ENGINE_JS)
@@ -3549,7 +3711,7 @@ def publish_docs(results_dir: Path, docs_dir: Path) -> None:
         shutil.rmtree(dst_frames)
     if src_frames.exists():
         for pattern in ("*.png", "*.mesh.js", "*.flight.js", "*.flow.js",
-                        "*.parts/*"):
+                        "*.pressure.js", "*.parts/*"):
             for f in sorted(src_frames.rglob(pattern)):
                 dst = docs_dir / f.relative_to(results_dir)
                 dst.parent.mkdir(parents=True, exist_ok=True)

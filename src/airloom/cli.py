@@ -216,11 +216,18 @@ def cmd_cfd_calibrate(args: argparse.Namespace) -> int:
 
 
 def cmd_cfd_flow(args: argparse.Namespace) -> int:
-    from .cfd import run_flow
     cfg = load_config(args.root, results_dir=args.results)
-    run_flow(cfg, Path(args.root).resolve() / "cfd",
-             h=args.genome_hash, solve=args.solve, extract=args.extract,
-             run_id=args.run_id)
+    if args.pressure:
+        from .cfd import run_pressure_sweep
+        run_pressure_sweep(cfg, Path(args.root).resolve() / "cfd",
+                           h=args.genome_hash, solve=args.solve,
+                           extract=args.extract, run_id=args.run_id,
+                           jobs=args.jobs)
+    else:
+        from .cfd import run_flow
+        run_flow(cfg, Path(args.root).resolve() / "cfd",
+                 h=args.genome_hash, solve=args.solve, extract=args.extract,
+                 run_id=args.run_id, jobs=args.jobs)
     return 0
 
 
@@ -351,6 +358,17 @@ def main(argv: list[str] | None = None) -> int:
                    help="run the cases through Docker; CPU-heavy (~1-2h)")
     p.add_argument("--extract", action="store_true",
                    help="parse already-solved cases into gallery payloads")
+    p.add_argument("--pressure", action="store_true",
+                   help="surface-pressure (Pa) attitude sweep instead of"
+                        " streamlines: 5 solves/scenario (mean + "
+                        "FLOW_SWEEP_DEG) reusing the scenario's already-"
+                        "meshed case; requires a prior plain `cfd-flow "
+                        "--solve` for this candidate")
+    p.add_argument("--jobs", type=int, default=1,
+                   help="concurrent case solves once the (one) mesh is"
+                        " ready -- each case is its own Docker container,"
+                        " so this is free parallelism on a multi-core"
+                        " machine")
     p.set_defaults(fn=cmd_cfd_flow)
 
     args = ap.parse_args(argv)

@@ -75,12 +75,34 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   border:1px solid var(--rule);border-radius:6px;touch-action:none}
 #perf-row figcaption{font:12px var(--mono);color:var(--faint);
   text-align:center;margin-top:4px}
-#perf-open{display:flex;justify-content:center;margin-top:16px}
-#perf-open button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
-  background:none;border:1px solid var(--rule);border-radius:2px;
-  padding:8px 26px;cursor:pointer}
-#perf-open button:hover{color:var(--ink);border-color:var(--ink)}
+/* pressure row: same six-tile layout as the performance row above, but
+   a visually distinct section -- deliberately never mixed with the
+   streamline tiles */
+#pressure-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;
+  justify-content:center;width:100vw;margin-left:calc(50% - 50vw);
+  padding:0 28px}
+#pressure-row .pf{flex:1;min-width:150px;margin:0}
+#pressure-row canvas{width:100%;aspect-ratio:1/1;display:block;
+  cursor:grab;border:1px solid var(--rule);border-radius:6px;
+  touch-action:none}
+#pressure-row figcaption{font:12px var(--mono);color:var(--faint);
+  text-align:center;margin-top:4px}
+#cp-legend{display:flex;align-items:center;justify-content:center;
+  gap:10px;margin:16px auto 0;font:12px var(--mono);color:var(--faint)}
+#cp-legend .bar{width:180px;height:10px;border-radius:5px;
+  background:linear-gradient(to right,
+    rgb(26,64,166) 0%,rgb(242,242,235) 50%,rgb(191,20,20) 100%)}
+/* streamline speed colormap: sequential viridis (dark purple = slow,
+   yellow = fast) -- unlike pressure, speed has no meaningful zero to
+   diverge around, so this is a perceptually-uniform sequential map
+   instead of #cp-legend's diverging one (see speedColor() in
+   viewer.js); stops match its 5-color viridis approximation */
+#flow-legend{display:flex;align-items:center;justify-content:center;
+  gap:10px;margin:16px auto 0;font:12px var(--mono);color:var(--faint)}
+#flow-legend .bar{width:180px;height:10px;border-radius:5px;
+  background:linear-gradient(to right,
+    rgb(68,1,84) 0%,rgb(65,68,135) 25%,rgb(42,120,142) 50%,
+    rgb(34,168,132) 75%,rgb(253,231,37) 100%)}
 .panel .cap{font:12px var(--mono);color:var(--faint);margin:6px 0 0;
   min-height:16px}
 /* replay controls reuse the research log's visual language */
@@ -112,14 +134,6 @@ LANDING_JS = r"""
 "use strict";
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
-// the button under the scenario row rides the card's own overlay
-// wiring (same full-screen performance view)
-var po=document.getElementById("perf-open");
-if(po)po.addEventListener("click",function(){
-  var b=document.querySelector(
-    '.viewer .vbtns button[data-mode="perf"]');
-  if(b&&!b.disabled)b.click();
-});
 var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
 AL.ensureBlobs(need).then(function(){
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
@@ -155,22 +169,25 @@ AL.ensureBlobs(need).then(function(){
     var tp2=document.getElementById("trail-panel");
     if(tp2)tp2.style.display="none";
   }
-  // ---- performance row: the champion flying every scenario at once.
-  // All the mini views share ONE camera state, so orbiting any box
-  // orbits them all; each poses the model from its own telemetry.
-  // WebGL contexts are a scarce, capped resource on mobile browsers --
-  // six of them created up front (on top of the hero card, replay and
-  // trail views above) can push a page past that cap and get an
-  // already-open context silently evicted. Defer creation until the
-  // row is actually about to scroll into view.
-  var boxes=[].slice.call(document.querySelectorAll("#perf-row canvas"));
-  var perfRow=document.getElementById("perf-row");
-  if(!boxes.length||!perfRow)return;
-  function startPerfRow(){
+  // ---- scenario rows: the champion flying every weather scenario at
+  // once, one row for streamlines and a SEPARATE row for surface
+  // pressure -- same telemetry-driven pose math, own camera state and
+  // own data per row, so neither leaks into the other. All the mini
+  // views within a row share ONE camera state, so orbiting any box
+  // orbits the rest of that row; each poses the model from its own
+  // telemetry. WebGL contexts are a scarce, capped resource on mobile
+  // browsers -- creating a dozen of them up front (on top of the hero
+  // card, replay and trail views above) can push a page past that cap
+  // and get an already-open context silently evicted. Defer creation
+  // until each row is actually about to scroll into view.
+  function startScenarioRow(rowId,mode){
+    var row=document.getElementById(rowId);
+    var boxes=[].slice.call(document.querySelectorAll("#"+rowId+" canvas"));
+    if(!boxes.length||!row)return;
     var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
     var views=[];
     boxes.forEach(function(cv){
-      var v=AL.makeViewer(cv,pst,{flowLines:30});
+      var v=AL.makeViewer(cv,pst,{flowLines:mode==="flow"?30:0});
       if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
     });
     if(!views.length)return;
@@ -178,18 +195,26 @@ AL.ensureBlobs(need).then(function(){
     .then(function(){
       views.forEach(function(w){
         w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
-        // real CFD streamlines where solved; analytic field otherwise.
-        // Anchored at the trace's mean attitude: the wind stays
-        // world-fixed while the craft oscillates within it.
-        AL.ensureFlowLines(CH,w.scen).then(function(d){
-          var fd=AL.FLIGHTS[CH+"|"+w.scen];
-          w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
+        if(mode==="flow"){
+          // real CFD streamlines where solved; analytic field otherwise.
+          // Anchored at the trace's mean attitude: the wind stays
+          // world-fixed while the craft oscillates within it.
+          AL.ensureFlowLines(CH,w.scen).then(function(d){
+            var fd=AL.FLIGHTS[CH+"|"+w.scen];
+            w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
+        }else{
+          // surface pressure (Pa), blended live between the nearest
+          // solved attitudes as the craft's own AoA changes -- see
+          // pressureUpdate in viewer.js
+          AL.ensurePressure(CH,w.scen).then(function(d){
+            w.v.setPressureData(d)});
+        }
       });
       var on=true,last=null;
       if("IntersectionObserver" in window){
         new IntersectionObserver(function(es){
           es.forEach(function(en){on=en.isIntersecting;last=null});
-        }).observe(perfRow);
+        }).observe(row);
       }
       function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
       function tick(ts){
@@ -219,25 +244,35 @@ AL.ensureBlobs(need).then(function(){
           w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
           w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
           w.v.setPropAngle(w.th);
-          // the wind channel is what tells the six boxes apart
-          w.v.windUpdate([lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
-                          lerp(d,"wz",f0,i,j)],dt);
+          var wv=[lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
+                  lerp(d,"wz",f0,i,j)];
+          // the wind channel / pressure repaint is what tells the boxes
+          // in a row apart
+          if(mode==="flow")w.v.windUpdate(wv,dt);
+          else w.v.pressureUpdate(wv,dt);
         });
         pst.redraw(); // one shared state: draws every box in the row
       }
       requestAnimationFrame(tick);
     });
   }
-  if("IntersectionObserver" in window){
-    var startObs=new IntersectionObserver(function(es){
-      es.forEach(function(en){
-        if(en.isIntersecting){startObs.disconnect();startPerfRow()}
-      });
-    },{rootMargin:"400px"});
-    startObs.observe(perfRow);
-  }else{
-    startPerfRow();
+  function deferScenarioRow(rowId,mode){
+    var row=document.getElementById(rowId);
+    if(!row)return;
+    if("IntersectionObserver" in window){
+      var startObs=new IntersectionObserver(function(es){
+        es.forEach(function(en){
+          if(en.isIntersecting){
+            startObs.disconnect();startScenarioRow(rowId,mode)}
+        });
+      },{rootMargin:"400px"});
+      startObs.observe(row);
+    }else{
+      startScenarioRow(rowId,mode);
+    }
   }
+  deferScenarioRow("perf-row","flow");
+  deferScenarioRow("pressure-row","pressure");
 });
 })();
 """
@@ -556,6 +591,9 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
                      if h and _mesh_js_for(results_dir, cands[h]["png_path"])}
     flight_src: dict[str, dict[str, str]] = {}
     flow_src: dict[str, dict[str, str]] = {}
+    # surface-pressure (Pa) payloads, kept in their own dict/data-attribute
+    # so the pressure tiles never share state with the streamline viewers
+    pressure_src: dict[str, dict[str, str]] = {}
     for fh in (champ_hash, base_hash):
         if not fh or not cands[fh]["png_path"]:
             continue
@@ -568,6 +606,10 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
                  for p in sorted(fdir.glob(f"{fh}.*.flow.js"))}
         if flows:
             flow_src[fh] = flows
+        pressures = {p.name.split(".")[1]: _rel(results_dir, str(p))
+                    for p in sorted(fdir.glob(f"{fh}.*.pressure.js"))}
+        if pressures:
+            pressure_src[fh] = pressures
     parts.append(candidate_card_html(
         store, run_id, results_dir, cands, champ_hash,
         viewer_hashes=viewer_hashes,
@@ -576,8 +618,11 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         baseline_hash=base_hash, baseline_fit=base_fit,
         href_base="log.html"))
 
-    # performance: every scored flight replayed side by side, cameras
-    # locked together (all the mini views share one orbit state)
+    # performance + pressure: every scored flight replayed side by side
+    # twice, once as streamlines and once as surface pressure -- one
+    # intro paragraph covering both, two 6-tile rows underneath. Kept as
+    # separate row ids/states/cameras internally (the streamline and
+    # pressure viewers never share data), just presented as one section.
     if flight_src.get(champ_hash):
         scen_ws = {s["scenario"]: s["wh_per_km"]
                    for s in store.scenario_results_for(run_id, champ_hash)}
@@ -594,16 +639,38 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             "scenarios</h2>",
             '<p class="sub">the actual scored flights, replayed from '
             "simulation telemetry &mdash; attitude and rotor speed are "
-            "what the simulator graded. Flow lines are OpenFOAM RANS "
+            "what the simulator graded. The first row is OpenFOAM RANS "
             "streamlines at each scenario&rsquo;s mean relative wind "
             "where solved (rotors not modeled), an illustrative field "
-            f"otherwise. Drag inside any box and all {n_scen} cameras "
-            "orbit in unison; the <b>view candidate performance</b> "
-            "button on the card above opens the full-screen replay "
-            "with live telemetry.</p>",
+            "otherwise, posed with the craft&rsquo;s own live attitude "
+            "and colored by local velocity magnitude on a sequential "
+            "scale &mdash; dark purple where flow slows, yellow where "
+            "it accelerates around the frame. "
+            "The second row is the same flights colored by solved "
+            "surface pressure instead, in pascals: deep red is a "
+            "stagnation zone (high pressure, most of the drag), deep "
+            "blue is a suction zone &mdash; raw pressure, not the "
+            "normalized Cp coefficient, so a scenario with genuinely "
+            "more severe airflow reads as more intense rather than just "
+            "differently shaped. Both rows share one color scale across "
+            "all six scenarios and blend live as the craft&rsquo;s own "
+            f"attitude changes during the replay. Drag inside any box "
+            f"and all {n_scen} cameras orbit in unison; the <b>view "
+            "candidate performance</b> button on the card above opens "
+            "the full-screen replay with live telemetry.</p>",
             f'<div id="perf-row">{boxes}</div>',
-            '<div id="perf-open"><button>view candidate '
-            "performance</button></div>"]
+            '<div id="flow-legend"><span>slow</span>'
+            '<span class="bar"></span><span>fast</span></div>']
+
+    if pressure_src.get(champ_hash):
+        pboxes = "".join(
+            f'<figure class="pf"><canvas data-scen="{s}"></canvas>'
+            f"<figcaption>{s.replace('_', ' ')}</figcaption></figure>"
+            for s in flow_src.get(champ_hash, pressure_src[champ_hash]))
+        parts += [
+            f'<div id="pressure-row">{pboxes}</div>',
+            '<div id="cp-legend"><span>suction</span>'
+            '<span class="bar"></span><span>stagnation</span></div>']
 
     # the evolution: the whole lineage superimposed, then the replay of
     # the champion's own line -- the trail comes first (the net shape
@@ -691,6 +758,8 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         f"{json.dumps(flight_src, separators=(',', ':'))}</script>",
         '<script type="application/json" id="flow-src">'
         f"{json.dumps(flow_src, separators=(',', ':'))}</script>",
+        '<script type="application/json" id="pressure-src">'
+        f"{json.dumps(pressure_src, separators=(',', ':'))}</script>",
         f"<script>var BASELINE={json.dumps(base_hash)};"
         f"var CHAMP={json.dumps(champ_hash)};"
         "window.NO_LIVE_RELOAD=true;</script>",

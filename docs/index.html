@@ -485,12 +485,34 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   border:1px solid var(--rule);border-radius:6px;touch-action:none}
 #perf-row figcaption{font:12px var(--mono);color:var(--faint);
   text-align:center;margin-top:4px}
-#perf-open{display:flex;justify-content:center;margin-top:16px}
-#perf-open button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
-  text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
-  background:none;border:1px solid var(--rule);border-radius:2px;
-  padding:8px 26px;cursor:pointer}
-#perf-open button:hover{color:var(--ink);border-color:var(--ink)}
+/* pressure row: same six-tile layout as the performance row above, but
+   a visually distinct section -- deliberately never mixed with the
+   streamline tiles */
+#pressure-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;
+  justify-content:center;width:100vw;margin-left:calc(50% - 50vw);
+  padding:0 28px}
+#pressure-row .pf{flex:1;min-width:150px;margin:0}
+#pressure-row canvas{width:100%;aspect-ratio:1/1;display:block;
+  cursor:grab;border:1px solid var(--rule);border-radius:6px;
+  touch-action:none}
+#pressure-row figcaption{font:12px var(--mono);color:var(--faint);
+  text-align:center;margin-top:4px}
+#cp-legend{display:flex;align-items:center;justify-content:center;
+  gap:10px;margin:16px auto 0;font:12px var(--mono);color:var(--faint)}
+#cp-legend .bar{width:180px;height:10px;border-radius:5px;
+  background:linear-gradient(to right,
+    rgb(26,64,166) 0%,rgb(242,242,235) 50%,rgb(191,20,20) 100%)}
+/* streamline speed colormap: sequential viridis (dark purple = slow,
+   yellow = fast) -- unlike pressure, speed has no meaningful zero to
+   diverge around, so this is a perceptually-uniform sequential map
+   instead of #cp-legend's diverging one (see speedColor() in
+   viewer.js); stops match its 5-color viridis approximation */
+#flow-legend{display:flex;align-items:center;justify-content:center;
+  gap:10px;margin:16px auto 0;font:12px var(--mono);color:var(--faint)}
+#flow-legend .bar{width:180px;height:10px;border-radius:5px;
+  background:linear-gradient(to right,
+    rgb(68,1,84) 0%,rgb(65,68,135) 25%,rgb(42,120,142) 50%,
+    rgb(34,168,132) 75%,rgb(253,231,37) 100%)}
 .panel .cap{font:12px var(--mono);color:var(--faint);margin:6px 0 0;
   min-height:16px}
 /* replay controls reuse the research log's visual language */
@@ -516,9 +538,11 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
 </div>
 <div class="detail setter champion" id="d-4553a646ccc2"><div class="dhead">candidate <span class="hash">4553a646ccc2</span><span class="chip champ">run champion</span></div><div class="dcols"><div class="viewer"><div class="vr"><img class="peek" decoding="async" data-src="frames/gen_0079/4553a646ccc2_bottom.png" alt="4553a646ccc2" data-mesh="m-4553a646ccc2" data-title="4553a646ccc2" data-fit="5.763" data-setter="1" data-ancestor="m-7792e42599f3" data-anctitle="7792e42599f3 · g0 · 6.886 · baseline"><div class="hint">drag to rotate &middot; scroll to zoom &middot; double-click resets</div></div><div class="vbtns"><button data-mode="evo">view candidate evolution</button><button data-mode="perf">view candidate performance</button></div><div class="lgd parts"><span class="lg gl">evolved:</span><span class="lg"><span class="sw"><span class="dot" style="background:#8c2f1f"></span></span>arms<span class="tip"><b>arms</b><br>Evolved part: the four arms &mdash; length, width, waist, thickness and sweep genes reshape them.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#34322e"></span></span>deck plates + standoffs<span class="tip"><b>deck plates + standoffs</b><br>Evolved part: the stacked deck plates and standoffs &mdash; plate size, thickness and deck gap genes reshape them.</span></span><span class="lg gl">fixed kit:</span><span class="lg"><span class="sw"><span class="dot" style="background:#4a6fa5"></span></span>battery<span class="tip"><b>battery</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#5a7a52"></span></span>FC/ESC stack<span class="tip"><b>FC/ESC stack</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#8a6a1e"></span></span>wiring/XT60<span class="tip"><b>wiring/XT60</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#55534c"></span></span>motors<span class="tip"><b>motors</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span><span class="lg"><span class="sw"><span class="dot" style="background:#d8d5c8"></span></span>prop disks<span class="tip"><b>prop disks</b><br>Fixed kit, identical on every candidate &mdash; drawn in the 3D model for context only; evolution never changes it.</span></span></div></div><div class="dmeta"><table class="dt hd"><tr><th>metric</th><th>value</th></tr><tr><td>energy score</td><td class='num'><b>5.763</b> Wh/km</td></tr><tr><td>vs baseline</td><td class='num'><b>16.3%</b> better</td></tr><tr><td>scenario mean</td><td class='num'>3.553 Wh/km</td></tr><tr><td>worst scenario</td><td class='num'>4.421 Wh/km</td></tr><tr><td>frame mass</td><td class='num'>55.7&thinsp;g</td></tr><tr><td>material</td><td class='num'>cf_plate</td></tr><tr><td>born</td><td class='num'>generation 79 via crossover</td></tr></table><div class="note"><span class="nlab">hypothesis</span>Crossing the two 5.767-5.768 co-leaders, this candidate bets that combining their independently-good arm-waist and sweep traits, rather than mutating either alone, can compound into a genuinely lower-drag hybrid.</div><div class="note"><span class="nlab">method</span>Crossed the two leading parents, pulling in a narrower arm waist and wider arm from the second parent, trimming the material blend, and opening rear sweep slightly.</div><div class="note res"><span class="nlab">result</span>Fitness dropped to 5.763, beating both parents and becoming the NEW WINNER for the generation, edging out sibling candidate 222e0e2cc59f&#x27;s 5.767. Every scenario improved marginally, suggesting the narrower waist combined with a wider arm genuinely reduces flex-related losses without adding drag. Worth testing next: push arm waist narrower still, toward x0.40, to see if the trend continues before it becomes a structural liability.</div><div class="nmodel">notes by claude-haiku-4-5-20251001, claude-sonnet-5</div><div class="tlab">scenario results &amp; genome</div><div class="tables"><table class="dt sc-tbl"><tr><th>scenario</th><th>wh/km</th><th>avg power, w</th><th>max tilt</th><th></th></tr><tr><td>calm_warm</td><td>3.056</td><td>129.8</td><td>25.1&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>cold_headwind</td><td>3.648</td><td>155.0</td><td>37.2&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>crosswind</td><td>3.526</td><td>149.8</td><td>32.3&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>gusty_light</td><td>3.405</td><td>144.7</td><td>31.6&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>hot_thin</td><td>3.260</td><td>138.5</td><td>27.0&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr><tr><td>storm</td><td>4.421</td><td>187.8</td><td>29.1&deg;</td><td style='color:var(--accent);font-style:italic'></td></tr></table><table class="dt gene-tbl"><tr><th>gene</th><th>value</th><th></th></tr><tr><td>arm length</td><td>×0.78</td><td></td></tr><tr><td>arm width</td><td>×0.87</td><td></td></tr><tr><td>arm waist</td><td>×0.42</td><td></td></tr><tr><td>arm thickness</td><td>2.5 mm</td><td></td></tr><tr><td>tip thickness</td><td>×0.98</td><td></td></tr><tr><td>arm cutouts</td><td>×0.00</td><td></td></tr><tr><td>front sweep</td><td>37.2°</td><td></td></tr><tr><td>rear sweep</td><td>44.3°</td><td></td></tr><tr><td>plate length</td><td>×0.94</td><td></td></tr><tr><td>plate width</td><td>×1.01</td><td></td></tr><tr><td>deck gap</td><td>29.8 mm</td><td></td></tr><tr><td>battery wedge</td><td>1.0°</td><td></td></tr><tr><td>plate thickness</td><td>×0.63</td><td></td></tr><tr><td>material</td><td>cf_plate</td><td></td></tr></table></div></div><div class="parents"><div class="lab">parents</div><figure><a href="log.html#d-81837e8357bb" style="border:none"><img data-src="frames/gen_0077/81837e8357bb.png" alt="81837e8357bb" decoding="async"></a><figcaption>81837e8357bb &middot; <span class="num">5.767</span></figcaption></figure><figure><a href="log.html#d-bf7d9ddf87f6" style="border:none"><img data-src="frames/gen_0078/bf7d9ddf87f6.png" alt="bf7d9ddf87f6" decoding="async"></a><figcaption>bf7d9ddf87f6 &middot; <span class="num">5.768</span></figcaption></figure></div></div></div>
 <h2>performance: the champion flying all 6 weather scenarios</h2>
-<p class="sub">the actual scored flights, replayed from simulation telemetry &mdash; attitude and rotor speed are what the simulator graded. Flow lines are OpenFOAM RANS streamlines at each scenario&rsquo;s mean relative wind where solved (rotors not modeled), an illustrative field otherwise. Drag inside any box and all 6 cameras orbit in unison; the <b>view candidate performance</b> button on the card above opens the full-screen replay with live telemetry.</p>
+<p class="sub">the actual scored flights, replayed from simulation telemetry &mdash; attitude and rotor speed are what the simulator graded. The first row is OpenFOAM RANS streamlines at each scenario&rsquo;s mean relative wind where solved (rotors not modeled), an illustrative field otherwise, posed with the craft&rsquo;s own live attitude and colored by local velocity magnitude on a sequential scale &mdash; dark purple where flow slows, yellow where it accelerates around the frame. The second row is the same flights colored by solved surface pressure instead, in pascals: deep red is a stagnation zone (high pressure, most of the drag), deep blue is a suction zone &mdash; raw pressure, not the normalized Cp coefficient, so a scenario with genuinely more severe airflow reads as more intense rather than just differently shaped. Both rows share one color scale across all six scenarios and blend live as the craft&rsquo;s own attitude changes during the replay. Drag inside any box and all 6 cameras orbit in unison; the <b>view candidate performance</b> button on the card above opens the full-screen replay with live telemetry.</p>
 <div id="perf-row"><figure class="pf"><canvas data-scen="calm_warm"></canvas><figcaption>calm warm &middot; 3.056 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="cold_headwind"></canvas><figcaption>cold headwind &middot; 3.648 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="crosswind"></canvas><figcaption>crosswind &middot; 3.526 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="gusty_light"></canvas><figcaption>gusty light &middot; 3.405 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="hot_thin"></canvas><figcaption>hot thin &middot; 3.260 Wh/km</figcaption></figure><figure class="pf"><canvas data-scen="storm"></canvas><figcaption>storm &middot; 4.421 Wh/km</figcaption></figure></div>
-<div id="perf-open"><button>view candidate performance</button></div>
+<div id="flow-legend"><span>slow</span><span class="bar"></span><span>fast</span></div>
+<div id="pressure-row"><figure class="pf"><canvas data-scen="calm_warm"></canvas><figcaption>calm warm</figcaption></figure><figure class="pf"><canvas data-scen="cold_headwind"></canvas><figcaption>cold headwind</figcaption></figure><figure class="pf"><canvas data-scen="crosswind"></canvas><figcaption>crosswind</figcaption></figure><figure class="pf"><canvas data-scen="gusty_light"></canvas><figcaption>gusty light</figcaption></figure><figure class="pf"><canvas data-scen="hot_thin"></canvas><figcaption>hot thin</figcaption></figure><figure class="pf"><canvas data-scen="storm"></canvas><figcaption>storm</figcaption></figure></div>
+<div id="cp-legend"><span>suction</span><span class="bar"></span><span>stagnation</span></div>
 <h2>the lineage trail: 80 generations, superimposed</h2>
 <p class="sub">every ancestor on the champion&rsquo;s line, from the baseline to the winner, drawn on top of each other &mdash; the winner solid, each ancestor a fainter gray ghost the further back it goes. Evolved parts only, so the shape change itself is what reads.</p>
 <div class="panel" id="trail-panel"><canvas id="trail-canvas"></canvas></div>
@@ -10770,6 +10794,7 @@ if(typeof window.TREE_PIN==="string"&&META[window.TREE_PIN]){
 <script type="application/json" id="blob-src">{"m-7792e42599f3":"frames/gen_0000/7792e42599f3.mesh.js","m-4553a646ccc2":"frames/gen_0079/4553a646ccc2.mesh.js","m-bf7d9ddf87f6":"frames/gen_0078/bf7d9ddf87f6.mesh.js","m-6c1c1963d383":"frames/gen_0076/6c1c1963d383.mesh.js","m-318f5b17dcdb":"frames/gen_0075/318f5b17dcdb.mesh.js","m-caf7425025ef":"frames/gen_0075/caf7425025ef.mesh.js","m-87c8fa55a889":"frames/gen_0073/87c8fa55a889.mesh.js","m-b4fab6ab7227":"frames/gen_0072/b4fab6ab7227.mesh.js","m-b0f1891a8f78":"frames/gen_0071/b0f1891a8f78.mesh.js","m-ad8871a2dc40":"frames/gen_0070/ad8871a2dc40.mesh.js","m-70471228a0b9":"frames/gen_0067/70471228a0b9.mesh.js","m-2416283932cc":"frames/gen_0066/2416283932cc.mesh.js","m-ac19d20e0e0b":"frames/gen_0065/ac19d20e0e0b.mesh.js","m-13cc64e0b6dc":"frames/gen_0063/13cc64e0b6dc.mesh.js","m-db6154a228b3":"frames/gen_0062/db6154a228b3.mesh.js","m-d773d9589e16":"frames/gen_0060/d773d9589e16.mesh.js","m-edfd1f91cfd1":"frames/gen_0058/edfd1f91cfd1.mesh.js","m-3f4703e7772e":"frames/gen_0054/3f4703e7772e.mesh.js","m-04ff0826e748":"frames/gen_0020/04ff0826e748.mesh.js","m-0e35d1c372f5":"frames/gen_0019/0e35d1c372f5.mesh.js","m-7cb5e0fb0f54":"frames/gen_0052/7cb5e0fb0f54.mesh.js","m-3f2badcff637":"frames/gen_0051/3f2badcff637.mesh.js","m-07b4654d6ff5":"frames/gen_0050/07b4654d6ff5.mesh.js","m-e7bb72f4bb57":"frames/gen_0048/e7bb72f4bb57.mesh.js","m-b52d9f62ec39":"frames/gen_0046/b52d9f62ec39.mesh.js","m-42b2f05c7846":"frames/gen_0043/42b2f05c7846.mesh.js","m-00d69e7202dc":"frames/gen_0041/00d69e7202dc.mesh.js","m-94d7793ebd81":"frames/gen_0040/94d7793ebd81.mesh.js","m-ca88346c95ae":"frames/gen_0036/ca88346c95ae.mesh.js","m-913f15a5a9be":"frames/gen_0039/913f15a5a9be.mesh.js","m-0166abd4d36e":"frames/gen_0038/0166abd4d36e.mesh.js","m-4d5a5ecbbe0d":"frames/gen_0037/4d5a5ecbbe0d.mesh.js","m-ec81aaaf05c6":"frames/gen_0036/ec81aaaf05c6.mesh.js","m-b5fd89cd1e22":"frames/gen_0024/b5fd89cd1e22.mesh.js","m-4e8c86fe9cfd":"frames/gen_0040/4e8c86fe9cfd.mesh.js","m-457bb2ac5e47":"frames/gen_0042/457bb2ac5e47.mesh.js","m-0d752fea69f4":"frames/gen_0040/0d752fea69f4.mesh.js","m-7d43a417f1f2":"frames/gen_0039/7d43a417f1f2.mesh.js","m-646a06905c29":"frames/gen_0038/646a06905c29.mesh.js","m-d0f89ce2aa6f":"frames/gen_0037/d0f89ce2aa6f.mesh.js","m-1a8724bc0df6":"frames/gen_0036/1a8724bc0df6.mesh.js","m-4a0fbfe92906":"frames/gen_0034/4a0fbfe92906.mesh.js","m-2d9fa0a61d91":"frames/gen_0033/2d9fa0a61d91.mesh.js","m-63ee905eb117":"frames/gen_0032/63ee905eb117.mesh.js","m-89b92a51a1d5":"frames/gen_0032/89b92a51a1d5.mesh.js","m-33ab77f283dd":"frames/gen_0035/33ab77f283dd.mesh.js","m-25de790024cd":"frames/gen_0034/25de790024cd.mesh.js","m-8da55bcaa280":"frames/gen_0036/8da55bcaa280.mesh.js","m-a8359c6458ff":"frames/gen_0035/a8359c6458ff.mesh.js","m-7b1e1208a985":"frames/gen_0034/7b1e1208a985.mesh.js","m-80224a35b8a9":"frames/gen_0031/80224a35b8a9.mesh.js","m-4f7255f5364a":"frames/gen_0034/4f7255f5364a.mesh.js","m-97ab5e513af7":"frames/gen_0033/97ab5e513af7.mesh.js","m-e03f89ef0ba9":"frames/gen_0032/e03f89ef0ba9.mesh.js","m-dbe355952720":"frames/gen_0031/dbe355952720.mesh.js","m-6ee9d05adace":"frames/gen_0033/6ee9d05adace.mesh.js","m-b2f3b2e99a18":"frames/gen_0032/b2f3b2e99a18.mesh.js","m-774ab485c721":"frames/gen_0031/774ab485c721.mesh.js","m-bd7c0cc776e5":"frames/gen_0028/bd7c0cc776e5.mesh.js","m-25489c5c4184":"frames/gen_0032/25489c5c4184.mesh.js","m-cbb51c89c940":"frames/gen_0031/cbb51c89c940.mesh.js","m-b30ff77c67b3":"frames/gen_0037/b30ff77c67b3.mesh.js","m-b26f1effed24":"frames/gen_0040/b26f1effed24.mesh.js","m-7f8d4756ea04":"frames/gen_0039/7f8d4756ea04.mesh.js","m-61b5e47c6d2c":"frames/gen_0043/61b5e47c6d2c.mesh.js","m-6a56f2c2924b":"frames/gen_0047/6a56f2c2924b.mesh.js","m-71bd5aa15020":"frames/gen_0045/71bd5aa15020.mesh.js","m-61844712d53e":"frames/gen_0044/61844712d53e.mesh.js","m-15c422327b08":"frames/gen_0002/15c422327b08.mesh.js","m-147c162c7115":"frames/gen_0001/147c162c7115.mesh.js","m-fb21f27a5a37":"frames/gen_0000/fb21f27a5a37.mesh.js","m-ac6152897717":"frames/gen_0000/ac6152897717.mesh.js","m-6f1d794a18c7":"frames/gen_0043/6f1d794a18c7.mesh.js","m-2991738d5132":"frames/gen_0041/2991738d5132.mesh.js","m-939e58c18328":"frames/gen_0059/939e58c18328.mesh.js","m-4f7f130683ab":"frames/gen_0061/4f7f130683ab.mesh.js","m-5b36b7ba31ae":"frames/gen_0060/5b36b7ba31ae.mesh.js","m-5cdac6ab7364":"frames/gen_0059/5cdac6ab7364.mesh.js","m-11a813e12658":"frames/gen_0060/11a813e12658.mesh.js","m-6f34a6d8b8a0":"frames/gen_0062/6f34a6d8b8a0.mesh.js","m-7b72828ca192":"frames/gen_0061/7b72828ca192.mesh.js","m-d7374e00b9ed":"frames/gen_0065/d7374e00b9ed.mesh.js","m-58571c6a9bc4":"frames/gen_0040/58571c6a9bc4.mesh.js","m-6db70c32221a":"frames/gen_0063/6db70c32221a.mesh.js","m-35eb65efe1f7":"frames/gen_0062/35eb65efe1f7.mesh.js","m-f2101412c247":"frames/gen_0061/f2101412c247.mesh.js","m-ec53169beaa7":"frames/gen_0065/ec53169beaa7.mesh.js","m-fd6ec10c3150":"frames/gen_0063/fd6ec10c3150.mesh.js","m-81d77d40a723":"frames/gen_0064/81d77d40a723.mesh.js","m-73dbaa8da714":"frames/gen_0063/73dbaa8da714.mesh.js","m-f2a8bd3b3138":"frames/gen_0062/f2a8bd3b3138.mesh.js","m-8c77829a4cac":"frames/gen_0062/8c77829a4cac.mesh.js","m-30a97e96c273":"frames/gen_0063/30a97e96c273.mesh.js","m-e5b4e85a44a9":"frames/gen_0069/e5b4e85a44a9.mesh.js","m-b9875b5864b2":"frames/gen_0068/b9875b5864b2.mesh.js","m-8ac4c8e23d62":"frames/gen_0067/8ac4c8e23d62.mesh.js","m-591295fbf339":"frames/gen_0066/591295fbf339.mesh.js","m-4c99fc85e1c2":"frames/gen_0065/4c99fc85e1c2.mesh.js","m-c85fb3a7d14d":"frames/gen_0051/c85fb3a7d14d.mesh.js","m-e11b88c67c75":"frames/gen_0064/e11b88c67c75.mesh.js","m-0ccd0db07aa6":"frames/gen_0063/0ccd0db07aa6.mesh.js","m-afc5d2384c50":"frames/gen_0063/afc5d2384c50.mesh.js","m-52ed0f4a3446":"frames/gen_0071/52ed0f4a3446.mesh.js","m-59c6df74bc54":"frames/gen_0070/59c6df74bc54.mesh.js","m-1f59e66ff16e":"frames/gen_0072/1f59e66ff16e.mesh.js","m-461576713f2a":"frames/gen_0074/461576713f2a.mesh.js","m-44f028494322":"frames/gen_0073/44f028494322.mesh.js","m-58846fcec09d":"frames/gen_0072/58846fcec09d.mesh.js","m-81837e8357bb":"frames/gen_0077/81837e8357bb.mesh.js","m-f75f83b22b07":"frames/gen_0076/f75f83b22b07.mesh.js","m-d33be0b1ff3e":"frames/gen_0075/d33be0b1ff3e.mesh.js","m-8dff7a249bfd":"frames/gen_0074/8dff7a249bfd.mesh.js","m-bff4bcb6264c":"frames/gen_0074/bff4bcb6264c.mesh.js","m-147477ac7643":"frames/gen_0075/147477ac7643.mesh.js","m-752459a29c9d":"frames/gen_0074/752459a29c9d.mesh.js","m-3ea600b4fceb":"frames/gen_0075/3ea600b4fceb.mesh.js","m-452eeb990a01":"frames/gen_0074/452eeb990a01.mesh.js","m-811956359c17":"frames/gen_0073/811956359c17.mesh.js","m-1b211058c096":"frames/gen_0071/1b211058c096.mesh.js","m-8072d6ac6af6":"frames/gen_0070/8072d6ac6af6.mesh.js","m-fd9db8a3f7d2":"frames/gen_0068/fd9db8a3f7d2.mesh.js","m-9d4f63731087":"frames/gen_0067/9d4f63731087.mesh.js","m-3f605bcdd0b2":"frames/gen_0066/3f605bcdd0b2.mesh.js","m-8496623657c2":"frames/gen_0066/8496623657c2.mesh.js"}</script>
 <script type="application/json" id="flight-src">{"4553a646ccc2":{"calm_warm":"frames/gen_0079/4553a646ccc2.calm_warm.flight.js","cold_headwind":"frames/gen_0079/4553a646ccc2.cold_headwind.flight.js","crosswind":"frames/gen_0079/4553a646ccc2.crosswind.flight.js","gusty_light":"frames/gen_0079/4553a646ccc2.gusty_light.flight.js","hot_thin":"frames/gen_0079/4553a646ccc2.hot_thin.flight.js","storm":"frames/gen_0079/4553a646ccc2.storm.flight.js"},"7792e42599f3":{"calm_warm":"frames/gen_0000/7792e42599f3.calm_warm.flight.js","cold_headwind":"frames/gen_0000/7792e42599f3.cold_headwind.flight.js","crosswind":"frames/gen_0000/7792e42599f3.crosswind.flight.js","gusty_light":"frames/gen_0000/7792e42599f3.gusty_light.flight.js","hot_thin":"frames/gen_0000/7792e42599f3.hot_thin.flight.js","storm":"frames/gen_0000/7792e42599f3.storm.flight.js"}}</script>
 <script type="application/json" id="flow-src">{"4553a646ccc2":{"calm_warm":"frames/gen_0079/4553a646ccc2.calm_warm.flow.js","cold_headwind":"frames/gen_0079/4553a646ccc2.cold_headwind.flow.js","crosswind":"frames/gen_0079/4553a646ccc2.crosswind.flow.js","gusty_light":"frames/gen_0079/4553a646ccc2.gusty_light.flow.js","hot_thin":"frames/gen_0079/4553a646ccc2.hot_thin.flow.js","storm":"frames/gen_0079/4553a646ccc2.storm.flow.js"}}</script>
+<script type="application/json" id="pressure-src">{"4553a646ccc2":{"calm_warm":"frames/gen_0079/4553a646ccc2.calm_warm.pressure.js","cold_headwind":"frames/gen_0079/4553a646ccc2.cold_headwind.pressure.js","crosswind":"frames/gen_0079/4553a646ccc2.crosswind.pressure.js","gusty_light":"frames/gen_0079/4553a646ccc2.gusty_light.pressure.js","hot_thin":"frames/gen_0079/4553a646ccc2.hot_thin.pressure.js","storm":"frames/gen_0079/4553a646ccc2.storm.pressure.js"}}</script>
 <script>var BASELINE="7792e42599f3";var CHAMP="4553a646ccc2";window.NO_LIVE_RELOAD=true;</script>
 <script>(function(){var m=location.hash.match(/^#(?:ovl|perf|d)-([0-9a-f]+)/);if(m&&m[1]!==CHAMP)location.replace("log.html"+location.hash);})()</script>
 <script src="viewer.js"></script>
@@ -11217,8 +11242,11 @@ openFromHash();
 // quick view presets act on whichever tab is showing
 // nose (FPV camera) = +X in mesh space; yaw/pitch pairs put it facing
 // the viewer (front), pointing left/right in profile, or up in plan views
+// top/bottom sit just short of the pole (+-1.55, not +-PI/2 exactly) --
+// same reason the drag clamp does: landing exactly on it means the
+// very next drag move snaps back off it
 var VIEWS={front:[Math.PI/2,0],left:[Math.PI,0],right:[0,0],
-           top:[-Math.PI/2,Math.PI/2],bottom:[Math.PI/2,-Math.PI/2]};
+           top:[-Math.PI/2,1.55],bottom:[Math.PI/2,-1.55]};
 function activeState(){
   if(ovl.classList.contains("perf"))return flState;
   var b=ovl.querySelector(".ovl-tabs button.on");
@@ -11279,14 +11307,6 @@ document.querySelectorAll(".chart-card [data-h]").forEach(function(el){
 "use strict";
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
-// the button under the scenario row rides the card's own overlay
-// wiring (same full-screen performance view)
-var po=document.getElementById("perf-open");
-if(po)po.addEventListener("click",function(){
-  var b=document.querySelector(
-    '.viewer .vbtns button[data-mode="perf"]');
-  if(b&&!b.disabled)b.click();
-});
 var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
 AL.ensureBlobs(need).then(function(){
   var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
@@ -11322,22 +11342,25 @@ AL.ensureBlobs(need).then(function(){
     var tp2=document.getElementById("trail-panel");
     if(tp2)tp2.style.display="none";
   }
-  // ---- performance row: the champion flying every scenario at once.
-  // All the mini views share ONE camera state, so orbiting any box
-  // orbits them all; each poses the model from its own telemetry.
-  // WebGL contexts are a scarce, capped resource on mobile browsers --
-  // six of them created up front (on top of the hero card, replay and
-  // trail views above) can push a page past that cap and get an
-  // already-open context silently evicted. Defer creation until the
-  // row is actually about to scroll into view.
-  var boxes=[].slice.call(document.querySelectorAll("#perf-row canvas"));
-  var perfRow=document.getElementById("perf-row");
-  if(!boxes.length||!perfRow)return;
-  function startPerfRow(){
+  // ---- scenario rows: the champion flying every weather scenario at
+  // once, one row for streamlines and a SEPARATE row for surface
+  // pressure -- same telemetry-driven pose math, own camera state and
+  // own data per row, so neither leaks into the other. All the mini
+  // views within a row share ONE camera state, so orbiting any box
+  // orbits the rest of that row; each poses the model from its own
+  // telemetry. WebGL contexts are a scarce, capped resource on mobile
+  // browsers -- creating a dozen of them up front (on top of the hero
+  // card, replay and trail views above) can push a page past that cap
+  // and get an already-open context silently evicted. Defer creation
+  // until each row is actually about to scroll into view.
+  function startScenarioRow(rowId,mode){
+    var row=document.getElementById(rowId);
+    var boxes=[].slice.call(document.querySelectorAll("#"+rowId+" canvas"));
+    if(!boxes.length||!row)return;
     var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
     var views=[];
     boxes.forEach(function(cv){
-      var v=AL.makeViewer(cv,pst,{flowLines:30});
+      var v=AL.makeViewer(cv,pst,{flowLines:mode==="flow"?30:0});
       if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
     });
     if(!views.length)return;
@@ -11345,18 +11368,26 @@ AL.ensureBlobs(need).then(function(){
     .then(function(){
       views.forEach(function(w){
         w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
-        // real CFD streamlines where solved; analytic field otherwise.
-        // Anchored at the trace's mean attitude: the wind stays
-        // world-fixed while the craft oscillates within it.
-        AL.ensureFlowLines(CH,w.scen).then(function(d){
-          var fd=AL.FLIGHTS[CH+"|"+w.scen];
-          w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
+        if(mode==="flow"){
+          // real CFD streamlines where solved; analytic field otherwise.
+          // Anchored at the trace's mean attitude: the wind stays
+          // world-fixed while the craft oscillates within it.
+          AL.ensureFlowLines(CH,w.scen).then(function(d){
+            var fd=AL.FLIGHTS[CH+"|"+w.scen];
+            w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
+        }else{
+          // surface pressure (Pa), blended live between the nearest
+          // solved attitudes as the craft's own AoA changes -- see
+          // pressureUpdate in viewer.js
+          AL.ensurePressure(CH,w.scen).then(function(d){
+            w.v.setPressureData(d)});
+        }
       });
       var on=true,last=null;
       if("IntersectionObserver" in window){
         new IntersectionObserver(function(es){
           es.forEach(function(en){on=en.isIntersecting;last=null});
-        }).observe(perfRow);
+        }).observe(row);
       }
       function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
       function tick(ts){
@@ -11386,25 +11417,35 @@ AL.ensureBlobs(need).then(function(){
           w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
           w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
           w.v.setPropAngle(w.th);
-          // the wind channel is what tells the six boxes apart
-          w.v.windUpdate([lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
-                          lerp(d,"wz",f0,i,j)],dt);
+          var wv=[lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
+                  lerp(d,"wz",f0,i,j)];
+          // the wind channel / pressure repaint is what tells the boxes
+          // in a row apart
+          if(mode==="flow")w.v.windUpdate(wv,dt);
+          else w.v.pressureUpdate(wv,dt);
         });
         pst.redraw(); // one shared state: draws every box in the row
       }
       requestAnimationFrame(tick);
     });
   }
-  if("IntersectionObserver" in window){
-    var startObs=new IntersectionObserver(function(es){
-      es.forEach(function(en){
-        if(en.isIntersecting){startObs.disconnect();startPerfRow()}
-      });
-    },{rootMargin:"400px"});
-    startObs.observe(perfRow);
-  }else{
-    startPerfRow();
+  function deferScenarioRow(rowId,mode){
+    var row=document.getElementById(rowId);
+    if(!row)return;
+    if("IntersectionObserver" in window){
+      var startObs=new IntersectionObserver(function(es){
+        es.forEach(function(en){
+          if(en.isIntersecting){
+            startObs.disconnect();startScenarioRow(rowId,mode)}
+        });
+      },{rootMargin:"400px"});
+      startObs.observe(row);
+    }else{
+      startScenarioRow(rowId,mode);
+    }
   }
+  deferScenarioRow("perf-row","flow");
+  deferScenarioRow("pressure-row","pressure");
 });
 })();
 </script>

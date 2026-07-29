@@ -698,6 +698,24 @@ functions
             );
         }}
     }}
+    pressure
+    {{
+        type                 surfaces;
+        libs                 (sampling);
+        writeControl         onEnd;
+        interpolationScheme  cell;
+        surfaceFormat        vtp;
+        fields               (p);
+        surfaces
+        {{
+            frame
+            {{
+                type        patch;
+                patches     (frame);
+                interpolate false;
+                triangulate true;
+            }}
+        }}
 }}
 """)
 
@@ -791,41 +809,87 @@ def generate_flow(cfg: Config, out_root: Path, store, run_id: str,
     return cases
 
 
+def _clean_stale_solve_output(case: Path) -> None:
+    """Wipe a case's previously-solved timestep dirs + postProcessing
+    right before RE-solving it. `startFrom latestTime` will happily read
+    a stale timestep left over from an earlier solve of this exact case
+    (e.g. a different mesh cell count -> a confusing size-mismatch FOAM
+    FATAL IO ERROR). Deliberately NOT done at case-file-generation time
+    (generate_flow/generate_flow_sweep run on every `--extract`-only
+    invocation too, and must stay non-destructive so extraction can
+    still find already-solved results)."""
+    if not case.exists():
+        return
+    pp = case / "postProcessing"
+    if pp.exists():
+        shutil.rmtree(pp)
+    for d in case.iterdir():
+        if d.is_dir() and d.name not in ("0", "constant", "system") \
+                and d.name.replace(".", "", 1).isdigit():
+            shutil.rmtree(d)
+
+
+def _solve_flow_case(case: Path, mesh_src: Path, image: str) -> None:
+    """Copy an already-computed mesh into `case` and run the solve --
+    the piece of solve_flow/solve_flow_sweep that's safe to parallelize
+    (each case is an independent container once meshed)."""
+    _clean_stale_solve_output(case)
+    dst = case / "constant" / "polyMesh"
+    if dst.exists():
+        shutil.rmtree(dst)
+    shutil.copytree(mesh_src, dst)
+    cmd = ["docker", "run", "--rm",
+           "-v", f"{case.resolve()}:/case", "-w", "/case",
+           "--entrypoint", "/bin/bash", image, "-lc",
+           "source /openfoam/bash.rc 2>/dev/null || "
+           "source /usr/lib/openfoam/openfoam*/etc/bashrc; "
+           "potentialFoam && simpleFoam"]
+    with open(case / "run.log", "w") as f:
+        subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, check=True)
+
+
 def solve_flow(cases: list[tuple[str, Path]],
-               image: str = DOCKER_IMAGE) -> None:
-    """Mesh ONCE (first case), copy polyMesh into the rest, solve all."""
-    first = True
-    mesh_src: Path | None = None
-    for scen, case in cases:
+               image: str = DOCKER_IMAGE, jobs: int = 1) -> None:
+    """Mesh ONCE (first case, serially -- meshing is the one step that
+    genuinely can't parallelize, since every other case reuses its
+    polyMesh), then solve the rest, up to `jobs` containers at a time
+    (each is fully independent once its mesh is copied in)."""
+    if not cases:
+        return
+    first_scen, first_case = cases[0]
+    print(f"  flow: {first_scen} ...", flush=True)
+    _clean_stale_solve_output(first_case)
+    cmd = ["docker", "run", "--rm",
+           "-v", f"{first_case.resolve()}:/case", "-w", "/case",
+           "--entrypoint", "/bin/bash", image, "-lc",
+           "source /openfoam/bash.rc 2>/dev/null || "
+           "source /usr/lib/openfoam/openfoam*/etc/bashrc; "
+           "blockMesh && snappyHexMesh -overwrite && "
+           "potentialFoam && simpleFoam"]
+    with open(first_case / "run.log", "w") as f:
+        subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, check=True)
+    print(f"  flow: {first_scen} done", flush=True)
+    mesh_src = first_case / "constant" / "polyMesh"
+    rest = cases[1:]
+    if not rest:
+        return
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _one(scen: str, case: Path) -> str:
         print(f"  flow: {scen} ...", flush=True)
-        if first:
-            cmd = ["docker", "run", "--rm",
-                   "-v", f"{case.resolve()}:/case", "-w", "/case",
-                   "--entrypoint", "/bin/bash", image, "-lc",
-                   "source /openfoam/bash.rc 2>/dev/null || "
-                   "source /usr/lib/openfoam/openfoam*/etc/bashrc; "
-                   "blockMesh && snappyHexMesh -overwrite && "
-                   "potentialFoam && simpleFoam"]
-            with open(case / "run.log", "w") as f:
-                subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT,
-                               check=True)
-            mesh_src = case / "constant" / "polyMesh"
-            first = False
-        else:
-            dst = case / "constant" / "polyMesh"
-            if dst.exists():
-                shutil.rmtree(dst)
-            shutil.copytree(mesh_src, dst)
-            cmd = ["docker", "run", "--rm",
-                   "-v", f"{case.resolve()}:/case", "-w", "/case",
-                   "--entrypoint", "/bin/bash", image, "-lc",
-                   "source /openfoam/bash.rc 2>/dev/null || "
-                   "source /usr/lib/openfoam/openfoam*/etc/bashrc; "
-                   "potentialFoam && simpleFoam"]
-            with open(case / "run.log", "w") as f:
-                subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT,
-                               check=True)
+        _solve_flow_case(case, mesh_src, image)
         print(f"  flow: {scen} done", flush=True)
+        return scen
+
+    with ThreadPoolExecutor(max_workers=max(1, jobs)) as ex:
+        futs = {ex.submit(_one, scen, case): scen for scen, case in rest}
+        for fut in as_completed(futs):
+            try:
+                fut.result()
+            except Exception as exc:
+                print(f"  FAILED flow/{futs[fut]}: {exc} (see its "
+                      "run.log)", flush=True)
 
 
 def _parse_tracks_vtp(path: Path) -> list[dict[str, list[float]]]:
@@ -892,7 +956,11 @@ def extract_flow(out_root: Path, store, run_id: str, h: str) -> list[Path]:
     png = Path(cand["png_path"])
     root = flow_case_dirs(out_root, h)
     written = []
-    for case in sorted(p for p in root.iterdir() if p.is_dir()):
+    # "@"-suffixed dirs are sweep-angle cases (generate_flow_sweep), not
+    # plain scenarios -- extract_flow_sweep/extract_pressure_sweep own
+    # those; picking them up here would ship a bogus extra "scenario"
+    for case in sorted(p for p in root.iterdir()
+                       if p.is_dir() and "@" not in p.name):
         scen = case.name
         vtks = sorted(case.glob("postProcessing/**/streamlines/*/*.vtp"))
         if not vtks:
@@ -915,7 +983,7 @@ def extract_flow(out_root: Path, store, run_id: str, h: str) -> list[Path]:
 
 def run_flow(cfg: Config, out_root: Path, h: str | None = None,
              solve: bool = False, extract: bool = False,
-             run_id: str | None = None) -> None:
+             run_id: str | None = None, jobs: int = 1) -> None:
     from .dbstore import Store
     results = cfg.evolution.results_dir
     store = Store(results / "run.db")
@@ -933,7 +1001,7 @@ def run_flow(cfg: Config, out_root: Path, h: str | None = None,
     cases = generate_flow(cfg, out_root, store, run_id, h)
     print(f"cases: {', '.join(s for s, _ in cases)}")
     if solve:
-        solve_flow(cases)
+        solve_flow(cases, jobs=jobs)
     if extract or solve:
         extract_flow(out_root, store, run_id, h)
 
@@ -1018,3 +1086,323 @@ def extract_flow_sweep(out_root: Path, store, run_id: str, h: str,
     out.write_text(f'airloomFlow("{h}","{scen}",{payload})\n')
     print(f"  sweep: {scen}: {len(sets)} attitude sets -> {out.name}")
     return out
+
+
+# ------------------------------------------------------ surface pressure --
+# Same attitude sweep as the streamlines (one mesh, five solves per
+# scenario), but samples the `frame` patch's own pressure field instead
+# of seeding streamlines. OpenFOAM's `surfaces` function object re-
+# triangulates the patch itself (snappyHexMesh's refined surface, not the
+# candidate's original/decimated geometry), so its output does NOT line
+# up index-for-index with either the CFD assembly STL or the gallery's
+# rendered mesh.json -- the values are carried onto the render mesh's own
+# face order by nearest-centroid lookup instead.
+def _read_vtp_arrays(path: Path) -> dict[str, np.ndarray]:
+    """OpenFOAM surface-sample .vtp: inline-binary-base64 XML DataArrays
+    (same format as the streamline tracks) -> {name: flat ndarray}."""
+    import base64
+    import re
+
+    _DTYPE = {"Float32": np.float32, "Float64": np.float64,
+              "Int32": np.int32, "Int64": np.int64,
+              "UInt32": np.uint32, "UInt64": np.uint64}
+    txt = path.read_text()
+    arrays: dict[str, np.ndarray] = {}
+    for m in re.finditer(r"<DataArray[^>]*type='(\w+)'[^>]*Name='(\w+)'"
+                         r"[^>]*>([^<]*)</DataArray>", txt, re.S):
+        dtype, name, body = m.group(1), m.group(2), m.group(3)
+        raw = base64.b64decode("".join(body.split()))
+        arrays[name] = np.frombuffer(raw[8:], dtype=_DTYPE[dtype])
+    return arrays
+
+
+def _parse_surface_vtp(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """-> (face_centroids [N,3], p [N]) for a triangulated patch with
+    face-centered (CellData) values."""
+    arrays = _read_vtp_arrays(path)
+    pts = arrays["Points"].reshape(-1, 3)
+    conn = arrays["connectivity"].astype(int)
+    offsets = arrays["offsets"].astype(int)
+    p = np.asarray(arrays["p"], dtype=float)
+    centroids = np.empty((len(offsets), 3))
+    start = 0
+    for i, end in enumerate(offsets):
+        centroids[i] = pts[conn[start:end]].mean(axis=0)
+        start = int(end)
+    return centroids, p[:len(centroids)]
+
+
+def _mesh_face_centroids(mesh_json_path: Path) -> np.ndarray:
+    """Decode a <hash>.mesh.json render blob (the SAME base64 vertex/face
+    arrays viewer.js decodes client-side) into per-face centroids, in
+    the exact face order the gallery's mesh buffers use -- this is the
+    surface the pressure payload must be indexed against, not the CFD
+    assembly (which excludes props, decimates differently, and orders
+    parts differently; see evaluate.py's DRAW_ORDER vs cfd.py's
+    _flow_assembly)."""
+    import base64
+    d = json.loads(mesh_json_path.read_text())
+    v = np.frombuffer(base64.b64decode(d["v"]), dtype=np.float32
+                      ).reshape(-1, 3)
+    fdtype = np.uint16 if d.get("i") == "u16" else np.uint32
+    f = np.frombuffer(base64.b64decode(d["f"]), dtype=fdtype).reshape(-1, 3)
+    return v[f].mean(axis=1)
+
+
+def _map_nearest(src_xyz: np.ndarray, src_val: np.ndarray,
+                 dst_xyz: np.ndarray) -> np.ndarray:
+    """Nearest-centroid lookup: each dst face gets its closest src face's
+    value. Both meshes describe the same candidate geometry in the same
+    body-frame coordinates, so this is a plain 3D nearest-neighbor -- no
+    coordinate transform needed, just a face-count/order mismatch."""
+    from scipy.spatial import cKDTree
+    _, idx = cKDTree(src_xyz).query(dst_xyz)
+    return src_val[idx]
+
+
+def _flow_case_solved(case: Path) -> bool:
+    """A case counts as already solved if simpleFoam ran to completion
+    (its onEnd function objects wrote output). Re-solving an already-
+    converged case is not just wasteful -- _clean_stale_solve_output
+    wipes its postProcessing first, DESTROYING any previously-extracted
+    output, so this check is load-bearing, not just an optimization."""
+    return bool(list(case.glob("postProcessing/**/streamlines/*/*.vtp"))
+               or list(case.glob("postProcessing/**/pressure/*/*.vtp")))
+
+
+def solve_flow_sweep(cases: list[tuple[str, Path]], base_case: Path,
+                     image: str = DOCKER_IMAGE, jobs: int = 1) -> None:
+    """Solve sweep cases by copying the ALREADY-MESHED base scenario's
+    polyMesh (same geometry/box -- freestream BCs mean no remeshing per
+    angle is needed, same trick `solve_flow` uses across scenarios).
+    Every case is independent once meshed, so up to `jobs` run at once.
+    Skips any case already solved (see _flow_case_solved)."""
+    todo = [(name, case) for name, case in cases
+           if not _flow_case_solved(case)]
+    skipped = len(cases) - len(todo)
+    if skipped:
+        print(f"  sweep: {skipped} case(s) already solved, skipping",
+             flush=True)
+    if not todo:
+        return
+    mesh_src = base_case / "constant" / "polyMesh"
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _one(name: str, case: Path) -> str:
+        print(f"  sweep: {name} ...", flush=True)
+        _solve_flow_case(case, mesh_src, image)
+        print(f"  sweep: {name} done", flush=True)
+        return name
+
+    with ThreadPoolExecutor(max_workers=max(1, jobs)) as ex:
+        futs = {ex.submit(_one, name, case): name for name, case in todo}
+        for fut in as_completed(futs):
+            try:
+                fut.result()
+            except Exception as exc:
+                print(f"  FAILED sweep/{futs[fut]}: {exc} (see its "
+                      "run.log)", flush=True)
+
+
+def extract_pressure_sweep(out_root: Path, store, run_id: str, h: str,
+                           scen: str) -> Path | None:
+    """Combine the base case + the 4 sweep cases' surface-pressure output
+    into ONE payload keyed by attitude angle, RAW gauge pressure (Pa,
+    relative to freestream static) mapped onto the candidate's RENDER
+    mesh face order: {"range":[pMin,pMax], "sets":[{"a":angle,
+    "p":[...]}...]}. Deliberately NOT the normalized Cp coefficient --
+    Cp = p/(0.5*rho*U^2) divides out how hard the scenario's wind is
+    blowing, so a calm scenario and a severe one at similar relative
+    airspeed would look equally intense despite genuinely different
+    dynamic pressure. Raw Pa (shared across scenarios by
+    normalize_pressure_ranges) lets harsher scenarios visibly read as
+    harsher."""
+    cand = store.get_candidate(run_id, h)
+    png = Path(cand["png_path"])
+    mesh_json = png.with_suffix(".mesh.json")
+    if not mesh_json.exists():
+        print(f"  pressure: {scen}: no {mesh_json.name}, skipping")
+        return None
+    dst_xyz = _mesh_face_centroids(mesh_json)
+    root = flow_case_dirs(out_root, h)
+    u0 = json.loads((root / f"{scen}.freestream.json").read_text())["u"]
+    names = [scen] + [f"{scen}@{d:+05.1f}" for d in FLOW_SWEEP_DEG]
+    sets, all_p = [], []
+    for name in names:
+        case = root / name
+        vtks = sorted(case.glob("postProcessing/**/pressure/*/*.vtp"))
+        if not vtks:
+            print(f"  pressure: {name}: no surface output, skipping")
+            continue
+        u = json.loads((root / f"{name}.freestream.json").read_text())["u"]
+        src_xyz, p_kin = _parse_surface_vtp(vtks[-1])
+        # OpenFOAM's incompressible `p` is kinematic (p/rho, dims
+        # [0 2 -2 0 0 0 0]) -- scale by RHO for dimensional Pa
+        p_pa = p_kin * RHO
+        p_dst = _map_nearest(src_xyz, p_pa, dst_xyz)
+        all_p.append(p_dst)
+        sets.append({"a": round(_xz_angle(u0, u), 2),
+                     "p": [round(float(x), 2) for x in p_dst]})
+        print(f"  pressure: {name}: {len(p_dst)} faces at "
+              f"{_xz_angle(u0, u):+.1f} deg")
+    if not sets:
+        return None
+    sets.sort(key=lambda x: x["a"])
+    # 2nd/98th percentile, not true min/max: a handful of outlier faces
+    # (sharp edges, thin trailing surfaces) span a disproportionate
+    # share of the raw range and would wash out the whole colormap --
+    # standard practice for pressure plots is to clip the extreme tails
+    pooled = np.concatenate(all_p)
+    lo = float(np.percentile(pooled, 2))
+    hi = float(np.percentile(pooled, 98))
+    payload = json.dumps({"u": u0, "range": [round(lo, 2), round(hi, 2)],
+                          "sets": sets}, separators=(",", ":"))
+    out = png.parent / f"{h}.{scen}.pressure.js"
+    out.write_text(f'airloomPressure("{h}","{scen}",{payload})\n')
+    print(f"  pressure: {scen}: {len(sets)} attitude sets -> {out.name}")
+    return out
+
+
+def normalize_pressure_ranges(out_root: Path, store, run_id: str,
+                              h: str) -> None:
+    """Rewrite every already-extracted <h>.<scen>.pressure.js so they all
+    share ONE color-scale range (2nd/98th percentile pooled across every
+    scenario extracted so far) instead of each scenario normalizing
+    against only its own faces. Without this, a mild scenario and a
+    severe one would both stretch to the same red/blue extremes and
+    look equally dramatic -- exactly backwards for a grid whose point is
+    comparing scenarios against each other. Safe to re-run any time (as
+    each new scenario's pressure lands, previously-written ones need
+    their range widened/tightened to match)."""
+    cand = store.get_candidate(run_id, h)
+    png = Path(cand["png_path"])
+    files = sorted(png.parent.glob(f"{h}.*.pressure.js"))
+    if not files:
+        return
+    payloads: dict[Path, dict] = {}
+    pooled = []
+    for f in files:
+        txt = f.read_text()
+        data = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+        payloads[f] = data
+        for s in data["sets"]:
+            pooled.extend(s["p"])
+    if not pooled:
+        return
+    arr = np.asarray(pooled)
+    lo = round(float(np.percentile(arr, 2)), 2)
+    hi = round(float(np.percentile(arr, 98)), 2)
+    for f, data in payloads.items():
+        if data.get("range") == [lo, hi]:
+            continue
+        scen = f.name.split(".")[1]
+        data["range"] = [lo, hi]
+        payload = json.dumps(data, separators=(",", ":"))
+        f.write_text(f'airloomPressure("{h}","{scen}",{payload})\n')
+    print(f"  pressure: normalized range [{lo}, {hi}] across "
+         f"{len(files)} scenario(s)")
+
+
+def normalize_flow_speed_range(out_root: Path, store, run_id: str,
+                               h: str) -> None:
+    """Rewrite every already-extracted <h>.<scen>.flow.js with two shared
+    ranges (across every scenario extracted so far): `speedRange`
+    (min/max scenario-mean relative airspeed) and `pointSpeedRange`
+    (2nd/98th percentile of every point's LOCAL speed, pooled across
+    every line/angle/scenario). The viewer bakes ribbon color from local
+    speed against pointSpeedRange, the same blue(slow)-to-red(fast)
+    colormap as the pressure tiles -- one shared domain so a genuinely
+    fast patch of flow reads the same red on every scenario's tile, the
+    way CFD postprocessing tools usually color streamlines."""
+    cand = store.get_candidate(run_id, h)
+    png = Path(cand["png_path"])
+    files = sorted(p for p in png.parent.glob(f"{h}.*.flow.js")
+                   if "@" not in p.name)
+    if not files:
+        return
+    payloads: dict[Path, dict] = {}
+    speeds, point_speeds = [], []
+    for f in files:
+        txt = f.read_text()
+        data = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+        payloads[f] = data
+        u = data.get("u")
+        if u:
+            speeds.append(math.sqrt(sum(x * x for x in u)))
+        line_groups = ([s["lines"] for s in data["sets"]]
+                      if "sets" in data else [data.get("lines", [])])
+        for lines in line_groups:
+            for ln in lines:
+                point_speeds.extend(ln.get("s", []))
+    if not speeds:
+        return
+    lo, hi = round(min(speeds), 3), round(max(speeds), 3)
+    if point_speeds:
+        arr = np.asarray(point_speeds)
+        p_lo, p_hi = (round(float(np.percentile(arr, 2)), 3),
+                     round(float(np.percentile(arr, 98)), 3))
+    else:
+        p_lo, p_hi = lo, hi
+    for f, data in payloads.items():
+        if (data.get("speedRange") == [lo, hi]
+                and data.get("pointSpeedRange") == [p_lo, p_hi]):
+            continue
+        scen = f.name.split(".")[1]
+        data["speedRange"] = [lo, hi]
+        data["pointSpeedRange"] = [p_lo, p_hi]
+        payload = json.dumps(data, separators=(",", ":"))
+        f.write_text(f'airloomFlow("{h}","{scen}",{payload})\n')
+    print(f"  flow: normalized speed range [{lo}, {hi}] m/s, point speed "
+         f"range [{p_lo}, {p_hi}] m/s across {len(files)} scenario(s)")
+
+
+def run_pressure_sweep(cfg: Config, out_root: Path, h: str | None = None,
+                       solve: bool = False, extract: bool = False,
+                       run_id: str | None = None, jobs: int = 1) -> None:
+    """Surface-pressure AND streamline sweep, layered on TOP of an
+    already-generated `cfd-flow` run: each scenario's base case (mesh +
+    freestream.json) must already exist on disk (run `airloom cfd-flow
+    --solve` first, so its regenerated controlDict picks up the
+    `pressure` function object added alongside `streamlines`). The same
+    5 solves/scenario serve both: pressure gets the full attitude sweep
+    for the first time, and streamlines get upgraded from the single-
+    field format to the attitude-blended "sets" format (so ribbons pose
+    with the live model instead of a frozen mean attitude)."""
+    from .dbstore import Store
+    results = cfg.evolution.results_dir
+    store = Store(results / "run.db")
+    run_id = run_id or store.latest_run_id(with_data=True)
+    if run_id is None:
+        raise SystemExit("no runs found")
+    if h is None:  # default: the run champion
+        cands = store.candidates_for_run(run_id)
+        fits = {c["hash"]: store.fitness_of(c) for c in cands}
+        h = min((k for k, f in fits.items() if math.isfinite(f)),
+                key=lambda k: fits[k], default=None)
+        if h is None:
+            raise SystemExit("no valid candidates")
+    root = flow_case_dirs(out_root, h)
+    if not root.exists():
+        raise SystemExit(f"no flow cases for {h} -- run `airloom cfd-flow "
+                         "--solve` first")
+    scens = sorted(p.name.split(".")[0] for p in root.glob("*.freestream.json")
+                   if "@" not in p.name)
+    if not scens:
+        raise SystemExit(f"no flow cases for {h} -- run `airloom cfd-flow "
+                         "--solve` first")
+    print(f"pressure candidate: {h}, scenarios: {', '.join(scens)}")
+    for scen in scens:
+        base_case = root / scen
+        if not (base_case / "constant" / "polyMesh").exists():
+            print(f"  {scen}: base case not solved, skipping (run "
+                  "`airloom cfd-flow --solve` first)")
+            continue
+        cases = generate_flow_sweep(out_root, h, scen)
+        if solve:
+            solve_flow_sweep(cases, base_case, jobs=jobs)
+        if extract or solve:
+            extract_pressure_sweep(out_root, store, run_id, h, scen)
+            extract_flow_sweep(out_root, store, run_id, h, scen)
+            normalize_pressure_ranges(out_root, store, run_id, h)
+            normalize_flow_speed_range(out_root, store, run_id, h)

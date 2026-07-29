@@ -4,6 +4,7 @@ Case generation, the analytical predictions the report compares against,
 the freestream-direction convention (must match aero.py's rasterization
 direction), and the force.dat parser for both OpenFOAM output layouts.
 """
+import base64
 import json
 import math
 
@@ -12,7 +13,9 @@ import pytest
 
 from airloom.aero import CD_ARM, CD_BODY, measure_areas, projected_area
 from airloom.cfd import (CONTRAST_GENES, TILTS_DEG, generate, measured_cda,
-                         parse_forces, predicted_cda, _frame_for)
+                         parse_forces, predicted_cda, _frame_for,
+                         _map_nearest, _mesh_face_centroids,
+                         _parse_surface_vtp)
 from airloom.genome import BASELINE, Genome
 
 
@@ -114,3 +117,68 @@ def test_measured_cda_projects_on_freestream(tmp_path):
     t = math.radians(tilt)
     expect = (2.0 * math.cos(t) + 1.0 * math.sin(t)) / (0.5 * 1.225 * u * u)
     assert measured_cda(case, tilt, u) == pytest.approx(expect)
+
+
+# --------------------------------------------- surface pressure mapping ---
+def _vtp_inline_array(arr: np.ndarray) -> str:
+    """OpenFOAM's inline-binary DataArray body: base64(UInt64 byte-count
+    header + raw payload), matching what _parse_surface_vtp/
+    _parse_tracks_vtp both expect."""
+    raw = arr.tobytes()
+    return base64.b64encode(np.uint64(len(raw)).tobytes() + raw).decode()
+
+
+def _write_fake_surface_vtp(path, points, conn, offsets, p) -> None:
+    def da(dtype_name, name, arr):
+        return (f"<DataArray type='{dtype_name}' Name='{name}'>"
+                f"{_vtp_inline_array(arr)}</DataArray>")
+    txt = ("<VTKFile><PolyData><Piece>"
+          f"<Points>{da('Float32', 'Points', points.astype(np.float32))}"
+          "</Points>"
+          "<Polys>"
+          f"{da('Int32', 'connectivity', conn.astype(np.int32))}"
+          f"{da('Int32', 'offsets', offsets.astype(np.int32))}"
+          "</Polys>"
+          f"<CellData>{da('Float32', 'p', p.astype(np.float32))}"
+          "</CellData>"
+          "</Piece></PolyData></VTKFile>")
+    path.write_text(txt)
+
+
+def test_parse_surface_vtp_centroids_and_pressure(tmp_path):
+    # two triangles, sharing no vertices, one CellData value each
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0],
+                       [2, 0, 0], [3, 0, 0], [2, 1, 0]], float)
+    conn = np.arange(6)
+    offsets = np.array([3, 6])
+    p = np.array([10.0, 20.0])
+    vtp = tmp_path / "frame.vtp"
+    _write_fake_surface_vtp(vtp, points, conn, offsets, p)
+    centroids, values = _parse_surface_vtp(vtp)
+    assert centroids.shape == (2, 3)
+    assert centroids[0] == pytest.approx([1 / 3, 1 / 3, 0], abs=1e-5)
+    assert centroids[1] == pytest.approx([7 / 3, 1 / 3, 0], abs=1e-5)
+    assert values == pytest.approx([10.0, 20.0], abs=1e-3)
+
+
+def test_mesh_face_centroids_matches_render_face_order(tmp_path):
+    # a unit square split into two triangles, uint16 face indices
+    v = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]],
+                 dtype=np.float32)
+    f = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.uint16)
+    blob = {"v": base64.b64encode(v.tobytes()).decode(),
+           "f": base64.b64encode(f.tobytes()).decode(), "i": "u16"}
+    mesh_json = tmp_path / "cand.mesh.json"
+    mesh_json.write_text(json.dumps(blob))
+    centroids = _mesh_face_centroids(mesh_json)
+    assert centroids.shape == (2, 3)
+    assert centroids[0] == pytest.approx([2 / 3, 1 / 3, 0], abs=1e-5)
+    assert centroids[1] == pytest.approx([1 / 3, 2 / 3, 0], abs=1e-5)
+
+
+def test_map_nearest_carries_closest_source_value():
+    src_xyz = np.array([[0, 0, 0], [10, 0, 0]], float)
+    src_val = np.array([1.0, 99.0])
+    dst_xyz = np.array([[0.1, 0, 0], [9.9, 0, 0], [4.9, 0, 0]], float)
+    out = _map_nearest(src_xyz, src_val, dst_xyz)
+    assert out == pytest.approx([1.0, 99.0, 1.0])
