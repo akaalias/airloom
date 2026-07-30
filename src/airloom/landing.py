@@ -170,8 +170,24 @@ function startScenarioRow(rowId,mode){
           tz=lerp(d,"tz",f0,i,j);
       var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
       var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
-      var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
-      if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
+      var hx0=d.x[i1]-d.x[i0],hy0=d.y[i1]-d.y[i0],hm=Math.hypot(hx0,hy0);
+      // the out-and-back mission reverses ground-track heading by
+      // exactly 180 degrees at the turnaround (and again at the loop
+      // restart) -- a straight-line reciprocating path, not a curve, so
+      // the raw position-derivative heading flips sign in a single
+      // sample. Copying that in directly read as a sudden flip with no
+      // visible cause. Slew-limit the heading ANGLE instead of the raw
+      // vector, so a reversal reads as a fast continuous turn.
+      if(hm>=1e-4){
+        var hxN=hx0/hm,hyN=hy0/hm;
+        var curAng=Math.atan2(w.hy||0,w.hx||1),tgtAng=Math.atan2(hyN,hxN);
+        var dAng=((tgtAng-curAng+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+        var maxStep=dt*10; // rad/s turn-rate cap: fast but continuous
+        dAng=Math.max(-maxStep,Math.min(maxStep,dAng));
+        var newAng=curAng+dAng;
+        w.hx=Math.cos(newAng);w.hy=Math.sin(newAng);
+      }
+      var hx=w.hx||1,hy=w.hy||0;
       var dot=hx*tx+hy*ty;
       var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
       var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
