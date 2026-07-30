@@ -220,7 +220,11 @@ function startScenarioRow(rowId,mode){
       var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
       bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
       var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
-      w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+      // NOT applied to the model's displayed rotation -- that's
+      // camera-orbit only, always, so a user's drag is never fought or
+      // overridden by the craft's own flight attitude. Kept only as
+      // data for the wind/pressure angle-of-attack blend below.
+      w.v.telemetryR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
       w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
       w.v.setPropAngle(w.th);
       var wv=[lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),

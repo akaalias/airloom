@@ -1306,10 +1306,12 @@ function makeViewer(canvas,state,opts){
       flow.phase+=(dt||0)*m/8;
       flow.liveM=m;
       if(flow.cfd){
-        if(flow.cfd.sets&&view.modelR){
+        if(flow.cfd.sets&&view.telemetryR){
           // instantaneous incoming-flow angle vs the sweep's mean,
-          // in the body x-z plane (same formula the extractor used)
-          var MR=view.modelR,aw=flow.sw,u0=flow.cfd.u0;
+          // in the body x-z plane (same formula the extractor used) --
+          // this is a DATA lookup (which pre-solved sweep angle to
+          // blend toward), never applied to the model's own rotation
+          var MR=view.telemetryR,aw=flow.sw,u0=flow.cfd.u0;
           var abx=MR[0]*aw[0]+MR[1]*aw[1]+MR[2]*aw[2];
           var abz=MR[6]*aw[0]+MR[7]*aw[1]+MR[8]*aw[2];
           flow.alpha=Math.atan2(u0[0]*abz-u0[2]*abx,
@@ -1335,8 +1337,8 @@ function makeViewer(canvas,state,opts){
       var k2=1-Math.exp(-(dt||0)*4);
       press.sw[0]+=(ax-press.sw[0])*k2;press.sw[1]+=(ay-press.sw[1])*k2;
       press.sw[2]+=(az-press.sw[2])*k2;
-      if(!press.data||!view.modelR||!models.length)return;
-      var MR=view.modelR,u0=press.data.u,sw=press.sw;
+      if(!press.data||!view.telemetryR||!models.length)return;
+      var MR=view.telemetryR,u0=press.data.u,sw=press.sw;
       var abx=MR[0]*sw[0]+MR[1]*sw[1]+MR[2]*sw[2];
       var abz=MR[6]*sw[0]+MR[7]*sw[1]+MR[8]*sw[2];
       press.alpha=Math.atan2(u0[0]*abz-u0[2]*abx,
@@ -1426,18 +1428,10 @@ function makeViewer(canvas,state,opts){
       for(var m2=0;m2<models.length;m2++){
         var mo=models[m2],fade=mo.fade==null?1:mo.fade;
         if(fade<=0.004)continue;
-        // flight tab: pose the vehicle by telemetry attitude, but leave
-        // world-frame models (weather particles) under the orbit alone
-        var MR=mo.noPose?null:view.modelR;
-        if(MR){
-          var Cm=new Array(9);
-          for(var mc=0;mc<3;mc++)for(var mr=0;mr<3;mr++)
-            Cm[mc*3+mr]=Rb[mr]*MR[mc*3]+Rb[3+mr]*MR[mc*3+1]
-                        +Rb[6+mr]*MR[mc*3+2];
-          gl.uniformMatrix3fv(uR,false,Cm);
-        }else{
-          gl.uniformMatrix3fv(uR,false,Rb);
-        }
+        // the model's displayed orientation is camera-orbit only, always
+        // -- never composed with the craft's own flight attitude, so a
+        // user's drag is never fought or overridden by the telemetry
+        gl.uniformMatrix3fv(uR,false,Rb);
         bindBuf(mo.bufs.aP,"aP",3);bindBuf(mo.bufs.aN,"aN",3);
         bindBuf(mo.bufs.aC,"aC",4);
         gl.uniform1f(uF,fade);
@@ -1460,22 +1454,14 @@ function makeViewer(canvas,state,opts){
         }
       }
       // wind-channel streamlines: blended, depth-TESTED but not
-      // written -- the airframe occludes the air behind it. CFD
-      // ribbons live in BODY coordinates and pose with the craft; the
-      // analytic fallback lives in world frame (weather ignores pose)
+      // written -- the airframe occludes the air behind it. Drawn in
+      // the same fixed body-orientation reference the mesh now always
+      // renders in (camera-orbit only) -- neither ever rocks with the
+      // craft's own live attitude, so the two stay visually consistent
+      // with each other and neither fights a user's drag
       var FB=flow.cfd;
       if(flow.on&&FB&&(FB.nv||FB.sets)){
         var FR=Rb;
-        // sweep fields pose with the LIVE craft (they re-wrap by
-        // blending); a single field anchors at its mean attitude
-        var MRf=FB.sets?view.modelR:(FB.pose||view.modelR);
-        if(MRf){
-          var MR2=MRf,Cm2=new Array(9);
-          for(var mc2=0;mc2<3;mc2++)for(var mr2=0;mr2<3;mr2++)
-            Cm2[mc2*3+mr2]=Rb[mr2]*MR2[mc2*3]+Rb[3+mr2]*MR2[mc2*3+1]
-                          +Rb[6+mr2]*MR2[mc2*3+2];
-          FR=Cm2;
-        }
         gl.useProgram(prog2);
         gl.uniformMatrix3fv(f2.uR,false,FR);
         gl.uniform3f(f2.uT,frame.c[0],frame.c[1],frame.c[2]);
@@ -2142,7 +2128,12 @@ function flPoseData(d,V,S,dtf){
   var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
   bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
   var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
-  V.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+  // NOT applied to the model's displayed rotation -- that's camera-orbit
+  // only, always, so a user's drag is never fought or overridden by the
+  // craft's own flight attitude. Kept only as data: the wind/pressure
+  // angle-of-attack blend needs to know which way the body is actually
+  // pointed to pick the right pre-solved CFD sweep angle.
+  V.telemetryR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
   // -- spinning rotors: display rate proportional to the telemetry RPM,
   //    diagonal pairs counter-rotating. Fast enough to strobe like a
   //    filmed prop; true 9k rpm would only alias worse.
