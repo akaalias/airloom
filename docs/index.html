@@ -11381,11 +11381,14 @@ if(!AL||!CH)return;
 
 // ---- scenario rows: the champion flying every weather scenario at
 // once, one row for streamlines and a SEPARATE row for surface
-// pressure -- same telemetry-driven pose math, own camera state and
-// own data per row, so neither leaks into the other. All the mini
-// views within a row share ONE camera state, so orbiting any box
-// orbits the rest of that row; each poses the model from its own
-// telemetry. WebGL contexts are a scarce, capped resource on mobile
+// pressure -- own telemetry data per row (the streamline and pressure
+// viewers never share flight data), but ONE shared camera across BOTH
+// rows, so dragging any tile in either row orbits every tile on the
+// page, not just the rest of its own row. Created lazily by whichever
+// row mounts first; not tied to either row's own mount/unmount cycle,
+// so orbit position survives both rows scrolling off-screen and back.
+var sharedRowState=null;
+// WebGL contexts are a scarce, capped resource on mobile
 // browsers, so a row mounts its contexts only while it (plus a margin)
 // is on screen and releases them the moment it scrolls well clear --
 // same discipline AL.lazySection gives every section on this page.
@@ -11459,7 +11462,7 @@ function startScenarioRow(rowId,mode){
       if(mode==="flow")w.v.windUpdate(wv,dt);
       else w.v.pressureUpdate(wv,dt);
     });
-    pst.redraw(); // one shared state: draws every box in the row
+    pst.redraw(); // one state shared across both rows: draws every box everywhere
   }
   function markFailed(w){ // context lost well AFTER creation (GPU/OS
     // pressure, another context stealing the budget) -- w.v is already
@@ -11480,7 +11483,11 @@ function startScenarioRow(rowId,mode){
       boxes=boxes.filter(function(cv){return cv.dataset.scen==="cold_headwind"});
     if(!boxes.length)return;
     pending=true;
-    pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
+    // low chase-cam pitch; shared across BOTH rows, not just this one
+    // (see sharedRowState above) -- created once, by whichever row
+    // mounts first
+    if(!sharedRowState)sharedRowState=AL.makeState(0.35);
+    pst=sharedRowState;
     // per-tile state, not row-level: a WebGL context is a per-canvas
     // resource (mobile browsers cap the total available), so one tile
     // failing to get one must never block or hide the other five, and
