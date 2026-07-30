@@ -1,6 +1,7 @@
 """Real Source One V6 geometry: extraction and evolution-ready morphing.
 
-The official So1-V6-7inDC plate drawing (data/source_one/, GPLv3) is parsed
+The official So1-V6-7inDC plate drawing (data/source_one/, open-source,
+license unconfirmed -- see data/source_one/README.md) is parsed
 into named outlines -- front/rear arms, main / mid / top deck plates -- each
 with its true shape, lightening cutouts and bolt holes. The genome then
 deforms these REAL outlines with zone-based morphs that preserve the

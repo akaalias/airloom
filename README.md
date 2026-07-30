@@ -103,7 +103,8 @@ Restore any past state with `git -C results log` +
 Matched to the **official DroneAid Collective (drone-aid.de) workshop kit**,
 a 7-inch long-range build in the most popular open-source plate-frame
 archetype — the [TBS Source One](https://github.com/tbs-trappy/source_one)
-family (GPLv3: 2 mm deck plates, M3 standoffs, sandwiched plate arms).
+family (open-source: 2 mm deck plates, M3 standoffs, sandwiched plate arms;
+the upstream repo carries no license file, so terms are unconfirmed).
 Kit components as modeled: 4× 2806-class ~1300KV motors with 7×4-class
 3-blade props (ground truth: UIUC Master Airscrew GF 7×4 measurements),
 a self-built 6S1P 21700 Li-Ion pack (4.2 Ah, 470 g, strapped on top of the

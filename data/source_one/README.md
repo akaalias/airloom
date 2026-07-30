@@ -2,9 +2,13 @@
 
 `So1-V6-7inDC-2025-JUL-07.dxf` is the official TBS Source One V6 7-inch
 DeadCat frame drawing, copied unmodified from the upstream open-source
-repository (GPLv3):
+repository:
 
     https://github.com/tbs-trappy/source_one
+
+(the repo carries no LICENSE file, so its exact terms are unconfirmed --
+do not assume GPLv3 or any other specific license without checking with
+the author directly)
 
 It is cached here because this drawing is airloom's **genome substrate**:
 `src/airloom/realgeo.py` parses the plate outlines straight from the DXF —
