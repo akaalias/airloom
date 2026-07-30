@@ -134,72 +134,99 @@ LANDING_JS = r"""
 "use strict";
 var AL=window.AL,CH=window.CHAMP;
 if(!AL||!CH)return;
-var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
-AL.ensureBlobs(need).then(function(){
-  var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
-    timeline:document.getElementById("replay-tl"),
-    label:document.getElementById("replay-lab")});
-  if(rep.open(CH)){
-    var redraw=function(){rep.redraw()};
-    requestAnimationFrame(redraw);
-    setTimeout(redraw,80);
-    window.addEventListener("resize",redraw);
-    // the lineage trail: same chain the replay just opened, all steps
-    // superimposed at once instead of stepped through -- near-top-down
-    // pitch (1.2), same as the overlay's own "lineage trail" tab, since
-    // the plan shape is what reads best from above
-    var trailCv=document.getElementById("trail-canvas");
-    if(trailCv){
-      var trailState=AL.makeState(1.2);
-      var trailV=AL.makeViewer(trailCv,trailState);
-      if(trailV&&rep.chain.length>1){
-        trailV.load(AL.trailSpecs(rep.chain),rep.frame);
-        var trailRedraw=function(){trailState.redraw()};
-        requestAnimationFrame(trailRedraw);
-        setTimeout(trailRedraw,80);
-        window.addEventListener("resize",trailRedraw);
-      }else{
-        var tp=document.getElementById("trail-panel");
-        if(tp)tp.style.display="none";
-      }
-    }
-  }else{
-    var rp=document.getElementById("replay-panel");
-    if(rp)rp.style.display="none";
-    var tp2=document.getElementById("trail-panel");
-    if(tp2)tp2.style.display="none";
-  }
-  // ---- scenario rows: the champion flying every weather scenario at
-  // once, one row for streamlines and a SEPARATE row for surface
-  // pressure -- same telemetry-driven pose math, own camera state and
-  // own data per row, so neither leaks into the other. All the mini
-  // views within a row share ONE camera state, so orbiting any box
-  // orbits the rest of that row; each poses the model from its own
-  // telemetry. WebGL contexts are a scarce, capped resource on mobile
-  // browsers -- creating a dozen of them up front (on top of the hero
-  // card, replay and trail views above) can push a page past that cap
-  // and get an already-open context silently evicted. Defer creation
-  // until each row is actually about to scroll into view.
-  function startScenarioRow(rowId,mode){
-    var row=document.getElementById(rowId);
-    var boxes=[].slice.call(document.querySelectorAll("#"+rowId+" canvas"));
-    if(!boxes.length||!row)return;
-    var pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
-    var views=[];
-    boxes.forEach(function(cv){
-      var v=AL.makeViewer(cv,pst,{flowLines:mode==="flow"?30:0});
-      if(v)views.push({v:v,scen:cv.dataset.scen,t:0,th:0,hx:1,hy:0});
+
+// ---- scenario rows: the champion flying every weather scenario at
+// once, one row for streamlines and a SEPARATE row for surface
+// pressure -- same telemetry-driven pose math, own camera state and
+// own data per row, so neither leaks into the other. All the mini
+// views within a row share ONE camera state, so orbiting any box
+// orbits the rest of that row; each poses the model from its own
+// telemetry. WebGL contexts are a scarce, capped resource on mobile
+// browsers, so a row mounts its contexts only while it (plus a margin)
+// is on screen and releases them the moment it scrolls well clear --
+// same discipline AL.lazySection gives every section on this page.
+// Each box only ever needs the CHAMPION's own mesh + its own scenario's
+// telemetry, so rows never wait on (or get delayed by) the lineage
+// chain the replay/trail sections below fetch.
+function startScenarioRow(rowId,mode){
+  var row=document.getElementById(rowId);
+  if(!row)return;
+  var pst=null,views=null,raf=null,on=false,pending=false,last=null;
+  function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
+  function tick(ts){
+    raf=requestAnimationFrame(tick);
+    if(!on||!views)return; // parked offscreen, or contexts torn down
+    if(last===null)last=ts;
+    var dt=Math.min((ts-last)/1000,0.1);last=ts;
+    views.forEach(function(w){
+      var d=AL.FLIGHTS[CH+"|"+w.scen];
+      if(!d)return;
+      var n=d.x.length;
+      w.t=(w.t+dt*8)%(n/d.hz); // 8x replay, looped per scenario
+      var fx=Math.min(w.t*d.hz,n-1.001),i=Math.floor(fx),
+          j=Math.min(i+1,n-1),f0=fx-i;
+      // attitude: body z = thrust vector, body x follows the motion
+      var tx=lerp(d,"tx",f0,i,j),ty=lerp(d,"ty",f0,i,j),
+          tz=lerp(d,"tz",f0,i,j);
+      var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
+      var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
+      var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
+      if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
+      var dot=hx*tx+hy*ty;
+      var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
+      var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
+      bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
+      var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
+      w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
+      w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
+      w.v.setPropAngle(w.th);
+      var wv=[lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
+              lerp(d,"wz",f0,i,j)];
+      // the wind channel / pressure repaint is what tells the boxes
+      // in a row apart
+      if(mode==="flow")w.v.windUpdate(wv,dt);
+      else w.v.pressureUpdate(wv,dt);
     });
-    if(!views.length)return;
-    Promise.all(views.map(function(w){return AL.ensureFlight(CH,w.scen)}))
-    .then(function(){
-      views.forEach(function(w){
+    pst.redraw(); // one shared state: draws every box in the row
+  }
+  function mount(){
+    if(views||pending)return;
+    var boxes=[].slice.call(row.querySelectorAll("canvas"));
+    if(!boxes.length)return;
+    pending=true;
+    pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
+    // per-tile state, not row-level: a WebGL context is a per-canvas
+    // resource (mobile browsers cap the total available), so one tile
+    // failing to get one must never block or hide the other five, and
+    // every tile gets its OWN spinner the instant we start on it rather
+    // than only once the whole row's fetch has already succeeded.
+    var vs=[];
+    boxes.forEach(function(cv){
+      var fig=cv.closest("figure")||cv.parentNode;
+      fig.classList.add("al-loading");
+      var fresh=AL.freshCanvas(cv);
+      var v=AL.makeViewer(fresh,pst,{flowLines:mode==="flow"?30:0});
+      if(!v){ // context budget exhausted or WebGL unavailable on this tile
+        fig.classList.remove("al-loading");
+        fig.classList.add("al-failed");
+        return;
+      }
+      vs.push({v:v,scen:fresh.dataset.scen,fig:fig,t:0,th:0,hx:1,hy:0});
+    });
+    pending=false;
+    if(!vs.length)return; // every tile in the row failed to get a context
+    if(!on){vs.forEach(function(w){w.v.destroy();w.fig.classList.remove("al-loading")});return} // scrolled away mid-mount
+    views=vs;
+    views.forEach(function(w){
+      AL.ensureFlight(CH,w.scen).then(function(){
+        if(!views||views.indexOf(w)<0)return; // torn down meanwhile
         w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
         if(mode==="flow"){
           // real CFD streamlines where solved; analytic field otherwise.
           // Anchored at the trace's mean attitude: the wind stays
           // world-fixed while the craft oscillates within it.
           AL.ensureFlowLines(CH,w.scen).then(function(d){
+            if(!views||views.indexOf(w)<0)return; // torn down meanwhile
             var fd=AL.FLIGHTS[CH+"|"+w.scen];
             w.v.setFlowLines(d,d&&fd?AL.meanPose(fd):null)});
         }else{
@@ -207,73 +234,102 @@ AL.ensureBlobs(need).then(function(){
           // solved attitudes as the craft's own AoA changes -- see
           // pressureUpdate in viewer.js
           AL.ensurePressure(CH,w.scen).then(function(d){
+            if(!views||views.indexOf(w)<0)return;
             w.v.setPressureData(d)});
         }
+        w.fig.classList.remove("al-loading"); // this tile's own data is in
+        pst.redraw();
       });
-      var on=true,last=null;
-      if("IntersectionObserver" in window){
-        new IntersectionObserver(function(es){
-          es.forEach(function(en){on=en.isIntersecting;last=null});
-        }).observe(row);
-      }
-      function lerp(d,ch,f0,i,j){return d[ch][i]*(1-f0)+d[ch][j]*f0}
-      function tick(ts){
-        requestAnimationFrame(tick);
-        if(!on)return; // parked offscreen: no work
-        if(last===null)last=ts;
-        var dt=Math.min((ts-last)/1000,0.1);last=ts;
-        views.forEach(function(w){
-          var d=AL.FLIGHTS[CH+"|"+w.scen];
-          if(!d)return;
-          var n=d.x.length;
-          w.t=(w.t+dt*8)%(n/d.hz); // 8x replay, looped per scenario
-          var fx=Math.min(w.t*d.hz,n-1.001),i=Math.floor(fx),
-              j=Math.min(i+1,n-1),f0=fx-i;
-          // attitude: body z = thrust vector, body x follows the motion
-          var tx=lerp(d,"tx",f0,i,j),ty=lerp(d,"ty",f0,i,j),
-              tz=lerp(d,"tz",f0,i,j);
-          var tm=Math.hypot(tx,ty,tz)||1;tx/=tm;ty/=tm;tz/=tm;
-          var i0=Math.max(0,i-1),i1=Math.min(n-1,i+1);
-          var hx=d.x[i1]-d.x[i0],hy=d.y[i1]-d.y[i0],hm=Math.hypot(hx,hy);
-          if(hm<1e-4){hx=w.hx;hy=w.hy}else{hx/=hm;hy/=hm;w.hx=hx;w.hy=hy}
-          var dot=hx*tx+hy*ty;
-          var bx=[hx-dot*tx,hy-dot*ty,-dot*tz];
-          var bm=Math.hypot(bx[0],bx[1],bx[2])||1;
-          bx=[bx[0]/bm,bx[1]/bm,bx[2]/bm];
-          var by=[ty*bx[2]-tz*bx[1],tz*bx[0]-tx*bx[2],tx*bx[1]-ty*bx[0]];
-          w.v.modelR=[bx[0],bx[1],bx[2],by[0],by[1],by[2],tx,ty,tz];
-          w.th+=lerp(d,"rpm",f0,i,j)*0.0035*dt;
-          w.v.setPropAngle(w.th);
-          var wv=[lerp(d,"wx",f0,i,j),lerp(d,"wy",f0,i,j),
-                  lerp(d,"wz",f0,i,j)];
-          // the wind channel / pressure repaint is what tells the boxes
-          // in a row apart
-          if(mode==="flow")w.v.windUpdate(wv,dt);
-          else w.v.pressureUpdate(wv,dt);
-        });
-        pst.redraw(); // one shared state: draws every box in the row
-      }
-      requestAnimationFrame(tick);
     });
+    last=null;
+    raf=requestAnimationFrame(tick);
   }
-  function deferScenarioRow(rowId,mode){
-    var row=document.getElementById(rowId);
-    if(!row)return;
-    if("IntersectionObserver" in window){
-      var startObs=new IntersectionObserver(function(es){
-        es.forEach(function(en){
-          if(en.isIntersecting){
-            startObs.disconnect();startScenarioRow(rowId,mode)}
-        });
-      },{rootMargin:"400px"});
-      startObs.observe(row);
+  function unmount(){
+    if(raf){cancelAnimationFrame(raf);raf=null}
+    if(views)views.forEach(function(w){
+      w.v.destroy();w.fig.classList.remove("al-loading");
+    });
+    views=null;pst=null;
+  }
+  AL.lazySection(row,function(){on=true;mount()},
+                     function(){on=false;unmount()});
+}
+startScenarioRow("perf-row","flow");
+startScenarioRow("pressure-row","pressure");
+
+// ---- lineage chain (replay + trail): the champion's FULL ancestry can
+// be large on a long run (every steppable ancestor's mesh, tens of MB
+// combined) -- fetch it once, lazily, only once the reader actually
+// scrolls toward one of these two sections, never on page load.
+var rep=AL.makeReplay({canvas:document.getElementById("replay-canvas"),
+  timeline:document.getElementById("replay-tl"),
+  label:document.getElementById("replay-lab")});
+var chainPromise=null,opened=false,openFailed=false;
+var replayPanelEl=document.getElementById("replay-panel"),
+    trailPanelEl=document.getElementById("trail-panel");
+function ensureChain(){
+  if(!chainPromise){
+    // whichever of the two sections scrolled into view first triggers
+    // this; show BOTH panels' spinners since either may be on screen
+    if(replayPanelEl)replayPanelEl.classList.add("al-loading");
+    if(trailPanelEl)trailPanelEl.classList.add("al-loading");
+    var need=AL.walkChainFor(CH).steps.map(function(h){return "m-"+h});
+    chainPromise=AL.ensureBlobs(need);
+  }
+  return chainPromise;
+}
+function openOnce(){
+  if(opened||openFailed)return Promise.resolve();
+  return ensureChain().then(function(){
+    if(replayPanelEl)replayPanelEl.classList.remove("al-loading");
+    if(trailPanelEl)trailPanelEl.classList.remove("al-loading");
+    if(openFailed||opened)return; // a second caller raced us here
+    if(rep.open(CH)){
+      opened=true;
+      var redraw=function(){rep.redraw()};
+      requestAnimationFrame(redraw);
+      setTimeout(redraw,80);
+      window.addEventListener("resize",redraw);
+      // the timeline/label are built by open(); the GL context itself
+      // is what each section below mounts/unmounts on its own schedule
+      rep.closeViewer();
+      if(rep.chain.length<=1&&trailPanelEl)trailPanelEl.style.display="none";
     }else{
-      startScenarioRow(rowId,mode);
+      openFailed=true;
+      if(replayPanelEl)replayPanelEl.style.display="none";
+      if(trailPanelEl)trailPanelEl.style.display="none";
     }
-  }
-  deferScenarioRow("perf-row","flow");
-  deferScenarioRow("pressure-row","pressure");
-});
+  });
+}
+var replayPanel=document.getElementById("replay-panel");
+AL.lazySection(replayPanel,
+  function(){openOnce().then(function(){
+    if(!opened)return;
+    var ok=rep.reopenViewer(AL.freshCanvas(document.getElementById("replay-canvas")));
+    replayPanel.classList.toggle("al-failed",!ok);
+  })},
+  function(){replayPanel.classList.remove("al-failed");if(opened)rep.closeViewer()});
+
+// the lineage trail: same chain the replay opens, all steps
+// superimposed at once instead of stepped through -- near-top-down
+// pitch (1.2), same as the overlay's own "lineage trail" tab, since
+// the plan shape is what reads best from above
+var trailState=AL.makeState(1.2),trailV=null;
+var trailPanel=document.getElementById("trail-panel");
+AL.lazySection(trailPanel,
+  function(){openOnce().then(function(){
+    if(!opened||rep.chain.length<=1||trailV)return;
+    var cv=document.getElementById("trail-canvas");
+    if(!cv)return;
+    trailV=AL.makeViewer(AL.freshCanvas(cv),trailState);
+    trailPanel.classList.toggle("al-failed",!trailV);
+    if(!trailV)return;
+    trailV.load(AL.trailSpecs(rep.chain),rep.frame);
+    requestAnimationFrame(function(){trailState.redraw()});
+  })},
+  function(){trailPanel.classList.remove("al-failed");
+             if(trailV){trailV.destroy();trailV=null}});
+window.addEventListener("resize",function(){trailState.redraw()});
 })();
 """
 
@@ -395,15 +451,12 @@ INTRO_TITLE = ("&ldquo;The snuggle is real&rdquo;: &mdash; evolving "
 
 INTRO_TEXT = (
     "I let a genetic algorithm loose on the geometry of a 7-inch "
-    "quadcopter frame &mdash; the real, GPLv3 Source One V6 plate "
-    "drawings, morphed by fourteen genes and flown through six simulated "
-    "weather scenarios, with Claude sitting in every few generations to "
-    "propose designs from the run&rsquo;s own telemetry. Every candidate "
-    'ever flown is in the <a href="log.html">gallery</a>, failures '
-    "included: click one to spin the 3D model, superimpose its whole "
-    "lineage as ghosts, or replay its evolution generation by "
-    'generation. Free software, <a href="https://github.com/akaalias/'
-    'airloom">GPLv3</a>.')
+    "quadcopter frame &mdash; the real, "
+    '<a href="https://github.com/tbs-trappy/source_one">open-source '
+    "Source One V6</a> plate drawings, morphed by fourteen genes and "
+    "flown through six simulated weather scenarios, with Claude sitting in "
+    "every few generations to propose designs from the run&rsquo;s own "
+    "telemetry.")
 
 
 def _build_section_html(results_dir: Path, champ) -> list[str]:
@@ -637,27 +690,14 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         parts += [
             f"<h2>performance: the champion flying all {n_scen} weather "
             "scenarios</h2>",
-            '<p class="sub">the actual scored flights, replayed from '
-            "simulation telemetry &mdash; attitude and rotor speed are "
-            "what the simulator graded. The first row is OpenFOAM RANS "
-            "streamlines at each scenario&rsquo;s mean relative wind "
-            "where solved (rotors not modeled), an illustrative field "
-            "otherwise, posed with the craft&rsquo;s own live attitude "
-            "and colored by local velocity magnitude on a sequential "
-            "scale &mdash; dark purple where flow slows, yellow where "
-            "it accelerates around the frame. "
-            "The second row is the same flights colored by solved "
-            "surface pressure instead, in pascals: deep red is a "
-            "stagnation zone (high pressure, most of the drag), deep "
-            "blue is a suction zone &mdash; raw pressure, not the "
-            "normalized Cp coefficient, so a scenario with genuinely "
-            "more severe airflow reads as more intense rather than just "
-            "differently shaped. Both rows share one color scale across "
-            "all six scenarios and blend live as the craft&rsquo;s own "
-            f"attitude changes during the replay. Drag inside any box "
-            f"and all {n_scen} cameras orbit in unison; the <b>view "
-            "candidate performance</b> button on the card above opens "
-            "the full-screen replay with live telemetry.</p>",
+            '<p class="sub">the champion&rsquo;s actual scored flights, '
+            "replayed from simulation telemetry. Top row: airflow "
+            "streamlines colored by speed (dark purple slow, yellow "
+            "fast). Bottom row: surface pressure in pascals (deep red "
+            "is high-pressure stagnation, deep blue is suction). Drag "
+            "any box and the whole row orbits together; the <b>view "
+            "candidate performance</b> button above opens the "
+            "full-screen replay with live telemetry.</p>",
             f'<div id="perf-row">{boxes}</div>',
             '<div id="flow-legend"><span>slow</span>'
             '<span class="bar"></span><span>fast</span></div>']

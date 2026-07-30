@@ -30,6 +30,22 @@ a:hover{border-bottom-color:var(--accent)}
 
 .num{font-variant-numeric:lining-nums tabular-nums}
 img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
+/* generic lazy-load states: any element that fetches its own mesh/
+   telemetry off a scroll observer gets one of these -- a spinner while
+   in flight, a plain fallback note if a context genuinely can't be had
+   (WebGL contexts are a capped, scarce resource on mobile). Self-
+   contained (sets its own position:relative), so callers just toggle
+   the class on whatever wrapper element makes sense for them. */
+@keyframes al-spin{to{transform:rotate(360deg)}}
+.al-loading{position:relative}
+.al-loading::after{content:"";position:absolute;top:50%;left:50%;
+  width:26px;height:26px;margin:-13px 0 0 -13px;
+  border:2px solid var(--rule);border-top-color:var(--muted);
+  border-radius:50%;animation:al-spin .8s linear infinite;z-index:5}
+.al-failed{position:relative}
+.al-failed::after{content:"3D unavailable";position:absolute;top:50%;
+  left:50%;transform:translate(-50%,-50%);font:11px var(--mono);
+  color:var(--faint);white-space:nowrap;z-index:5}
 /* detail-card viewer buttons: open the evolution / performance overlays */
 .vbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .vbtns button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
@@ -465,7 +481,7 @@ table.sc td:last-child{text-align:right;color:var(--ink)}
 <div class="wrap">
 <nav class="topnav"><span class="brand">Airloom</span><a href="index.html">the result</a><a href="log.html" class="on">research log</a><a href="lineage.html">family tree</a><a href="glossary.html">glossary</a><a href="lab-notebook.html">lab notebook</a></nav>
 <h1>Airloom &mdash; run <code>run_20260714_015948</code></h1>
-<p class="sub num">80 generation(s) &middot; 1061 candidates (755 valid) &middot; <span class="updated">regenerated 19:27:40</span></p>
+<p class="sub num">80 generation(s) &middot; 1061 candidates (755 valid) &middot; <span class="updated">regenerated 13:37:48</span></p>
 <p class="sub intro">every candidate the run has flown, in evaluation order. Gray dots are evaluated designs &mdash; height is the aggregate energy score in Wh/km across all scenarios, lower is better. The black step line tracks the best so far, stepping down at each labeled improvement. Red &#215;&rsquo;s on the &#8734; row are invalid designs that failed a check and never flew. Click any black improvement dot to jump to that candidate&rsquo;s detail card below.</p>
 
 <div class="lgd"><span class="lg"><span class="sw"><span class="dot" style="background:#b9b6a6"></span></span>candidate<span class="tip"><b>candidate</b><br>One evaluated design, drawn at its aggregate energy score across all scenarios. Lower is better.</span></span><span class="lg"><span class="sw"><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#b9b6a6" stroke-width="1.4"/></svg></span>off scale<span class="tip"><b>off scale</b><br>A valid but far-off candidate above the 95th-percentile cap, drawn hollow at the top edge so one terrible design does not squash the interesting region.</span></span><span class="lg"><span class="sw"><span style="display:inline-block;width:16px;border-top:2px solid #111111"></span></span>best so far<span class="tip"><b>best so far</b><br>Step line tracking the lowest energy score reached so far; each black dot is an improvement. Click one to jump to that candidate&rsquo;s detail card.</span></span><span class="lg"><span class="sw"><span style="color:#8c2f1f;font-weight:700">&#215;</span></span>invalid (design fail)<span class="tip"><b>invalid (design fail)</b><br>Failed a structural or geometric check and never flew the scenarios, so it has no finite score &mdash; plotted on the &#8734; row.</span></span><span class="lg"><span class="sw"><span style="display:inline-block;width:14px;height:12px;background:#8f8c78;opacity:0.25"></span></span>generation<span class="tip"><b>generation</b><br>Alternating shaded bands group the candidates of each generation (labeled g0, g1, &hellip; below the axis); hover a band for its candidate count.</span></span><span class="lg"><span class="sw"><svg width="14" height="14"><circle cx="7" cy="7" r="3" fill="#b9b6a6"/><circle cx="7" cy="7" r="5.6" fill="none" stroke="#6a4a8a" stroke-width="1.4"/></svg></span>claude-designed<span class="tip"><b>claude-designed</b><br>A purple halo marks candidates proposed by the Claude designer; a light purple generation band means Claude had input that generation (designer round).</span></span><span class="lg"><span class="sw"><span style="color:#2e6e63;font-weight:700">g</span></span>pivot generation<span class="tip"><b>pivot generation</b><br>Patience ran out on a plateau: this generation was bred from far-apart parents to re-diversify the pool.</span></span></div>
@@ -6774,4 +6790,4 @@ document.querySelectorAll(".chart-card [data-h]").forEach(function(el){
 })();
 </script>
 </div>
-<style>#gh-ribbon{position:fixed;right:-56px;bottom:36px;z-index:80;transform:rotate(-45deg);background:#111111;color:#fffff8;font:600 11px "Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.12em;white-space:nowrap;padding:7px 64px;text-decoration:none;border:none;outline:1px solid rgba(255,255,248,.4);outline-offset:-4px;box-shadow:0 1px 8px rgba(0,0,0,.3)}#gh-ribbon:hover{background:#8c2f1f;color:#fffff8}</style><a id="gh-ribbon" href="https://github.com/akaalias/airloom" target="_blank" rel="noopener">view on GitHub</a>
+<style>#gh-ribbon{position:fixed;right:-56px;bottom:36px;z-index:80;transform:rotate(-45deg);background:#111111;color:#fffff8;font:600 11px "Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.12em;white-space:nowrap;padding:7px 64px;text-decoration:none;border:none;outline:1px solid rgba(255,255,248,.4);outline-offset:-4px;box-shadow:0 1px 8px rgba(0,0,0,.3)}#gh-ribbon:hover{background:#8c2f1f;color:#fffff8}@media(max-width:600px){#gh-ribbon{right:-50px;bottom:24px;font-size:9px;letter-spacing:.09em;padding:5px 44px}}</style><a id="gh-ribbon" href="https://github.com/akaalias/airloom" target="_blank" rel="noopener">view on GitHub</a>

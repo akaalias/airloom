@@ -34,7 +34,9 @@ GH_RIBBON_HTML = (
     "padding:7px 64px;text-decoration:none;border:none;"
     "outline:1px solid rgba(255,255,248,.4);outline-offset:-4px;"
     "box-shadow:0 1px 8px rgba(0,0,0,.3)}"
-    "#gh-ribbon:hover{background:#8c2f1f;color:#fffff8}</style>"
+    "#gh-ribbon:hover{background:#8c2f1f;color:#fffff8}"
+    "@media(max-width:600px){#gh-ribbon{right:-50px;bottom:24px;"
+    "font-size:9px;letter-spacing:.09em;padding:5px 44px}}</style>"
     '<a id="gh-ribbon" href="https://github.com/akaalias/airloom" '
     'target="_blank" rel="noopener">view on GitHub</a>')
 
@@ -111,6 +113,22 @@ LAZY_IMG_JS = (
 CARD_CSS = """
 .num{font-variant-numeric:lining-nums tabular-nums}
 img.peek.busy{opacity:.5;cursor:progress} /* mesh payloads loading */
+/* generic lazy-load states: any element that fetches its own mesh/
+   telemetry off a scroll observer gets one of these -- a spinner while
+   in flight, a plain fallback note if a context genuinely can't be had
+   (WebGL contexts are a capped, scarce resource on mobile). Self-
+   contained (sets its own position:relative), so callers just toggle
+   the class on whatever wrapper element makes sense for them. */
+@keyframes al-spin{to{transform:rotate(360deg)}}
+.al-loading{position:relative}
+.al-loading::after{content:"";position:absolute;top:50%;left:50%;
+  width:26px;height:26px;margin:-13px 0 0 -13px;
+  border:2px solid var(--rule);border-top-color:var(--muted);
+  border-radius:50%;animation:al-spin .8s linear infinite;z-index:5}
+.al-failed{position:relative}
+.al-failed::after{content:"3D unavailable";position:absolute;top:50%;
+  left:50%;transform:translate(-50%,-50%);font:11px var(--mono);
+  color:var(--faint);white-space:nowrap;z-index:5}
 /* detail-card viewer buttons: open the evolution / performance overlays */
 .vbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .vbtns button{font:600 11px var(--serif);font-feature-settings:"smcp" 1;
@@ -1637,14 +1655,16 @@ function liveCards(o){
   function activate(vr,img){
     if(vr._cv||vr._pend)return;
     vr._pend=1;
+    vr.classList.add("al-loading"); // the still shows underneath meanwhile
     ensureBlobs([img.dataset.mesh]).then(function(){
       vr._pend=0;
-      if(!vr._on||vr._cv)return; // scrolled away while loading
+      if(!vr._on||vr._cv){vr.classList.remove("al-loading");return} // away
       var cv=document.createElement("canvas");
       cv.className="cv3d";
       var st=makeState();
       var v=makeViewer(cv,st,o.viewerOpts||{});
-      if(!v)return; // no webgl: the still stays
+      vr.classList.remove("al-loading");
+      if(!v)return; // no webgl: the still stays, no spinner needed
       vr.appendChild(cv);
       v.load([{id:img.dataset.mesh}]);
       vr._cv=cv;cv._view=v;cv._st=st;
@@ -1653,6 +1673,7 @@ function liveCards(o){
     });
   }
   function deactivate(vr){
+    vr.classList.remove("al-loading");
     var cv=vr._cv;
     if(!cv)return;
     vr._cv=null;
@@ -1677,6 +1698,35 @@ function liveCards(o){
   });
   window.addEventListener("resize",function(){
     active.forEach(function(s){s.redraw()})});
+}
+// ---- swap a canvas for a fresh twin, same id/classes/data-*: WEBGL_lose_
+// context is a one-way trip for a given element (getContext afterward
+// keeps returning the same dead context, not a new one), so a spot that
+// releases its GL resources and later wants them back needs a new
+// canvas, not the old one reused.
+function freshCanvas(cv){
+  var n=document.createElement("canvas");
+  for(var i=0;i<cv.attributes.length;i++)
+    n.setAttribute(cv.attributes[i].name,cv.attributes[i].value);
+  cv.parentNode.replaceChild(n,cv);
+  return n;
+}
+// ---- mount/unmount a whole page section's WebGL work as it scrolls
+// well clear of the viewport (both directions), so sections give their
+// contexts back instead of quietly eating into the page's small (and on
+// mobile, capped) budget; mount() runs again if the reader scrolls back.
+// Falls back to a one-time mount where IntersectionObserver is missing.
+function lazySection(el,mount,unmount){
+  if(!el)return;
+  if(!("IntersectionObserver" in window)){mount();return}
+  var on=false;
+  new IntersectionObserver(function(es){
+    es.forEach(function(en){
+      if(en.isIntersecting===on)return;
+      on=en.isIntersecting;
+      if(on)mount();else unmount();
+    });
+  },{rootMargin:"400px"}).observe(el);
 }
 
 
@@ -1893,6 +1943,23 @@ function makeReplay(o){
     label();
     return true;
   };
+  // release the GL context without touching chain/idx/timeline state --
+  // pages that mount this off a scroll observer call this on the way
+  // out, then reopenViewer() on the way back in, instead of a full
+  // open() (which would rebuild the timeline and rewind to step 0)
+  rep.closeViewer=function(){
+    if(anim){cancelAnimationFrame(anim);anim=null}
+    if(viewer){viewer.destroy();viewer=null}
+  };
+  rep.reopenViewer=function(canvas){
+    if(viewer||!rep.chain.length)return false;
+    if(canvas)o.canvas=canvas;
+    viewer=makeViewer(o.canvas,state);
+    if(!viewer)return false;
+    viewer.load(specs(rep.idx),rep.frame);
+    state.redraw();
+    return true;
+  };
   return rep;
 }
 
@@ -1921,7 +1988,8 @@ window.AL={makeState:makeState,makeViewer:makeViewer,
   blobAvailable:blobAvailable,FLIGHTS:FLIGHTS,FLIGHT_SRC:FLIGHT_SRC,
   WMETA:WMETA,BASELINE:BASELINE,DEF_YAW:DEF_YAW,DEF_PITCH:DEF_PITCH,
   walkChainFor:walkChainFor,chainFrame:chainFrame,trailSpecs:trailSpecs,
-  makeReplay:makeReplay,liveCards:liveCards,meanPose:meanPose};
+  makeReplay:makeReplay,liveCards:liveCards,meanPose:meanPose,
+  freshCanvas:freshCanvas,lazySection:lazySection};
 })();
 """  # noqa: E501  -- written verbatim to viewer.js
 
