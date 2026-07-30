@@ -97,6 +97,15 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   #perf-row .pf[data-scen="cold_headwind"],
   #pressure-row .pf[data-scen="cold_headwind"]{flex-basis:100%;max-width:420px}
 }
+/* text that only makes sense where the thing it refers to is showing:
+   the overlay button (hidden below 600px, see .vbtns) and the note
+   about the five scenario tiles mobile doesn't render */
+.mobile-scen-note{display:none;text-align:center;font:12px var(--mono);
+  color:var(--faint);font-style:italic;margin:10px 0 0}
+@media(max-width:600px){
+  .desktop-only{display:none}
+  .mobile-scen-note{display:block}
+}
 #cp-legend{display:flex;align-items:center;justify-content:center;
   gap:10px;margin:16px auto 0;font:12px var(--mono);color:var(--faint)}
 #cp-legend .bar{width:180px;height:10px;border-radius:5px;
@@ -192,7 +201,15 @@ function startScenarioRow(rowId,mode){
         var hxN=hx0/hm,hyN=hy0/hm;
         var curAng=Math.atan2(w.hy||0,w.hx||1),tgtAng=Math.atan2(hyN,hxN);
         var dAng=((tgtAng-curAng+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-        var maxStep=dt*10; // rad/s turn-rate cap: fast but continuous
+        // rad/s turn-rate cap. This is time-based, not frame-based, so
+        // it's mathematically continuous regardless of frame rate --
+        // but a device under GPU/memory pressure (exactly the mobile
+        // case this whole session has been about) can drop several
+        // frames in a row, and a fast cap means a big chunk of the turn
+        // happens in that ONE gap with nothing rendered in between,
+        // which looks exactly like an instant snap. Slower reads as a
+        // turn even across a dropped-frame stutter.
+        var maxStep=dt*2.5;
         dAng=Math.max(-maxStep,Math.min(maxStep,dAng));
         var newAng=curAng+dAng;
         w.hx=Math.cos(newAng);w.hy=Math.sin(newAng);
@@ -746,10 +763,14 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             "streamlines colored by speed (dark purple slow, yellow "
             "fast). Bottom row: surface pressure in pascals (deep red "
             "is high-pressure stagnation, deep blue is suction). Drag "
-            "any box and the whole row orbits together; the <b>view "
-            "candidate performance</b> button above opens the "
-            "full-screen replay with live telemetry.</p>",
+            "any box and the whole row orbits together."
+            '<span class="desktop-only"> The <b>view candidate '
+            "performance</b> button above opens the full-screen replay "
+            "with live telemetry.</span></p>",
             f'<div id="perf-row">{boxes}</div>',
+            '<p class="mobile-scen-note">+5 more scenarios on desktop '
+            "&mdash; too much for a phone&rsquo;s WebGL budget to render "
+            "at once</p>",
             '<div id="flow-legend"><span>slow</span>'
             '<span class="bar"></span><span>fast</span></div>']
 
@@ -760,6 +781,9 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
             for s in flow_src.get(champ_hash, pressure_src[champ_hash]))
         parts += [
             f'<div id="pressure-row">{pboxes}</div>',
+            '<p class="mobile-scen-note">+5 more scenarios on desktop '
+            "&mdash; too much for a phone&rsquo;s WebGL budget to render "
+            "at once</p>",
             '<div id="cp-legend"><span>suction</span>'
             '<span class="bar"></span><span>stagnation</span></div>']
 

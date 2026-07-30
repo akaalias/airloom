@@ -2126,7 +2126,12 @@ function flPoseData(d,V,S,dtf){
     var hxN=hx0/hm,hyN=hy0/hm;
     var curAng=Math.atan2(S.hy||0,S.hx||1),tgtAng=Math.atan2(hyN,hxN);
     var dAng=((tgtAng-curAng+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-    var maxStep=(dtf||0.016)*10; // rad/s turn-rate cap: fast but continuous
+    // slower than it looks like it needs to be: this is time-based so
+    // it's continuous regardless of frame rate, but a device under
+    // load can drop several frames in a row, and a fast cap means most
+    // of the turn happens in that one gap with nothing rendered in
+    // between -- which reads as an instant snap, not a turn
+    var maxStep=(dtf||0.016)*2.5;
     dAng=Math.max(-maxStep,Math.min(maxStep,dAng));
     var newAng=curAng+dAng;
     S.hx=Math.cos(newAng);S.hy=Math.sin(newAng);
