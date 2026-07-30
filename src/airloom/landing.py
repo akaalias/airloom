@@ -87,6 +87,16 @@ h2 .hash{font:400 21px var(--mono);color:var(--muted)}
   touch-action:none}
 #pressure-row figcaption{font:12px var(--mono);color:var(--faint);
   text-align:center;margin-top:4px}
+/* six live WebGL contexts per row is real GPU budget on a phone, and on
+   a small screen six tiny tiles read poorly anyway -- show one big one
+   instead. The matching JS skips creating contexts for the hidden five
+   entirely rather than just hiding already-mounted ones. */
+@media(max-width:600px){
+  #perf-row .pf:not([data-scen="cold_headwind"]),
+  #pressure-row .pf:not([data-scen="cold_headwind"]){display:none}
+  #perf-row .pf[data-scen="cold_headwind"],
+  #pressure-row .pf[data-scen="cold_headwind"]{flex-basis:100%;max-width:420px}
+}
 #cp-legend{display:flex;align-items:center;justify-content:center;
   gap:10px;margin:16px auto 0;font:12px var(--mono);color:var(--faint)}
 #cp-legend .bar{width:180px;height:10px;border-radius:5px;
@@ -216,6 +226,12 @@ function startScenarioRow(rowId,mode){
   function mount(){
     if(views||pending)return;
     var boxes=[].slice.call(row.querySelectorAll("canvas"));
+    // a phone's WebGL context budget struggles with six of these live
+    // at once (and six tiny tiles read poorly on a small screen anyway)
+    // -- show/create just one. The CSS hides the other five figures;
+    // this is what keeps their contexts from ever being requested.
+    if(window.matchMedia&&window.matchMedia("(max-width:600px)").matches)
+      boxes=boxes.filter(function(cv){return cv.dataset.scen==="cold_headwind"});
     if(!boxes.length)return;
     pending=true;
     pst=AL.makeState(0.35); // low chase-cam pitch, shared by the row
@@ -715,8 +731,8 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
         scen_ws = {s["scenario"]: s["wh_per_km"]
                    for s in store.scenario_results_for(run_id, champ_hash)}
         boxes = "".join(
-            f'<figure class="pf"><canvas data-scen="{s}"></canvas>'
-            f"<figcaption>{s.replace('_', ' ')}"
+            f'<figure class="pf" data-scen="{s}"><canvas data-scen="{s}">'
+            f"</canvas><figcaption>{s.replace('_', ' ')}"
             + (f" &middot; {_fmt(scen_ws[s])} Wh/km"
                if scen_ws.get(s) is not None else "")
             + "</figcaption></figure>"
@@ -739,8 +755,8 @@ def write_landing(store: Store, run_id: str, results_dir: Path) -> Path:
 
     if pressure_src.get(champ_hash):
         pboxes = "".join(
-            f'<figure class="pf"><canvas data-scen="{s}"></canvas>'
-            f"<figcaption>{s.replace('_', ' ')}</figcaption></figure>"
+            f'<figure class="pf" data-scen="{s}"><canvas data-scen="{s}">'
+            f"</canvas><figcaption>{s.replace('_', ' ')}</figcaption></figure>"
             for s in flow_src.get(champ_hash, pressure_src[champ_hash]))
         parts += [
             f'<div id="pressure-row">{pboxes}</div>',
