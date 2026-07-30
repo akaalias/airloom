@@ -320,9 +320,27 @@ function makeState(basePitch){
 }
 function makeViewer(canvas,state,opts){
   opts=opts||{};
-  var gl=canvas.getContext("webgl",{antialias:true,alpha:false})
-       ||canvas.getContext("experimental-webgl");
+  // antialiasing roughly doubles a context's GPU memory footprint; on a
+  // page that can have a dozen small tiles live at once, that's real
+  // budget on a constrained mobile GPU for a difference invisible at
+  // tile size. Callers with many simultaneous small viewers turn it off.
+  var aa=opts.antialias!==false;
+  var gl=canvas.getContext("webgl",{antialias:aa,alpha:false})
+       ||canvas.getContext("experimental-webgl",{antialias:aa,alpha:false});
   if(!gl)return null;
+  // a context can be silently evicted by the OS/driver well AFTER
+  // creation (GPU memory pressure, backgrounding, another context
+  // stealing the budget) -- without this listener the browser's default
+  // behavior on some mobile builds is to paint the canvas as a broken-
+  // resource glyph instead of just going blank. preventDefault() opts
+  // into recovery semantics; onLost lets the caller show its own
+  // fallback and stop touching this (now-dead) view.
+  var contextLost=false;
+  canvas.addEventListener("webglcontextlost",function(ev){
+    ev.preventDefault();
+    contextLost=true;
+    if(opts.onLost)opts.onLost();
+  },false);
   function shader(type,src){var sh=gl.createShader(type);
     gl.shaderSource(sh,src);gl.compileShader(sh);return sh}
   var prog=gl.createProgram();
@@ -783,7 +801,7 @@ function makeViewer(canvas,state,opts){
       return cur>0?need(state.basePitch)/cur:null;
     },
     draw:function(){
-      if(!models.length)return;
+      if(contextLost||!models.length)return;
       var dpr=window.devicePixelRatio||1;
       var w=canvas.clientWidth,h=canvas.clientHeight;
       if(w<2||h<2)return;
@@ -1076,7 +1094,18 @@ function liveCards(o){
       var cv=document.createElement("canvas");
       cv.className="cv3d";
       var st=makeState();
-      var v=makeViewer(cv,st,o.viewerOpts||{});
+      // research-log pages can have several of these live near the
+      // viewport at once; default AA off (real GPU memory per context)
+      // unless a caller explicitly opts back in via viewerOpts
+      var vOpts={antialias:false};
+      for(var vk in (o.viewerOpts||{}))vOpts[vk]=o.viewerOpts[vk];
+      // lost after creation (GPU/OS pressure): drop back to the still
+      // image cleanly rather than leave a dead canvas on top of it
+      vOpts.onLost=function(){
+        var i=active.indexOf(st);if(i>=0)active.splice(i,1);
+        if(vr._cv===cv){vr._cv=null;cv.remove()}
+      };
+      var v=makeViewer(cv,st,vOpts);
       vr.classList.remove("al-loading");
       if(!v)return; // no webgl: the still stays, no spinner needed
       vr.appendChild(cv);

@@ -205,6 +205,14 @@ function startScenarioRow(rowId,mode){
     });
     pst.redraw(); // one shared state: draws every box in the row
   }
+  function markFailed(w){ // context lost well AFTER creation (GPU/OS
+    // pressure, another context stealing the budget) -- w.v is already
+    // dead at this point, just stop touching it and show our own
+    // fallback instead of whatever the browser would otherwise paint
+    w.fig.classList.remove("al-loading");
+    w.fig.classList.add("al-failed");
+    if(views){var idx=views.indexOf(w);if(idx>=0)views.splice(idx,1)}
+  }
   function mount(){
     if(views||pending)return;
     var boxes=[].slice.call(row.querySelectorAll("canvas"));
@@ -221,20 +229,31 @@ function startScenarioRow(rowId,mode){
       var fig=cv.closest("figure")||cv.parentNode;
       fig.classList.add("al-loading");
       var fresh=AL.freshCanvas(cv);
-      var v=AL.makeViewer(fresh,pst,{flowLines:mode==="flow"?30:0});
+      var w={scen:fresh.dataset.scen,fig:fig,t:0,th:0,hx:1,hy:0};
+      // antialiasing roughly doubles a context's GPU memory footprint;
+      // up to a dozen of these can be live across both rows at once on
+      // a small mobile GPU, and AA is barely visible at this tile size
+      var v=AL.makeViewer(fresh,pst,{flowLines:mode==="flow"?30:0,
+        antialias:false,onLost:function(){markFailed(w)}});
       if(!v){ // context budget exhausted or WebGL unavailable on this tile
         fig.classList.remove("al-loading");
         fig.classList.add("al-failed");
         return;
       }
-      vs.push({v:v,scen:fresh.dataset.scen,fig:fig,t:0,th:0,hx:1,hy:0});
+      w.v=v;vs.push(w);
     });
     pending=false;
     if(!vs.length)return; // every tile in the row failed to get a context
     if(!on){vs.forEach(function(w){w.v.destroy();w.fig.classList.remove("al-loading")});return} // scrolled away mid-mount
     views=vs;
     views.forEach(function(w){
-      AL.ensureFlight(CH,w.scen).then(function(){
+      // the champion's own mesh, not just this tile's telemetry, has to
+      // actually be in hand before .load() can draw anything -- it used
+      // to arrive for free because the (slow) lineage-chain fetch this
+      // row no longer waits on gave it plenty of time in the background.
+      // Race it explicitly instead of assuming someone else fetched it.
+      Promise.all([AL.ensureFlight(CH,w.scen),AL.ensureBlobs(["m-"+CH])])
+      .then(function(){
         if(!views||views.indexOf(w)<0)return; // torn down meanwhile
         w.v.load([{id:"m-"+CH,propSpin:true,mono:true}]);
         if(mode==="flow"){
